@@ -1,0 +1,55 @@
+@import url(http://fonts.googleapis.com/css?family=Alike);
+@import "normalize.css";
+
+body {
+	width: 32em;
+	margin: 7.5em auto;
+	font-family: 'Alike', 'Baskerville', serif;
+	background-color: #fafafa;
+	color: #222;
+	text-align: justify;
+}
+
+h1 {
+	color: #840000;
+	text-align: center;
+	font-weight: normal;
+}
+
+h2 {
+	color: #444;
+	text-align: left;
+	font-weight: normal;
+}
+
+header h2 {
+	font-size: 1em;
+	font-style: italic;
+	text-align: center;
+	margin: -1em auto 2em auto;
+}
+
+a {
+	color: #9f1111;
+	text-decoration: none;
+	text-shadow: 1px 1px 1px #eee;
+}
+
+a:hover {
+	color: #ee4444;
+}
+
+pre, tt, code {
+	font-family: monospace;
+}
+
+img {
+	max-width: 100%;
+}
+
+footer {
+	text-align: center;
+	font-size: smaller;
+	font-style: italic;
+	margin-top: 3em;
+}
