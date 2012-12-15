@@ -14,8 +14,8 @@
 %% 
 %% The Current Maintainer of this work is Simon Sigurdhsson.
 %% 
-%% This work consists of the files chscite.dtx and chscite.ins
-%% and the derived filebase chscite.sty.
+%% This work consists of the files skdoc.dtx and skdoc.ins and the
+%% derived filebase skdoc.cls.
 
 This is version 0.0 of the skdoc document class. It is designed to
 generate both documentation and derivative files using only LaTeX,
