@@ -3,7 +3,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{skdoc}[2012/12/15 v0.0 skdoc documentation class]
 \RequirePackage{kvoptions,xstring,etoolbox,xparse,l3tl,l3int,%
-				l3file,l3keys,verbatim,xcolor}
+				l3file,l3keys,l3prg,verbatim,xcolor}
 
 % Define some options
 \SetupKeyvalOptions{
@@ -30,7 +30,8 @@
 %% Writing to a file
 %% All this code need better error checking
 \ExplSyntaxOn
-%\DeclareDocumentCommand\skdoc@openfile{}{}
+\tl_new:N\skdoc@temptl
+\ior_new:N\skdoc@input
 \iow_new:N\skdoc@output
 % This declares a file as part of the bundle,
 % we will be writing things to it.
@@ -89,6 +90,32 @@
 	\skdoc@verbatim{#1}
 }{
 	\endskdoc@verbatim
+}
+%% Read preamble from current document and store in variable
+\DeclareDocumentCommand\SelfPreambleTo{m}{%
+	\group_begin:
+	\ior_open:Nn\skdoc@input{\c_job_name_tl}
+	\bool_until_do:nn{\ior_if_eof_p:N\skdoc@input}{%
+		\tl_if_empty:NTF\skdoc@temptl{}{%
+			\tl_put_right:Nx\skdoc@temptl{\iow_newline:}
+		}
+		\tl_clear:N\l_tmpb_tl
+		\ior_get_str:NN\skdoc@input\l_tmpa_tl
+		\tl_put_right:Nx\l_tmpb_tl{\tl_head:N\l_tmpa_tl}
+		\IfStrEq{\tl_to_str:N\l_tmpb_tl}{\@percentchar}{%
+			\tl_set_eq:NN\l_tmpb_tl\skdoc@temptl
+			\tl_concat:NNN\skdoc@temptl\l_tmpb_tl\l_tmpa_tl
+		}{%
+			\ior_close:N\skdoc@input
+		}
+	}
+	\xdef#1{\tl_to_str:N\skdoc@temptl}
+	\group_end:
+}
+% \SelfPreamble, y u no work?
+\DeclareDocumentCommand\SelfPreamble{}{%
+	\SelfPreambleTo{\skdoc@preambletemp}
+	\skdoc@preambletemp
 }
 \ExplSyntaxOff
 
