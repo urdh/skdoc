@@ -1,9 +1,25 @@
 % Totally uninteresing preamble
-% Consider doing it the LaTeX3 way?
+%
+% TODO:
+% Convert things to LaTeX3-ish ways of doing it!
+% And get rid of those end-of-line commends, we
+% don't need them with expl3 syntax.
+%
+% Implement a way to disable the code listings (and
+% text detailing the implementation) while still writing
+% the code to the target file.
+%
+% Restructure the code.
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{skdoc}[2012/12/15 v0.0 skdoc documentation class]
-\RequirePackage{kvoptions,xstring,etoolbox,xparse,l3tl,l3int,%
-				l3file,l3keys,l3prg,verbatim,xcolor}
+\RequirePackage{expl3}
+\ProvidesExplClass{skdoc}{2012/12/19}{0.0}{Documentation class}
+\RequirePackage{kvoptions,xstring,etoolbox,xparse,verbatim,xcolor}
+
+% Set up some message texts!
+\msg_new:nnn{skdoc}{key-exists}{File~key~"#1"~already~declared!}
+\msg_new:nnn{skdoc}{key-nexists}{File~key~"#1"~hasn't~been~declared!}
+\msg_new:nnn{skdoc}{wrote-file}{Writing~things~to~file~"#1".}
+\msg_new:nnn{skdoc}{read-preamble}{Reading~preamble~from~file~"#1".}
 
 % Define some options
 \SetupKeyvalOptions{
@@ -29,7 +45,6 @@
 
 %% Writing to a file
 %% All this code need better error checking
-\ExplSyntaxOn
 \tl_new:N\skdoc@temptl
 \ior_new:N\skdoc@input
 \iow_new:N\skdoc@output
@@ -48,11 +63,12 @@
 	\IfNoValueTF{#1}{}{\keys_set:nn{skdoc@declarefile}{#1}}
 	\tl_new:c{skdoc@output@\skdoc@key}
 	\int_if_exist:cTF{skdoc@output@\skdoc@key @line}{
-		\ClassError{skdoc}{File\space key\space \skdoc@key\space already\space declared!}
+		\msg_critical:nnx{skdoc}{key-exists}{\skdoc@key}
 	}{
 		\int_zero_new:c{skdoc@output@\skdoc@key @line}
 	}
 	\expandafter\xdef\csname skdoc@write@#2\endcsname{%
+		\noexpand\msg_log:nnn{skdoc}{wrote-file}{#2}
 		\noexpand\iow_open:Nn\noexpand\skdoc@output{#2}
 		\noexpand\IfStrEq{\skdoc@preamble}{}{}{
 			\noexpand\iow_now:Nx\noexpand\skdoc@output{\skdoc@preamble}
@@ -67,18 +83,27 @@
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
 	\@bsphack
 	\def\skdoc@key{#1}
-	\int_if_exist:cTF{skdoc@output@#1@line}{}{
-		\ClassError{skdoc}{File\space \skdoc@key\space undeclared!}
+	\int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
+		\msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
 	}%
 	\def\verbatim@processline{%
 		\tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
 		\int_gincr:c{skdoc@output@\skdoc@key @line}%
 		\leavevmode%
-		\llap{%
-			\scriptsize\color{lightgray}%
-			\int_use:c{skdoc@output@\skdoc@key @line}\ \ \hskip\@totalleftmargin%
-		}%
-		{\verbatim@font\the\verbatim@line}\par%
+		\hspace*{-5ex}
+		\begin{minipage}[c][1ex]{\textwidth}
+			\makebox[4ex]{%
+				\leavevmode
+				\tiny\color{lightgray}\hfill%
+				\int_use:c{skdoc@output@\skdoc@key @line}%
+			}%
+			\hspace*{1ex}%
+			{
+				\verbatim@font\footnotesize
+				\the\verbatim@line
+			}
+		\end{minipage}
+		\vskip-.75ex\par\noindent
 	}%
 	\let\do\@makeother\dospecials\catcode`\^^M\active%
 	\frenchspacing\@vobeyspaces\verbatim@start%
@@ -86,15 +111,18 @@
 	\@esphack%
 }
 \DeclareDocumentEnvironment{MacroCode}{m}{
-	\par
+	\vspace{.5\baselineskip}
+	\par\noindent
 	\skdoc@verbatim{#1}
 }{
 	\endskdoc@verbatim
+	\vskip\baselineskip
 }
-%% Read preamble from current document and store in variable
-\DeclareDocumentCommand\SelfPreambleTo{m}{%
+%% Read preamble from a document and store in variable
+\DeclareDocumentCommand\PreambleTo{mm}{%
 	\group_begin:
-	\ior_open:Nn\skdoc@input{\c_job_name_tl}
+	\msg_info:nnn{skdoc}{read-preamble}{#2}
+	\ior_open:Nn\skdoc@input{#2}
 	\bool_until_do:nn{\ior_if_eof_p:N\skdoc@input}{%
 		\tl_if_empty:NTF\skdoc@temptl{}{%
 			\tl_put_right:Nx\skdoc@temptl{\iow_newline:}
@@ -112,50 +140,320 @@
 	\xdef#1{\tl_to_str:N\skdoc@temptl}
 	\group_end:
 }
+% Read preamble from current document
+\DeclareDocumentCommand\SelfPreambleTo{m}{%
+	\PreambleTo{#1}{\c_job_name_tl}%
+}
 % \SelfPreamble, y u no work?
 \DeclareDocumentCommand\SelfPreamble{}{%
-	\SelfPreambleTo{\skdoc@preambletemp}
-	\skdoc@preambletemp
+	\SelfPreambleTo{\skdoc@preambletemp}%
+	\skdoc@preambletemp%
 }
-\ExplSyntaxOff
 
 % For the rest, see ydoc.dtx and http://tex.stackexchange.com/questions/47237/different-approach-to-literate-programming-for-latex
-\LoadClass{scrartcl}
-\RequirePackage{ydoc}
+\LoadClass[DIV7,headings=big,numbers=noenddot,%
+		   abstracton,bibliography=totoc,index=totoc]{scrartcl}
+\RequirePackage[british]{babel}
+\RequirePackage{scrpage,calc,shortvrb,url,hyperref}
+\RequirePackage[nomain,xindy,numberedsection,order=letter,%
+				sanitize={description=false,sort=false}]{glossaries}
+\RequirePackage{ydoc-code} %reimplement?
+\RequirePackage{ydoc-desc} %reimplement?
+\RequirePackage{PTSerif,ascii}%,PTMono}
+\RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
+\AtBeginDocument{\MakeShortVerb{\|}}
 
-% Also, hack the maketitle
-\def\@maketitle{%
-    \newpage
-    \null\vskip 2em
-    \begin{center}%
-        {%
-        	\LARGE \@title%
-        	\footnote{Available on \@homepage.}%
-        	\ifx\@repository\@empty\else%
-            \hspace{1ex}\footnote{Development version available on \@repository.}%
-        	\fi%
-         	\par%
-        }\vskip 1.5em%
-        \ifx\@bundle\@empty\else
-        {\large \@bundlesubtitle \par }\vskip 1.5em%
-        \fi
-        {\large \lineskip .5em%
-        \begin{tabular}[t]{c}%
-            \@author
-        \end{tabular}%
-        \par}%
-        \ifx\@plainemail\empty\else
-            {\large \lineskip .5em%
-            \begin{tabular}[t]{c}%
-                \@email
-            \end{tabular}%
-            \par}%
-        \fi
-        \vskip 1em
-        {\large \@date }%
-    \end{center}%
-    \par\vskip 1.5em
-    \aftergroup\ydocpdfsettings
+% Colors! (and fonts)
+\RenewDocumentCommand\descfont{}{\sffamily}
+\RenewDocumentCommand\sectfont{}{\sffamily}
+\providecolorset{RGB}{skdoc@color@}{}{
+	section,11,72,107;
+	extlink,73,10,61;
+	intlink,140,35,24;
+	sharp,250,105,0;
+	bright,198,229,217
+}
+% y u no work?
+\definecolorset{RGB}{}{}{
+	macrodesc,73,10,61;
+	keydesc,140,35,24;
+	macroimpl,73,10,61;
+	meta,11,72,107;
+	scriptcolor,140,35,24;
+	optioncolor,250,105,0
+}
+\colorlet{opt}{optioncolor}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=skdoc@color@intlink,
+	anchorcolor=skdoc@color@intlink,
+	citecolor=black,
+	urlcolor=skdoc@color@extlink
+}
+\addtokomafont{minisec}{\bfseries}
+\addtokomafont{paragraph}{\color{skdoc@color@section}}
+\addtokomafont{section}{\color{skdoc@color@section}}
+\addtokomafont{subsection}{\color{skdoc@color@section}}
+\addtokomafont{subsubsection}{\color{skdoc@color@section}}
+\addtokomafont{descriptionlabel}{\color{skdoc@color@section}}
+
+%% Bugfixing ydoc
+\def\PrintEnvImplName#1{%
+  \par\bigskip\noindent
+  \hbox{\hspace*{\descindent}\fbox{{\implstyle{#1}\strut}}}%
+  \par\medskip
+}
+%% Hacking some ydoc features
+\DeclareDocumentCommand\generalname{}{General}
+\DeclareDocumentCommand\@macroname{m}{
+	\def\skdoc@macroname@stylized{\cs{\expandafter\@gobble\string#1}}
+	\def\skdoc@macroname@key{macro-\expandafter\@gobble\string#1}
+}
+\DeclareDocumentCommand\@environmentname{m}{
+	\def\skdoc@macroname@stylized{\env{\string#1}}
+	\def\skdoc@macroname@key{env-#1}
+}
+\def\skdoc@macroname@stylized{}
+\let\skdoc@macroname@key\@empty
+\DeclareDocumentEnvironment{macro}{mo}{%
+	\index@macro{#1}
+	\@macroname{#1}%
+	\PrintMacroImpl{#1}%
+	\IfNoValueTF{#2}{}{\macro@impl@args[#2]}
+}{
+	\let\skdoc@macroname@key\@empty
+}
+\DeclareDocumentEnvironment{environment}{mo}{%
+	\index@environment{#1}
+	\@environmentname{#1}%
+	\PrintEnvImplName{#1}%
+	\IfNoValueTF{#2}{}{\macro@impl@args[#2]}
+}{
+	\let\skdoc@macroname@key\@empty
 }
 
-%% We need a way to insert a preamble to the files.
+%% The usual documentation stuff (not all of it)
+\newglossary{changes}{gls}{glo}{Changes}
+\newglossarystyle{changelog}{
+	\glossarystyle{altlist}
+	\renewcommand*{\glossaryentryfield}[5]{
+		\item[\glsentryitem{##1}\glstarget{##1}{##2}]
+				\mbox{}\par\nobreak\@afterheading
+	}
+}
+\AtBeginDocument{\makeglossaries}
+\DeclareDocumentCommand\changes{mm}{%
+	\@bsphack
+	\ifglsentryexists{#1}{}{
+		\newglossaryentry{#1}{
+			type=changes,
+			name={v#1},
+			description={\nopostdesc},
+			nonumberlist=true
+		}
+	}
+	\ifx\skdoc@macroname@key\@empty
+		\newglossaryentry{#1-general}{
+			type=changes,
+			description={\generalname{}:~#2},
+			parent={#1},
+			sort={0}
+		}
+		\glsadd[types=changes]{#1-general}
+	\else
+		\newglossaryentry{#1-\skdoc@macroname@key}{
+			type=changes,
+			description={\skdoc@macroname@stylized{}:~#2},
+			parent={#1},
+			sort={\skdoc@macroname@key}
+		}
+		\glsadd[types=changes]{#1-\skdoc@macroname@key}
+	\fi
+	\@esphack
+}
+\DeclareDocumentCommand\PrintChanges{}{%
+	\begingroup
+	\printglossary[type=changes,style=changelog]
+	\endgroup
+}
+
+%% Indexing!
+\newglossary{index}{ids}{ido}{Index}
+\newglossarystyle{docindex}{
+	\glossarystyle{indexgroup}
+	\renewcommand*{\glossaryentryfield}[5]{
+		\item\glsentryitem{##1}\glstarget{##1}{##2}
+  			\ifx\relax##4\relax\else\space(##4)\fi
+  			\space ##3\glspostdescription \space ##5}
+}
+\DeclareDocumentCommand\@index@{mm}{
+	\newglossaryentry{index-#1}{
+		type=index,
+		name={#2},
+		description={\nopostdesc},
+		sort={#1}
+	}
+}
+\let\old@PrintMacroName\PrintMacroName
+\DeclareDocumentCommand\PrintMacroName{m}{%
+	\index@macro{#1}
+	\old@PrintMacroName{#1}
+}
+\DeclareDocumentCommand\index@macro{m}{
+	\def\skdoc@temp{\expandafter\@gobble\string#1}
+	\ifglsentryexists{index-\skdoc@temp}{}{
+		\@index@{\expandafter\@gobble\string#1}
+				{\cs{\expandafter\@gobble\string#1}}
+	}
+	\glsadd[types=index]{index-\skdoc@temp}
+}
+\let\old@PrintEnvName\PrintEnvName
+\def\PrintEnvName#1#2{
+	\ifx#1\begin
+		\edef\skdoc@temp{\noexpand\index@environment{#2}}
+		\skdoc@temp
+	\fi
+	\old@PrintEnvName{#1}{#2}
+}
+\DeclareDocumentCommand\index@environment{m}{
+	\def\skdoc@temp{\string#1}
+	\ifglsentryexists{index-\skdoc@temp}{}{
+		\@index@{\string#1}
+				{\env{\string#1}~(environment)}
+	}
+	\glsadd[types=index]{index-\skdoc@temp}
+}
+\providecommand*\PrintIndex{%
+	\begingroup
+	\renewcommand*{\glossarypreamble}{
+%	
+	}
+	\printglossary[type=index,style=docindex]
+	\endgroup
+}
+
+%% Document metadata
+\DeclareDocumentCommand\package{om}{%
+	\keys_define:nn{skdoc@package}{%
+		vcs .value_required:,%
+		vcs .code:n = \repository{##1},%
+		ctan .code:n = \ctan{##1},%
+		ctan .default:n = #2%
+	}%
+	\IfNoValueTF{#1}{}{\keys_set:nn{skdoc@package}{#1}}%
+	\def\@package{#2}%
+	\title{The~\textsf{\textbf{\@package}}~document~class}%
+}
+\DeclareDocumentCommand\ctan{m}{%
+	\def\@ctan{\url{http://www.ctan.org/pkg/#1}}%
+}
+\DeclareDocumentCommand\repository{m}{%
+	\def\@repository{\url{#1}}%
+}
+\DeclareDocumentCommand\email{m}{%
+	\def\@plainemail{#1}%
+	\def\@email{\href{mailto:\@plainemail}{\@plainemail}}%
+}
+\DeclareDocumentCommand\version{m}{%
+	\def\@version{#1}%
+}
+\package[ctan]{skdoc}
+% Default metadata
+\let\@ctan\@empty%
+\let\@repository\@empty%
+\let\@plainemail\@empty%
+\let\@email\@empty%
+\let\@version\@empty%
+\package{\jobname}
+%\ExplSyntaxOff
+
+%% An environment to specify examples
+\DeclareDocumentEnvironment{example}{}{
+	\minisec{Example:}
+}{}
+
+%% PDF information
+\ifpdf
+	\def\skdocpdfsettings{%
+	    \hypersetup{%
+	        pdfauthor   = {\@author\space<\@plainemail>},
+	        pdftitle    = {\@title},
+	        pdfsubject  = {Documentation~of~LaTeX~package~\@package},
+	        pdfkeywords = {\@package,~LaTeX,~TeX}
+	    }%
+	}%
+\else
+	\let\skdocpdfsettings\empty%
+\fi
+
+% Also, new maketitle
+\def\@maketitle{%
+	\newpage
+	\null
+	\begin{flushleft}%
+	{%
+		\Huge\sectfont\@title%
+		\ifx\@ctan\@empty\else%
+			\footnote{Available~on~\@ctan.}%
+		\fi
+		\ifx\@repository\@empty\else%
+			\footnote{Development~version~available~on~\@repository.}%
+		\fi%
+		\par%
+	}%
+	\vskip 1em
+	{%
+		\Large\@author
+		\ifx\@email\@empty\else%
+			\space
+			\newlength\skdoc@minipage@ew%
+			\settowidth{\skdoc@minipage@ew}{%
+				\normalsize{$\lceil${\@email}$\rfloor$}}
+			\begin{minipage}[b]{\skdoc@minipage@ew}
+				\normalsize{$\lceil${\@email}$\rfloor$}
+			\end{minipage}\par%
+		\fi%
+	}%
+	\ifx\@version\@empty\else
+		\vskip .5em
+		{%
+			\large Version~\@version\par%
+		}%
+	\fi
+	\end{flushleft}%
+	\par\bigskip%
+}
+
+\def\maketitle{%
+    \skdocpdfsettings
+    \renewcommand\thefootnote{\@fnsymbol\c@footnote}
+    \@maketitle
+    \skdocpdfsettings
+}
+% And abstract
+\DeclareDocumentEnvironment{abstract}{}{
+	\newlength\skdoc@abstract@tw%
+	\newlength\skdoc@abstract@aw%
+	\settowidth{\skdoc@abstract@tw}{\descfont\abstractname}%
+	\setlength{\skdoc@abstract@aw}{\the\textwidth-\the\skdoc@abstract@tw-1.5em}%
+	\begin{minipage}{\textwidth}
+		\begin{minipage}[t]{\skdoc@abstract@tw}%
+			\begin{flushright}%
+				\leavevmode\descfont\abstractname%
+			\end{flushright}%
+		\end{minipage}%
+		\hfill%\hspace{1em}%
+		\begin{minipage}[t]{\skdoc@abstract@aw}%
+}{
+		\end{minipage}
+	\end{minipage}
+}
+% And the header/footer
+\deftripstyle{skdoc}%
+	{}{}{}%
+	{\small The~\textsf{\textbf{\@package}}~package,~v\@version}{}{\small\pagemark}
+\AfterBeginDocument{\pagestyle{skdoc}}
+
+
+
+
