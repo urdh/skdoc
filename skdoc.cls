@@ -179,8 +179,8 @@
 \AtBeginDocument{\MakeShortVerb{\|}}
 
 % Colors! (and fonts)
-\RenewDocumentCommand\descfont{}{\sffamily}
-\RenewDocumentCommand\sectfont{}{\sffamily}
+\RenewDocumentCommand\descfont{}{\sffamily\fontseries{sb}}
+\RenewDocumentCommand\sectfont{}{\sffamily\fontseries{sb}}
 \providecolorset{RGB}{skdoc@color@}{}{
 	section,11,72,107;
 	extlink,73,10,61;
@@ -496,6 +496,7 @@
 % And section headers
 \renewcommand*{\othersectionlevelsformat}[1]{%
 	\makebox[0pt][r]{%
+	\fontfamily{fos}\mdseries\selectfont
 	\csname the#1\endcsname\enskip}%
 }
 
