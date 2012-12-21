@@ -374,7 +374,7 @@
 \DeclareDocumentCommand\version{m}{%
 	\def\@version{#1}%
 }
-\package[ctan]{skdoc}
+\package[ctan]{\jobname}
 % Default metadata
 \let\@ctan\@empty%
 \let\@repository\@empty%
