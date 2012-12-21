@@ -9,7 +9,21 @@
 % text detailing the implementation) while still writing
 % the code to the target file.
 %
-% Restructure the code.
+% Nicer colors, especially for the code. And maybe make things
+% typeset in the margin, might be good.
+%
+% Restructure the code. Split into sub-packages and load them.
+%
+% Add "this is the file x.y, generated from x.z" to preambles
+% written, by guessing from the first character what the comment
+% character might be and writing it twice on the first line.
+% Should cover even things like C.
+%
+% Package option descriptions e.g. \DescribeOption
+% (Hint: see the microtype docs, section 3)
+%
+% Page numbers in the changelist does not make sense, dude.
+% Possibly, dates make sense so think about that a bit.
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
 \ProvidesExplClass{skdoc}{2012/12/19}{0.0}{Documentation class}
@@ -154,7 +168,8 @@
 \LoadClass[DIV7,headings=big,numbers=noenddot,%
 		   abstracton,bibliography=totoc,index=totoc]{scrartcl}
 \RequirePackage[british]{babel}
-\RequirePackage{scrpage,calc,shortvrb,url,hyperref}
+\RequirePackage[babel]{microtype}
+\RequirePackage{scrpage2,calc,shortvrb,url,hyperref}
 \RequirePackage[nomain,xindy,numberedsection,order=letter,%
 				sanitize={description=false,sort=false}]{glossaries}
 \RequirePackage{ydoc-code} %reimplement?
@@ -257,7 +272,8 @@
 			type=changes,
 			description={\generalname{}:~#2},
 			parent={#1},
-			sort={0}
+			sort={0},
+			nonumberlist=true
 		}
 		\glsadd[types=changes]{#1-general}
 	\else
@@ -265,7 +281,8 @@
 			type=changes,
 			description={\skdoc@macroname@stylized{}:~#2},
 			parent={#1},
-			sort={\skdoc@macroname@key}
+			sort={\skdoc@macroname@key},
+			nonumberlist=true
 		}
 		\glsadd[types=changes]{#1-\skdoc@macroname@key}
 	\fi
@@ -284,7 +301,7 @@
 	\renewcommand*{\glossaryentryfield}[5]{
 		\item\glsentryitem{##1}\glstarget{##1}{##2}
   			\ifx\relax##4\relax\else\space(##4)\fi
-  			\space ##3\glspostdescription \space ##5}
+  			##3\glspostdescription\space ##5}
 }
 \DeclareDocumentCommand\@index@{mm}{
 	\newglossaryentry{index-#1}{
@@ -435,14 +452,14 @@
 	\newlength\skdoc@abstract@tw%
 	\newlength\skdoc@abstract@aw%
 	\settowidth{\skdoc@abstract@tw}{\descfont\abstractname}%
-	\setlength{\skdoc@abstract@aw}{\the\textwidth-\the\skdoc@abstract@tw-1.5em}%
+	\setlength{\skdoc@abstract@aw}{\the\textwidth-\the\skdoc@abstract@tw-2em}%
 	\begin{minipage}{\textwidth}
 		\begin{minipage}[t]{\skdoc@abstract@tw}%
 			\begin{flushright}%
 				\leavevmode\descfont\abstractname%
 			\end{flushright}%
 		\end{minipage}%
-		\hfill%\hspace{1em}%
+		\hspace{1em}%
 		\begin{minipage}[t]{\skdoc@abstract@aw}%
 }{
 		\end{minipage}
@@ -454,6 +471,35 @@
 	{\small The~\textsf{\textbf{\@package}}~package,~v\@version}{}{\small\pagemark}
 \AfterBeginDocument{\pagestyle{skdoc}}
 
+% And the TOC
+\addtokomafont{sectionentry}{\rmfamily\bfseries}
+\addtokomafont{sectionentrypagenumber}{\rmfamily\bfseries}
+\let\l@section@\l@section
+\def\l@section{\vskip -.75ex\l@section@}
+\def\l@subsection{\vskip.35ex\penalty\@secpenalty\@dottedtocline{2}{1.5em}{2.7em}}
+\def\l@subsubsection#1#2{
+	\leftskip 4.2em
+	\parindent 0pt
+	{\let\numberline\@gobble{\small #1~[#2]}}
+}
+\def\l@table{\@dottedtocline{1}{0pt}{1.5em}}
+\def\l@figure{\@dottedtocline{1}{0pt}{1.5em}}
+\def\@pnumwidth{1.7em}
+\AtEndDocument{\addtocontents{toc}{\par}}
+\let\old@tableofcontents\tableofcontents
+\DeclareDocumentCommand\tableofcontents{}{
+	\microtypesetup{protrusion=false}
+	\old@tableofcontents
+	\microtypesetup{protrusion=true}
+}
 
+% And section headers
+\renewcommand*{\othersectionlevelsformat}[1]{%
+	\makebox[0pt][r]{%
+	\csname the#1\endcsname\enskip}%
+}
 
-
+% Set up microtype properly
+\g@addto@macro\@verbatim{\microtypesetup{activate=false}}
+\microtypesetup{expansion,kerning,spacing,tracking}
+\DisableLigatures{family = tt*}
