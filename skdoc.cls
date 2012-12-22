@@ -4,6 +4,7 @@
 % Convert things to LaTeX3-ish ways of doing it!
 % And get rid of those end-of-line commends, we
 % don't need them with expl3 syntax.
+% This esp. goes for variable names.
 %
 % Implement a way to disable the code listings (and
 % text detailing the implementation) while still writing
@@ -12,10 +13,13 @@
 % Nicer colors, especially for the code. And maybe make things
 % typeset in the margin, might be good.
 %
-% Restructure the code. Split into sub-packages and load them.
+% Restructure the code. Split into sub-packages and load them. Maybe.
 %
 % Package option descriptions e.g. \DescribeOption
 % (Hint: see the microtype docs, section 3)
+%
+% Would it even be possible for this to use itself in a .dtx? Maybe
+% use docstrip the first time and then load itself or something? Meh.
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
 \ProvidesExplClass{skdoc}{2012/12/19}{0.0}{Documentation class}
@@ -400,7 +404,7 @@
 	}%
 	\IfNoValueTF{#1}{}{\keys_set:nn{skdoc@package}{#1}}%
 	\def\@package{#2}%
-	\title{The~\textsf{\textbf{\@package}}~document~class}%
+	\title{The~\textsf{\textbf{\@package}}~package}%
 }
 \DeclareDocumentCommand\ctan{m}{%
 	\def\@ctan{\url{http://www.ctan.org/pkg/#1}}%
