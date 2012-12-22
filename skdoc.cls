@@ -173,7 +173,7 @@
 		   abstracton,bibliography=totoc,index=totoc]{scrartcl}
 \RequirePackage[british]{babel}
 \RequirePackage[babel]{microtype}
-\RequirePackage{scrpage2,calc,shortvrb,url,hyperref,multicol}
+\RequirePackage{scrpage2,calc,shortvrb,url,hyperref,multicol,hologo}
 \RequirePackage[nomain,xindy,numberedsection,order=letter,%
 				sanitize={description=false,sort=false}]{glossaries}
 \RequirePackage{ydoc-code} %reimplement?
@@ -248,6 +248,32 @@
 	\@environmentname{#1}%
 	\PrintEnvImplName{#1}%
 	\IfNoValueTF{#2}{}{\macro@impl@args[#2]}
+}{
+	\let\skdoc@macroname@key\@empty
+}
+
+%% And adding a few of our own
+\DeclareDocumentCommand\opt{m}{\texttt{#1}}
+\DeclareDocumentCommand\bib{m}{\texttt{@#1}}
+\DeclareDocumentCommand\@optionname{m}{
+	\def\skdoc@macroname@stylized{\opt{\string#1}}
+	\def\skdoc@macroname@key{opt-#1}
+}
+\DeclareDocumentCommand\@bibentryname{m}{
+	\def\skdoc@macroname@stylized{\bib{\expandafter\@gobble\string#1}}
+	\def\skdoc@macroname@key{bibentry-\expandafter\@gobble\string#1}
+}
+\DeclareDocumentEnvironment{option}{m}{%
+	\index@option*{#1}
+	\@optionname{#1}%
+	\PrintEnvImplName{#1}%
+}{
+	\let\skdoc@macroname@key\@empty
+}
+\DeclareDocumentEnvironment{bibentry}{m}{%
+	\index@bibentry*{#1}
+	\@bibentryname{#1}%
+	\PrintEnvImplName{#1}%
 }{
 	\let\skdoc@macroname@key\@empty
 }
@@ -379,6 +405,30 @@
 	\ifglsentryexists{index-\skdoc@temp}{}{
 		\@index@{\string#2}
 				{\env{\string#2}~(environment)}
+	}
+	\IfBooleanTF{#1}{
+		\glsadd[types=index]{index-\skdoc@temp}
+	}{
+		\glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+	}
+}
+\DeclareDocumentCommand\index@option{sm}{
+	\def\skdoc@temp{\string#2}
+	\ifglsentryexists{index-\skdoc@temp}{}{
+		\@index@{\string#2}
+				{\opt{\string#2}~(option)}
+	}
+	\IfBooleanTF{#1}{
+		\glsadd[types=index]{index-\skdoc@temp}
+	}{
+		\glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+	}
+}
+\DeclareDocumentCommand\index@bibentry{sm}{
+	\def\skdoc@temp{\expandafter\@gobble\string#2}
+	\ifglsentryexists{index-\skdoc@temp}{}{
+		\@index@{\expandafter\@gobble\string#2}
+				{\bib{\expandafter\@gobble\string#2}~(\hologoRobust{BibTeX}~entry~type)}
 	}
 	\IfBooleanTF{#1}{
 		\glsadd[types=index]{index-\skdoc@temp}
