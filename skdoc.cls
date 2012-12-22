@@ -223,6 +223,7 @@
   \par\medskip
 }
 %% Hacking some ydoc features
+\RenewDocumentCommand\pkg{m}{\textsf{#1}}
 \DeclareDocumentCommand\generalname{}{General}
 \DeclareDocumentCommand\@macroname{m}{
 	\def\skdoc@macroname@stylized{\cs{\expandafter\@gobble\string#1}}
