@@ -14,16 +14,8 @@
 %
 % Restructure the code. Split into sub-packages and load them.
 %
-% Add "this is the file x.y, generated from x.z" to preambles
-% written, by guessing from the first character what the comment
-% character might be and writing it twice on the first line.
-% Should cover even things like C.
-%
 % Package option descriptions e.g. \DescribeOption
 % (Hint: see the microtype docs, section 3)
-%
-% Page numbers in the changelist does not make sense, dude.
-% Possibly, dates make sense so think about that a bit.
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
 \ProvidesExplClass{skdoc}{2012/12/19}{0.0}{Documentation class}
@@ -81,10 +73,18 @@
 	}{
 		\int_zero_new:c{skdoc@output@\skdoc@key @line}
 	}
+	\IfStrEq{\skdoc@preamble}{}{}{
+		\tl_set:Nx\l_tmpa_tl{\skdoc@preamble}
+		\edef\skdoc@temp{\tl_head:N\l_tmpa_tl}
+		\def\skdoc@preamble@extra{
+			\skdoc@temp\skdoc@temp\space~This~is~file~`#2',~generated~from~`\c_job_name_tl.tex'~(key~`\skdoc@key').
+		}
+	}
 	\expandafter\xdef\csname skdoc@write@#2\endcsname{%
 		\noexpand\msg_log:nnn{skdoc}{wrote-file}{#2}
 		\noexpand\iow_open:Nn\noexpand\skdoc@output{#2}
 		\noexpand\IfStrEq{\skdoc@preamble}{}{}{
+			\noexpand\iow_now:Nx\noexpand\skdoc@output{\skdoc@preamble@extra}
 			\noexpand\iow_now:Nx\noexpand\skdoc@output{\skdoc@preamble}
 		}
 		\noexpand\iow_now:Nx\noexpand\skdoc@output{\noexpand\tl_to_str:c{skdoc@output@\skdoc@key}}
@@ -169,7 +169,7 @@
 		   abstracton,bibliography=totoc,index=totoc]{scrartcl}
 \RequirePackage[british]{babel}
 \RequirePackage[babel]{microtype}
-\RequirePackage{scrpage2,calc,shortvrb,url,hyperref}
+\RequirePackage{scrpage2,calc,shortvrb,url,hyperref,multicol}
 \RequirePackage[nomain,xindy,numberedsection,order=letter,%
 				sanitize={description=false,sort=false}]{glossaries}
 \RequirePackage{ydoc-code} %reimplement?
@@ -231,7 +231,7 @@
 \def\skdoc@macroname@stylized{}
 \let\skdoc@macroname@key\@empty
 \DeclareDocumentEnvironment{macro}{mo}{%
-	\index@macro{#1}
+	\index@macro*{#1}
 	\@macroname{#1}%
 	\PrintMacroImpl{#1}%
 	\IfNoValueTF{#2}{}{\macro@impl@args[#2]}
@@ -239,7 +239,7 @@
 	\let\skdoc@macroname@key\@empty
 }
 \DeclareDocumentEnvironment{environment}{mo}{%
-	\index@environment{#1}
+	\index@environment*{#1}
 	\@environmentname{#1}%
 	\PrintEnvImplName{#1}%
 	\IfNoValueTF{#2}{}{\macro@impl@args[#2]}
@@ -251,9 +251,24 @@
 \newglossary{changes}{gls}{glo}{Changes}
 \newglossarystyle{changelog}{
 	\glossarystyle{altlist}
+	\renewenvironment{theglossary}{
+		\begin{multicols}{2}\begin{description}
+		\begin{minipage}{\linewidth}
+	}{
+		\end{minipage}
+		\end{description}\end{multicols}
+	}
 	\renewcommand*{\glossaryentryfield}[5]{
+		\end{minipage}
+		\par\vspace{5\p@}\relax
+		\begin{minipage}{\linewidth}
 		\item[\glsentryitem{##1}\glstarget{##1}{##2}]
-				\mbox{}\par\nobreak\@afterheading
+					\mbox{}\par\nobreak\@afterheading
+	}
+	\renewcommand{\glossarysubentryfield}[6]{%
+		\par\hspace*{\itemindent}
+		\glssubentryitem{##2}%
+		\glstarget{##2}{\strut}##4\glspostdescription\space ##6
 	}
 }
 \AtBeginDocument{\makeglossaries}
@@ -298,10 +313,28 @@
 \newglossary{index}{ids}{ido}{Index}
 \newglossarystyle{docindex}{
 	\glossarystyle{indexgroup}
+	\renewenvironment{theglossary}{
+		\begin{multicols}{2}
+		\setlength{\parindent}{0pt}
+		\setlength{\parskip}{0pt plus 0.3pt}
+		\let\item\@idxitem
+		\begin{minipage}{\linewidth}
+	}{
+		\end{minipage}
+		\end{multicols}
+	}
 	\renewcommand*{\glossaryentryfield}[5]{
 		\item\glsentryitem{##1}\glstarget{##1}{##2}
-  			\ifx\relax##4\relax\else\space(##4)\fi
-  			##3\glspostdescription\space ##5}
+			\ifx\relax##4\relax\else\space(##4)\fi
+			##3\glspostdescription\space ##5}
+	\renewcommand*{\glsgroupheading}[1]{
+		\item{\descfont\glsgetgrouptitle{##1}}%\indexspace
+	}
+	\renewcommand*{\glsgroupskip}{
+		\end{minipage}
+		\par\vspace{15\p@}\relax
+		\begin{minipage}{\linewidth}
+	}
 }
 \DeclareDocumentCommand\@index@{mm}{
 	\newglossaryentry{index-#1}{
@@ -316,13 +349,17 @@
 	\index@macro{#1}
 	\old@PrintMacroName{#1}
 }
-\DeclareDocumentCommand\index@macro{m}{
-	\def\skdoc@temp{\expandafter\@gobble\string#1}
+\DeclareDocumentCommand\index@macro{sm}{
+	\def\skdoc@temp{\expandafter\@gobble\string#2}
 	\ifglsentryexists{index-\skdoc@temp}{}{
-		\@index@{\expandafter\@gobble\string#1}
-				{\cs{\expandafter\@gobble\string#1}}
+		\@index@{\expandafter\@gobble\string#2}
+				{\cs{\expandafter\@gobble\string#2}}
 	}
-	\glsadd[types=index]{index-\skdoc@temp}
+	\IfBooleanTF{#1}{
+		\glsadd[types=index]{index-\skdoc@temp}
+	}{
+		\glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+	}
 }
 \let\old@PrintEnvName\PrintEnvName
 \def\PrintEnvName#1#2{
@@ -332,18 +369,22 @@
 	\fi
 	\old@PrintEnvName{#1}{#2}
 }
-\DeclareDocumentCommand\index@environment{m}{
-	\def\skdoc@temp{\string#1}
+\DeclareDocumentCommand\index@environment{sm}{
+	\def\skdoc@temp{\string#2}
 	\ifglsentryexists{index-\skdoc@temp}{}{
-		\@index@{\string#1}
-				{\env{\string#1}~(environment)}
+		\@index@{\string#2}
+				{\env{\string#2}~(environment)}
 	}
-	\glsadd[types=index]{index-\skdoc@temp}
+	\IfBooleanTF{#1}{
+		\glsadd[types=index]{index-\skdoc@temp}
+	}{
+		\glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+	}
 }
 \providecommand*\PrintIndex{%
 	\begingroup
 	\renewcommand*{\glossarypreamble}{
-%	
+		Numbers~written~in~italic~refer~to~the~page~where~the~corresponding~entry~is~described;~numbers~in~roman~refer~to~the~code~line~of~the~definition.\par
 	}
 	\printglossary[type=index,style=docindex]
 	\endgroup
@@ -392,12 +433,12 @@
 %% PDF information
 \ifpdf
 	\def\skdocpdfsettings{%
-	    \hypersetup{%
-	        pdfauthor   = {\@author\space<\@plainemail>},
-	        pdftitle    = {\@title},
-	        pdfsubject  = {Documentation~of~LaTeX~package~\@package},
-	        pdfkeywords = {\@package,~LaTeX,~TeX}
-	    }%
+		\hypersetup{%
+			pdfauthor   = {\@author\space<\@plainemail>},
+			pdftitle    = {\@title},
+			pdfsubject  = {Documentation~of~LaTeX~package~\@package},
+			pdfkeywords = {\@package,~LaTeX,~TeX}
+		}%
 	}%
 \else
 	\let\skdocpdfsettings\empty%
@@ -442,10 +483,10 @@
 }
 
 \def\maketitle{%
-    \skdocpdfsettings
-    \renewcommand\thefootnote{\@fnsymbol\c@footnote}
-    \@maketitle
-    \skdocpdfsettings
+	\skdocpdfsettings
+	\renewcommand\thefootnote{\@fnsymbol\c@footnote}
+	\@maketitle
+	\skdocpdfsettings
 }
 % And abstract
 \DeclareDocumentEnvironment{abstract}{}{
