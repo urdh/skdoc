@@ -15,11 +15,14 @@
 %
 % Restructure the code. Split into sub-packages and load them. Maybe.
 %
-% Package option descriptions e.g. \DescribeOption
+% Package option descriptions e.g. \Option with key-value specs
 % (Hint: see the microtype docs, section 3)
 %
 % Would it even be possible for this to use itself in a .dtx? Maybe
 % use docstrip the first time and then load itself or something? Meh.
+%
+% \GetFileInfo could be simulated to set variables as \relax on first
+% run then reading actual stuff from specified file on second run.
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
 \ProvidesExplClass{skdoc}{2012/12/19}{0.0}{Documentation class}
@@ -173,7 +176,8 @@
 		   abstracton,bibliography=totoc,index=totoc]{scrartcl}
 \RequirePackage[british]{babel}
 \RequirePackage[babel]{microtype}
-\RequirePackage{scrpage2,calc,shortvrb,url,hyperref,multicol,hologo}
+\RequirePackage{scrpage2,calc,shortvrb,url,hyperref,multicol,%
+				hologo,marginnote}
 \RequirePackage[nomain,xindy,numberedsection,order=letter,%
 				sanitize={description=false,sort=false}]{glossaries}
 \RequirePackage{ydoc-code} %reimplement?
@@ -277,6 +281,20 @@
 }{
 	\let\skdoc@macroname@key\@empty
 }
+\let\optpar\relax
+\DeclareDocumentCommand\Options{m}{
+	\clist_set:Nn\l_tmpa_clist{#1}
+	\marginnote{
+		\clist_map_inline:Nn\l_tmpa_clist{
+			\index@option{####1}
+			\textcolor{opt}{\opt{####1}}\\
+		}
+	}
+}
+\DeclareDocumentCommand\Option{m}{
+	\Options{#1}
+}
+\reversemarginpar
 
 %% The usual documentation stuff (not all of it)
 \newglossary{changes}{gls}{glo}{Changes}
@@ -478,7 +496,9 @@
 \let\@email\@empty%
 \let\@version\@empty%
 \package{\jobname}
-%\ExplSyntaxOff
+% Reading the metadata
+\DeclareDocumentCommand\theversion{}{v\@version}
+\DeclareDocumentCommand\thepackage{}{\pkg{\@package}}
 
 %% An environment to specify examples
 \DeclareDocumentEnvironment{example}{}{
