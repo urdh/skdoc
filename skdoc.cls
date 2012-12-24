@@ -6,10 +6,6 @@
 % don't need them with expl3 syntax.
 % This esp. goes for variable names.
 %
-% Implement a way to disable the code listings (and
-% text detailing the implementation) while still writing
-% the code to the target file.
-%
 % Nicer colors, especially for the code. And maybe make things
 % typeset in the margin, might be good.
 %
@@ -112,7 +108,7 @@
 }
 % Save all the code in token lists, and also print it.
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
-	\@bsphack
+	\iftoggle{skdoc@impl}{\@bsphack}{}
 	\def\skdoc@key{#1}
 	\int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
 		\msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
@@ -120,34 +116,43 @@
 	\def\verbatim@processline{%
 		\tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
 		\int_gincr:c{skdoc@output@\skdoc@key @line}%
-		\leavevmode%
-		\hspace*{-5ex}
-		\begin{minipage}[c][1ex]{\textwidth}
-			\makebox[4ex]{%
-				\leavevmode
-				\tiny\color{lightgray}\hfill%
-				\int_use:c{skdoc@output@\skdoc@key @line}%
-			}%
-			\hspace*{1ex}%
-			{
-				\verbatim@font\footnotesize
-				\the\verbatim@line
-			}
-		\end{minipage}
-		\vskip-.75ex\par\noindent
+		\iftoggle{skdoc@impl}{
+			\leavevmode%
+			\hspace*{-5ex}
+			\begin{minipage}[c][1ex]{\textwidth}
+				\makebox[4ex]{%
+					\leavevmode
+					\tiny\color{lightgray}\hfill%
+					\int_use:c{skdoc@output@\skdoc@key @line}%
+				}%
+				\hspace*{1ex}%
+				{
+					\verbatim@font\footnotesize
+					\the\verbatim@line
+				}
+			\end{minipage}
+			\vskip-.75ex\par\noindent
+		}{}
 	}%
 	\let\do\@makeother\dospecials\catcode`\^^M\active%
-	\frenchspacing\@vobeyspaces\verbatim@start%
+	\iftoggle{skdoc@impl}{
+		\frenchspacing\@vobeyspaces
+	}{}
+	\verbatim@start%
 }{%
-	\@esphack%
+	\iftoggle{skdoc@impl}{\@esphack}{}%
 }
 \DeclareDocumentEnvironment{MacroCode}{m}{
-	\vspace{.5\baselineskip}
-	\par\noindent
+	\iftoggle{skdoc@impl}{
+		\vspace{.5\baselineskip}
+		\par\noindent
+	}{}
 	\skdoc@verbatim{#1}
 }{
 	\endskdoc@verbatim
-	\vskip\baselineskip
+	\iftoggle{skdoc@impl}{
+		\vskip\baselineskip
+	}{}
 }
 %% Read preamble from a document and store in variable
 \DeclareDocumentCommand\PreambleTo{mm}{%
@@ -187,7 +192,7 @@
 \RequirePackage[british]{babel}
 \RequirePackage[babel]{microtype}
 \RequirePackage{scrpage2,calc,shortvrb,url,hyperref,multicol,%
-				hologo,marginnote}
+				hologo,marginnote,atbegshi}
 \RequirePackage[nomain,xindy,numberedsection,order=letter,%
 				sanitize={description=false,sort=false}]{glossaries}
 \RequirePackage{ydoc-code} %reimplement?
@@ -432,6 +437,15 @@
 	}
 }
 \DeclareDocumentCommand\@index@{mm}{
+	\iftoggle{skdoc@impl}{
+		\iftoggle{skdoc@in@impl}{}{
+			\@index@@{#1}{#2}
+		}
+	}{
+		\@index@@{#1}{#2}
+	}
+}
+\DeclareDocumentCommand\@index@@{mm}{
 	\newglossaryentry{index-#1}{
 		type=index,
 		name={#2},
@@ -519,6 +533,47 @@
 	}
 	\printglossary[type=index,style=docindex]
 	\endgroup
+}
+
+%% Hiding the implementation
+\newtoggle{skdoc@impl}
+\newtoggle{skdoc@in@impl}
+\toggletrue{skdoc@impl}
+\togglefalse{skdoc@in@impl}
+\newcounter{skdoc@impl@page}
+\AtBeginShipout{
+	\iftoggle{skdoc@impl}{}{
+		\iftoggle{skdoc@in@impl}{\AtBeginShipoutDiscard}{}
+	}
+}
+\DeclareDocumentCommand\OnlyDescription{}{\togglefalse{skdoc@impl}}
+\DeclareDocumentCommand\Implementation{}{
+	\clearpage
+	\toggletrue{skdoc@in@impl}
+	\let\skdoc@old@part\part
+	\DeclareDocumentCommand\part{som}{}
+	\let\skdoc@old@section\section
+	\DeclareDocumentCommand\section{som}{}
+	\let\skdoc@old@subsection\subsection
+	\DeclareDocumentCommand\subsection{som}{}
+	\let\skdoc@old@subsubsection\subsubsection
+	\DeclareDocumentCommand\subsubsection{som}{}
+	\let\skdoc@old@paragraph\paragraph
+	\DeclareDocumentCommand\paragraph{som}{}
+	\let\skdoc@old@subparagraph\subparagraph
+	\DeclareDocumentCommand\subparagraph{som}{}
+	\setcounter{skdoc@impl@page}{\value{page}}
+}
+\DeclareDocumentCommand\Finale{}{
+	\clearpage
+	\togglefalse{skdoc@in@impl}
+	\let\part\skdoc@old@part
+	\let\section\skdoc@old@section
+	\let\subsection\skdoc@old@subsection
+	\let\subsubsection\skdoc@old@subsubsection
+	\let\paragraph\skdoc@old@paragraph
+	\let\subparagraph\skdoc@old@subparagraph
+	\setcounter{page}{\value{skdoc@impl@page}}
 }
 
 %% Document metadata
