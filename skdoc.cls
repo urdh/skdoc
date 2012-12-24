@@ -13,6 +13,16 @@
 % Nicer colors, especially for the code. And maybe make things
 % typeset in the margin, might be good.
 %
+% Way to describe themes in documentation.
+%
+% The boxes for documentation and implementation of commands (esp.
+% implementation) look shit. Replace with non-boxed and maginparred
+% variants instead?
+%
+% Show what file is being described in implementation?
+%
+% In the index, "@" should have its own header and not go under "default"
+%
 % Restructure the code. Split into sub-packages and load them. Maybe.
 %
 % Package option descriptions e.g. \Option with key-value specs
@@ -239,27 +249,31 @@
 }
 \def\skdoc@macroname@stylized{}
 \let\skdoc@macroname@key\@empty
-\DeclareDocumentEnvironment{macro}{mo}{%
-	\index@macro*{#1}
-	\@macroname{#1}%
-	\PrintMacroImpl{#1}%
-	\IfNoValueTF{#2}{}{\macro@impl@args[#2]}
+\DeclareDocumentEnvironment{macro}{smo}{%
+	\index@macro*{#2}
+	\@macroname{#2}%
+	\IfBooleanTF{#1}{}{\PrintMacroImpl{#2}}%
+	\IfNoValueTF{#3}{}{\macro@impl@args[#3]}
 }{
 	\let\skdoc@macroname@key\@empty
 }
-\DeclareDocumentEnvironment{environment}{mo}{%
-	\index@environment*{#1}
-	\@environmentname{#1}%
-	\PrintEnvImplName{#1}%
-	\IfNoValueTF{#2}{}{\macro@impl@args[#2]}
+\DeclareDocumentEnvironment{macro*}{mo}%
+	{\begin{macro}*{#1}[#2]}{\end{macro}}
+\DeclareDocumentEnvironment{environment}{smo}{%
+	\index@environment*{#2}
+	\@environmentname{#2}%
+	\IfBooleanTF{#1}{}{\PrintEnvImplName{#2}}%
+	\IfNoValueTF{#3}{}{\macro@impl@args[#3]}
 }{
 	\let\skdoc@macroname@key\@empty
 }
+\DeclareDocumentEnvironment{environment*}{mo}%
+	{\begin{environment}*{#1}[#2]}{\end{environment}}
 
 %% And adding a few of our own
 \DeclareDocumentCommand\opt{m}{\texttt{#1}}
 \DeclareDocumentCommand\bib{m}{\texttt{@#1}}
-\DeclareDocumentCommand\theme{m}{{@#1}}
+\DeclareDocumentCommand\thm{m}{\textrm{#1}}
 \DeclareDocumentCommand\@optionname{m}{
 	\def\skdoc@macroname@stylized{\opt{\string#1}}
 	\def\skdoc@macroname@key{opt-#1}
@@ -269,31 +283,40 @@
 	\def\skdoc@macroname@key{bibentry-\expandafter\@gobble\string#1}
 }
 \DeclareDocumentCommand\@themename{m}{
-	\def\skdoc@macroname@stylized{\theme{\string#1}}
+	\def\skdoc@macroname@stylized{\thm{\string#1}}
 	\def\skdoc@macroname@key{thm-#1}
 }
-\DeclareDocumentEnvironment{option}{m}{%
-	\index@option*{#1}
-	\@optionname{#1}%
-	\PrintEnvImplName{#1}%
+\DeclareDocumentEnvironment{option}{sm}{%
+	\index@option*{#2}
+	\@optionname{#2}%
+	\IfBooleanTF{#1}{}{\PrintEnvImplName{#2}}%
 }{
 	\let\skdoc@macroname@key\@empty
 }
-\DeclareDocumentEnvironment{bibentry}{m}{%
-	\index@bibentry*{#1}
-	\@bibentryname{#1}%
-	\PrintEnvImplName{#1}%
+\DeclareDocumentEnvironment{option*}{m}%
+	{\begin{option}*{#1}}{\end{option}}
+\DeclareDocumentEnvironment{bibentry}{sm}{%
+	\index@bibentry*{#2}
+	\@bibentryname{#2}%
+	\IfBooleanTF{#1}{}{\PrintEnvImplName{#2}}%
 }{
 	\let\skdoc@macroname@key\@empty
 }
-\DeclareDocumentEnvironment{theme}{m}{%
-	\index@theme*{#1}
-	\@themename{#1}%
-	\PrintEnvImplName{#1}%
+\DeclareDocumentEnvironment{bibentry*}{m}%
+	{\begin{bibentry}*{#1}}{\end{bibentry}}
+\DeclareDocumentEnvironment{theme}{sm}{%
+	\index@theme*{#2}
+	\@themename{#2}%
+	\IfBooleanTF{#1}{}{\PrintEnvImplName{#2}}%
 }{
 	\let\skdoc@macroname@key\@empty
 }
+\DeclareDocumentEnvironment{theme*}{m}%
+	{\begin{theme}*{#1}}{\end{theme}}
 \let\optpar\relax
+%\def\skdoc@Options@peek{
+%	\ifx\@let@token\WithValues\llap{\texttt{=}}\else\fi
+%}
 \DeclareDocumentCommand\Options{m}{
 	\clist_set:Nn\l_tmpa_clist{#1}
 	\marginnote{
@@ -302,9 +325,20 @@
 			\textcolor{opt}{\opt{####1}}\\
 		}
 	}
+%	\futurelet\@let@token\skdoc@Options@peek
 }
 \DeclareDocumentCommand\Option{m}{
 	\Options{#1}
+}
+\def\skdoc@WithValues@peek{
+	\ifx\@let@token\AndDefault\else\par\nobreak\fi
+}
+\DeclareDocumentCommand\WithValues{m}{
+	\noindent\makebox[\linewidth][l]{\texttt{\textcolor{gray}{#1}}}
+	\futurelet\@let@token\skdoc@WithValues@peek
+}
+\DeclareDocumentCommand\AndDefault{m}{
+	\llap{\textcolor{gray}{\texttt{(#1)}}}\par\nobreak
 }
 \reversemarginpar
 
@@ -470,7 +504,7 @@
 	\def\skdoc@temp{\string#2}
 	\ifglsentryexists{index-\skdoc@temp}{}{
 		\@index@{\string#2}
-				{\theme{\string#2}~(theme)}
+				{\thm{\string#2}~(theme)}
 	}
 	\IfBooleanTF{#1}{
 		\glsadd[types=index]{index-\skdoc@temp}
