@@ -353,15 +353,15 @@
 	\glossarystyle{altlist}
 	\renewenvironment{theglossary}{
 		\begin{multicols}{2}\begin{description}
-		\begin{minipage}{\linewidth}
+%		\begin{minipage}{\linewidth}
 	}{
-		\end{minipage}
+%		\end{minipage}
 		\end{description}\end{multicols}
 	}
 	\renewcommand*{\glossaryentryfield}[5]{
-		\end{minipage}
+%		\end{minipage}
 		\par\vspace{5\p@}\relax
-		\begin{minipage}{\linewidth}
+%		\begin{minipage}{\linewidth}
 		\item[\glsentryitem{##1}\glstarget{##1}{##2}]
 					\mbox{}\par\nobreak\@afterheading
 	}
@@ -418,9 +418,9 @@
 		\setlength{\parindent}{0pt}
 		\setlength{\parskip}{0pt plus 0.3pt}
 		\let\item\@idxitem
-		\begin{minipage}{\linewidth}
+%		\begin{minipage}{\linewidth}
 	}{
-		\end{minipage}
+%		\end{minipage}
 		\end{multicols}
 	}
 	\renewcommand*{\glossaryentryfield}[5]{
@@ -431,9 +431,9 @@
 		\item{\descfont\glsgetgrouptitle{##1}}%\indexspace
 	}
 	\renewcommand*{\glsgroupskip}{
-		\end{minipage}
+%		\end{minipage}
 		\par\vspace{15\p@}\relax
-		\begin{minipage}{\linewidth}
+%		\begin{minipage}{\linewidth}
 	}
 }
 \DeclareDocumentCommand\@index@{mm}{
