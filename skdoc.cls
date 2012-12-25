@@ -10,11 +10,16 @@
 % typeset in the margin, might be good.
 %
 % Fix the implementation spec of things:
-% * The argument list moves up on options, themes (and bibenty?)
-% * The actual macro/env name probably needs \llap (check this
+% - The argument list moves up on options, themes (and bibenty?)
+% - The actual macro/env name probably needs \llap (check this
 %   for the description commands as well)
-% * They add a skip at the end of MacroCode. Or maybe they add an
-%   empty line for starred environments. Figure this out.
+% - They add a skip at the end of MacroCode. Or maybe they add an
+%   empty line for starred environments. Figure this out. (MEH, made
+%   it less pronounced by changing \vspace*s instead)
+%
+% Environment description needs to be more obvious.
+%
+% Index page numbers aligned to the right with dots?
 %
 % Way to describe themes in documentation.
 %
@@ -117,7 +122,7 @@
 		\tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
 		\int_gincr:c{skdoc@output@\skdoc@key @line}%
 		\iftoggle{skdoc@impl}{
-			\leavevmode%
+			\noindent\leavevmode%
 			\hspace*{-5ex}
 			\begin{minipage}[c][1ex]{\textwidth}
 				\makebox[4ex]{%
@@ -131,7 +136,7 @@
 					\the\verbatim@line
 				}
 			\end{minipage}
-			\vskip-.75ex\par\noindent
+			\vskip-.75ex\par
 		}{}
 	}%
 	\let\do\@makeother\dospecials\catcode`\^^M\active%
@@ -144,14 +149,14 @@
 }
 \DeclareDocumentEnvironment{MacroCode}{m}{
 	\iftoggle{skdoc@impl}{
-		\vspace{.5\baselineskip}
+		\vspace{.2\baselineskip}
 		\par\noindent
 	}{}
 	\skdoc@verbatim{#1}
 }{
 	\endskdoc@verbatim
 	\iftoggle{skdoc@impl}{
-		\vskip\baselineskip
+		\vspace{.5\baselineskip}
 	}{}
 }
 %% Read preamble from a document and store in variable
@@ -255,6 +260,7 @@
 \def\skdoc@macroname@stylized{}
 \let\skdoc@macroname@key\@empty
 \DeclareDocumentEnvironment{macro}{smo}{%
+	\@bsphack
 	\index@macro*{#2}
 	\@macroname{#2}%
 	\IfBooleanTF{#1}{}{
@@ -265,10 +271,12 @@
 	}%
 }{
 	\let\skdoc@macroname@key\@empty
+	\@esphack
 }
 \DeclareDocumentEnvironment{macro*}{mo}%
 	{\begin{macro}*{#1}[#2]}{\end{macro}}
 \DeclareDocumentEnvironment{environment}{smo}{%
+	\@bsphack
 	\index@environment*{#2}
 	\@environmentname{#2}%
 	\IfBooleanTF{#1}{}{
@@ -279,6 +287,7 @@
 	}%
 }{
 	\let\skdoc@macroname@key\@empty
+	\@esphack
 }
 \DeclareDocumentEnvironment{environment*}{mo}%
 	{\begin{environment}*{#1}[#2]}{\end{environment}}
@@ -369,18 +378,21 @@
 	\def\skdoc@macroname@key{thm-#1}
 }
 \DeclareDocumentEnvironment{option}{sm}{%
+	\@bsphack
 	\index@option*{#2}
 	\@optionname{#2}%
 	\IfBooleanTF{#1}{}{
-		\macro@impl@argline@noarg{(option)}
 		\PrintEnvImplName{#2}
+		\macro@impl@argline@noarg{(option)}
 	}%
 }{
 	\let\skdoc@macroname@key\@empty
+	\@esphack
 }
 \DeclareDocumentEnvironment{option*}{m}%
 	{\begin{option}*{#1}}{\end{option}}
 \DeclareDocumentEnvironment{bibentry}{sm}{%
+	\@bsphack
 	\index@bibentry*{#2}
 	\@bibentryname{#2}%
 	\IfBooleanTF{#1}{}{
@@ -389,18 +401,21 @@
 	}%
 }{
 	\let\skdoc@macroname@key\@empty
+	\@esphack
 }
 \DeclareDocumentEnvironment{bibentry*}{m}%
 	{\begin{bibentry}*{#1}}{\end{bibentry}}
 \DeclareDocumentEnvironment{theme}{sm}{%
+	\@bsphack
 	\index@theme*{#2}
 	\@themename{#2}%
 	\IfBooleanTF{#1}{}{
-		\macro@impl@argline@noarg{(theme)}
 		\PrintEnvImplName{#2}
+		\macro@impl@argline@noarg{(theme)}
 	}%
 }{
 	\let\skdoc@macroname@key\@empty
+	\@esphack
 }
 \DeclareDocumentEnvironment{theme*}{m}%
 	{\begin{theme}*{#1}}{\end{theme}}
@@ -413,9 +428,12 @@
 	\marginnote{
 		\clist_map_inline:Nn\l_tmpa_clist{
 			\index@option{####1}
-			\textcolor{opt}{\opt{####1}}\\
+			\hfill
+			\llap{\textcolor{opt}{\opt{####1}}}
+			\mbox{}\\
 		}
 	}
+	\nobreak
 %	\futurelet\@let@token\skdoc@Options@peek
 }
 \DeclareDocumentCommand\Option{m}{
