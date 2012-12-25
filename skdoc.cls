@@ -9,20 +9,20 @@
 % Nicer colors, especially for the code. And maybe make things
 % typeset in the margin, might be good.
 %
-% Way to describe themes in documentation.
+% Fix the implementation spec of things:
+% * The argument list moves up on options, themes (and bibenty?)
+% * The actual macro/env name probably needs \llap (check this
+%   for the description commands as well)
+% * They add a skip at the end of MacroCode. Or maybe they add an
+%   empty line for starred environments. Figure this out.
 %
-% The boxes for documentation and implementation of commands (esp.
-% implementation) look shit. Replace with non-boxed and maginparred
-% variants instead?
+% Way to describe themes in documentation.
 %
 % Show what file is being described in implementation?
 %
 % In the index, "@" should have its own header and not go under "default"
 %
 % Restructure the code. Split into sub-packages and load them. Maybe.
-%
-% Package option descriptions e.g. \Option with key-value specs
-% (Hint: see the microtype docs, section 3)
 %
 % Would it even be possible for this to use itself in a .dtx? Maybe
 % use docstrip the first time and then load itself or something? Meh.
@@ -257,8 +257,12 @@
 \DeclareDocumentEnvironment{macro}{smo}{%
 	\index@macro*{#2}
 	\@macroname{#2}%
-	\IfBooleanTF{#1}{}{\PrintMacroImpl{#2}}%
-	\IfNoValueTF{#3}{}{\macro@impl@args[#3]}
+	\IfBooleanTF{#1}{}{
+		\PrintMacroImpl{#2}
+		\IfNoValueTF{#3}{
+			\macro@impl@argline@noarg{(no~arguments)}
+		}{\macro@impl@args[#3]}
+	}%
 }{
 	\let\skdoc@macroname@key\@empty
 }
@@ -267,13 +271,86 @@
 \DeclareDocumentEnvironment{environment}{smo}{%
 	\index@environment*{#2}
 	\@environmentname{#2}%
-	\IfBooleanTF{#1}{}{\PrintEnvImplName{#2}}%
-	\IfNoValueTF{#3}{}{\macro@impl@args[#3]}
+	\IfBooleanTF{#1}{}{
+		\PrintEnvImplName{#2}
+		\IfNoValueTF{#3}{
+			\macro@impl@argline@noarg{(no~arguments)}
+		}{\macro@impl@args[#3]}
+	}%
 }{
 	\let\skdoc@macroname@key\@empty
 }
 \DeclareDocumentEnvironment{environment*}{mo}%
 	{\begin{environment}*{#1}[#2]}{\end{environment}}
+\def\Describe@Macro#1{%
+	\endgroup
+	\edef\name{\expandafter\@gobble\string#1}%
+	\global\@namedef{href@desc@\name}{}%
+	\immediate\write\@mainaux{%
+		\global\noexpand\@namedef{href@desc@\name}{}%
+	}%
+	\hbox\y@bgroup
+	\@ifundefined{href@impl@\name}{}{\hyperlink{impl:\name}}%
+	{%
+		\hbox{
+			\vbox to 0pt{
+				\vss\hbox{
+					\raisebox{4ex}{\hypertarget{desc:\name}{}
+				}
+			}
+		}%
+		\marginnote{\llap{\PrintMacroName{#1}}}
+		}%
+	}%
+	\ydoc@macrocatcodes
+	\macroargsstyle
+	\read@Macro@arg
+}
+\def\descframe#1{%
+    \mbox{\hspace*{1.5\descsep}#1\hspace*{2\descsep}}%
+}
+\def\PrintEnvImplName#1{%
+	\par\mbox{}
+	\marginnote{\llap{\implstyle{#1}}}
+	\par
+}
+\def\macro@impl@argline@noarg#1{%
+	\vspace*{-\baselineskip}
+	\par\noindent{#1\strut}\par\medskip%
+}
+\def\macro@impl@argline#1#2{%
+	\par\noindent{\texttt{\##1}:~#2\strut}%
+}
+\def\macro@impl@args[#1]{%
+	\vspace*{-\baselineskip}
+	\begingroup
+	\let\macro@impl@argcnt\@tempcnta
+	\let\macro@impl@curarg\@tempcntb
+	\macro@impl@argcnt=#1\relax
+	\macro@impl@curarg=0\relax
+	\ifnum\macro@impl@curarg<\macro@impl@argcnt\relax
+		\expandafter\macro@impl@arg
+	\else
+		\expandafter\macro@impl@endargs
+	\fi
+}
+\def\macro@impl@endargs{
+	\endgroup\par
+}
+\def\PrintMacroImpl#1{%
+	\par
+	\hbox{%
+		\edef\name{\expandafter\@gobble\string#1}%
+		\global\@namedef{href@impl@\name}{}%
+		\immediate\write\@mainaux{%
+			\global\noexpand\@namedef{href@impl@\name}{}%
+		}%
+		\raisebox{4ex}[4ex]{\hypertarget{impl:\name}{}}%
+		\@ifundefined{href@desc@\name}{}{\hyperlink{desc:\name}}%
+		\marginnote{\llap{\PrintMacroImplName{#1}}}%
+	}%
+	\par
+}
 
 %% And adding a few of our own
 \DeclareDocumentCommand\opt{m}{\texttt{#1}}
@@ -294,7 +371,10 @@
 \DeclareDocumentEnvironment{option}{sm}{%
 	\index@option*{#2}
 	\@optionname{#2}%
-	\IfBooleanTF{#1}{}{\PrintEnvImplName{#2}}%
+	\IfBooleanTF{#1}{}{
+		\macro@impl@argline@noarg{(option)}
+		\PrintEnvImplName{#2}
+	}%
 }{
 	\let\skdoc@macroname@key\@empty
 }
@@ -303,7 +383,10 @@
 \DeclareDocumentEnvironment{bibentry}{sm}{%
 	\index@bibentry*{#2}
 	\@bibentryname{#2}%
-	\IfBooleanTF{#1}{}{\PrintEnvImplName{#2}}%
+	\IfBooleanTF{#1}{}{
+		\PrintEnvImplName{#2}
+		\macro@impl@argline@noarg{(\hologoRobust{BibTeX}~entry~type)}
+	}%
 }{
 	\let\skdoc@macroname@key\@empty
 }
@@ -312,7 +395,10 @@
 \DeclareDocumentEnvironment{theme}{sm}{%
 	\index@theme*{#2}
 	\@themename{#2}%
-	\IfBooleanTF{#1}{}{\PrintEnvImplName{#2}}%
+	\IfBooleanTF{#1}{}{
+		\macro@impl@argline@noarg{(theme)}
+		\PrintEnvImplName{#2}
+	}%
 }{
 	\let\skdoc@macroname@key\@empty
 }
@@ -438,11 +524,11 @@
 }
 \DeclareDocumentCommand\@index@{mm}{
 	\iftoggle{skdoc@impl}{
+		\@index@@{#1}{#2}
+	}{
 		\iftoggle{skdoc@in@impl}{}{
 			\@index@@{#1}{#2}
 		}
-	}{
-		\@index@@{#1}{#2}
 	}
 }
 \DeclareDocumentCommand\@index@@{mm}{
@@ -536,6 +622,8 @@
 }
 
 %% Hiding the implementation
+% Consequence of method: last page before implementation is broken,
+% anything after that is typeset on a new page.
 \newtoggle{skdoc@impl}
 \newtoggle{skdoc@in@impl}
 \toggletrue{skdoc@impl}
@@ -548,32 +636,36 @@
 }
 \DeclareDocumentCommand\OnlyDescription{}{\togglefalse{skdoc@impl}}
 \DeclareDocumentCommand\Implementation{}{
-	\clearpage
-	\toggletrue{skdoc@in@impl}
-	\let\skdoc@old@part\part
-	\DeclareDocumentCommand\part{som}{}
-	\let\skdoc@old@section\section
-	\DeclareDocumentCommand\section{som}{}
-	\let\skdoc@old@subsection\subsection
-	\DeclareDocumentCommand\subsection{som}{}
-	\let\skdoc@old@subsubsection\subsubsection
-	\DeclareDocumentCommand\subsubsection{som}{}
-	\let\skdoc@old@paragraph\paragraph
-	\DeclareDocumentCommand\paragraph{som}{}
-	\let\skdoc@old@subparagraph\subparagraph
-	\DeclareDocumentCommand\subparagraph{som}{}
-	\setcounter{skdoc@impl@page}{\value{page}}
+	\iftoggle{skdoc@impl}{}{
+		\clearpage
+		\toggletrue{skdoc@in@impl}
+		\let\skdoc@old@part\part
+		\DeclareDocumentCommand\part{som}{}
+		\let\skdoc@old@section\section
+		\DeclareDocumentCommand\section{som}{}
+		\let\skdoc@old@subsection\subsection
+		\DeclareDocumentCommand\subsection{som}{}
+		\let\skdoc@old@subsubsection\subsubsection
+		\DeclareDocumentCommand\subsubsection{som}{}
+		\let\skdoc@old@paragraph\paragraph
+		\DeclareDocumentCommand\paragraph{som}{}
+		\let\skdoc@old@subparagraph\subparagraph
+		\DeclareDocumentCommand\subparagraph{som}{}
+		\setcounter{skdoc@impl@page}{\value{page}}
+	}
 }
 \DeclareDocumentCommand\Finale{}{
-	\clearpage
-	\togglefalse{skdoc@in@impl}
-	\let\part\skdoc@old@part
-	\let\section\skdoc@old@section
-	\let\subsection\skdoc@old@subsection
-	\let\subsubsection\skdoc@old@subsubsection
-	\let\paragraph\skdoc@old@paragraph
-	\let\subparagraph\skdoc@old@subparagraph
-	\setcounter{page}{\value{skdoc@impl@page}}
+	\iftoggle{skdoc@impl}{}{
+		\clearpage
+		\togglefalse{skdoc@in@impl}
+		\let\part\skdoc@old@part
+		\let\section\skdoc@old@section
+		\let\subsection\skdoc@old@subsection
+		\let\subsubsection\skdoc@old@subsubsection
+		\let\paragraph\skdoc@old@paragraph
+		\let\subparagraph\skdoc@old@subparagraph
+		\setcounter{page}{\value{skdoc@impl@page}}
+	}
 }
 
 %% Document metadata
