@@ -11,8 +11,6 @@
 %
 % Environment description needs to be more obvious.
 %
-% Index page numbers aligned to the right with dots?
-%
 % Way to describe themes in documentation.
 %
 % In the index, "@" should have its own header and not go under "default"
@@ -521,6 +519,7 @@
 \newglossary{index}{ids}{ido}{Index}
 \newglossarystyle{docindex}{
 	\glossarystyle{indexgroup}
+	\renewcommand*{\glspostdescription}{\unskip\leaders\hbox to 2.9mm{\hss.}\hfill\strut}
 	\renewenvironment{theglossary}{
 		\begin{multicols}{2}
 		\setlength{\parindent}{0pt}
