@@ -114,6 +114,7 @@
 		\llap{
 			\scriptsize\color{gray}
 			$\langle$\skdoc@key$\rangle$
+			\makebox[2ex]{\strut}
 		}
 	}
 	\def\verbatim@processline{%
@@ -214,7 +215,6 @@
 	sharp,250,105,0;
 	bright,198,229,217
 }
-% y u no work?
 \definecolorset{RGB}{}{}{
 	macrodesc,73,10,61;
 	keydesc,140,35,24;
@@ -375,20 +375,26 @@
 	\def\skdoc@macroname@stylized{\thm{\string#1}}
 	\def\skdoc@macroname@key{thm-#1}
 }
-\DeclareDocumentEnvironment{option}{sm}{%
+\DeclareDocumentEnvironment{option}{smg}{%
 	\@bsphack
 	\index@option*{#2}
 	\@optionname{#2}%
 	\IfBooleanTF{#1}{}{
 		\PrintEnvImplName{#2}
-		\macro@impl@argline@noarg{(option)}
+		\IfNoValueTF{#3}{
+			\macro@impl@argline@noarg{(option)}
+		}{
+			\macro@impl@argline@noarg{
+				Option~with~values~\texttt{\textcolor{gray}{#3}}
+			}
+		}
 	}%
 }{
 	\let\skdoc@macroname@key\@empty
 	\@esphack
 }
-\DeclareDocumentEnvironment{option*}{m}%
-	{\begin{option}*{#1}}{\end{option}}
+\DeclareDocumentEnvironment{option*}{mg}%
+	{\begin{option}*{#1}{#2}}{\end{option}}
 \DeclareDocumentEnvironment{bibentry}{sm}{%
 	\@bsphack
 	\index@bibentry*{#2}
