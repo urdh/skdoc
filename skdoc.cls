@@ -9,21 +9,11 @@
 % Nicer colors, especially for the code. And maybe make things
 % typeset in the margin, might be good.
 %
-% Fix the implementation spec of things:
-% - The argument list moves up on options, themes (and bibenty?)
-% - The actual macro/env name probably needs \llap (check this
-%   for the description commands as well)
-% - They add a skip at the end of MacroCode. Or maybe they add an
-%   empty line for starred environments. Figure this out. (MEH, made
-%   it less pronounced by changing \vspace*s instead)
-%
 % Environment description needs to be more obvious.
 %
 % Index page numbers aligned to the right with dots?
 %
 % Way to describe themes in documentation.
-%
-% Show what file is being described in implementation?
 %
 % In the index, "@" should have its own header and not go under "default"
 %
@@ -37,7 +27,8 @@
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
 \ProvidesExplClass{skdoc}{2012/12/19}{0.0}{Documentation class}
-\RequirePackage{kvoptions,xstring,etoolbox,xparse,verbatim,xcolor}
+\RequirePackage{kvoptions,xstring,etoolbox,xparse,
+				verbatim,xcolor,marginnote}
 
 % Set up some message texts!
 \msg_new:nnn{skdoc}{key-exists}{File~key~"#1"~already~declared!}
@@ -118,6 +109,13 @@
 	\int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
 		\msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
 	}%
+	\marginnote{
+		\leavevmode
+		\llap{
+			\scriptsize\color{gray}
+			$\langle$\skdoc@key$\rangle$
+		}
+	}
 	\def\verbatim@processline{%
 		\tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
 		\int_gincr:c{skdoc@output@\skdoc@key @line}%
@@ -197,7 +195,7 @@
 \RequirePackage[british]{babel}
 \RequirePackage[babel]{microtype}
 \RequirePackage{scrpage2,calc,shortvrb,url,hyperref,multicol,%
-				hologo,marginnote,atbegshi}
+				hologo,atbegshi}
 \RequirePackage[nomain,xindy,numberedsection,order=letter,%
 				sanitize={description=false,sort=false}]{glossaries}
 \RequirePackage{ydoc-code} %reimplement?
