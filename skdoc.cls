@@ -11,18 +11,14 @@
 %
 % Environment description needs to be more obvious.
 %
-% Way to describe themes in documentation.
-%
-% In the index, "@" should have its own header and not go under "default"
+% More organized font scheme (\cs, \env, \pkg, \opt, \thm, \bib) and
+% more organized and accessible color schemes.
 %
 % Restructure the code. Split into sub-packages and load them. Maybe.
 %
 % Would it even be possible for this to use itself in a .dtx? Maybe
 % use docstrip the first time and then load itself or something? Meh.
 %
-% \GetFileInfo could be simulated to set variables as \relax on first
-% run then reading actual stuff from specified file on second run.
-\NeedsTeXFormat{LaTeX2e}
 \RequirePackage{expl3}
 \ProvidesExplClass{skdoc}{2012/12/19}{0.0}{Documentation class}
 \RequirePackage{kvoptions,xstring,etoolbox,xparse,
@@ -535,7 +531,11 @@
 			\ifx\relax##4\relax\else\space(##4)\fi
 			##3\glspostdescription\space ##5}
 	\renewcommand*{\glsgroupheading}[1]{
-		\item{\descfont\glsgetgrouptitle{##1}}%\indexspace
+		\IfStrEq{##1}{default}{
+			\item{\descfont\glssymbolsgroupname}
+		}{
+			\item{\descfont\glsgetgrouptitle{##1}}
+		}
 	}
 	\renewcommand*{\glsgroupskip}{
 %		\end{minipage}
