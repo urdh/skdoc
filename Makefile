@@ -22,12 +22,12 @@ clean:
 	rm -f skdoc.cls
 distclean: clean
 
-skdoc.cls:
-	tex skdoc.dtx
+%.cls:
+	tex $*.dtx
 
-skdoc.pdf:
-	pdflatex skdoc.dtx
-	makeglossaries skdoc
-	pdflatex skdoc.dtx
-	makeglossaries skdoc
-	pdflatex skdoc.dtx
+%.pdf:
+	pdflatex $*.dtx
+	makeglossaries $*
+	pdflatex $*.dtx
+	makeglossaries $*
+	pdflatex $*.dtx
