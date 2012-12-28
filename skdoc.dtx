@@ -73,12 +73,12 @@
 %</driver>
 %<class>\ProvidesExplClass{skdoc}
 %<*class>
-    {2012/12/26}{0.9}{skdoc documentation class}
+    {2012/12/26}{0.99}{skdoc documentation class}
 %</class>
 %
 %<*driver>
 \msg_new:nnn{skdoc-dtx}{not-installed}
-    {Run~`latex'~on~skdoc.ins~before~generating~the~documentation!}
+    {Run~`tex'~on~skdoc.dtx~before~generating~the~documentation!}
 \IfFileExists{skdoc.cls}{}{
     \msg_fatal:nn{skdoc-dtx}{not-installed}
 }
@@ -95,19 +95,20 @@
 \end{document}
 % \fi
 %
-% \changes{0.9}{Pre-release version with most of the general
-%               functionality implemented}
+% \changes{1.0}{First version released on CTAN}
+% \changes{0.99}{Implementing various todo items}
+% \changes{0.9}{Initial version}
 %
-% \package[ctan]{skdoc}
+% \package[ctan=skbundle,vcs=https://github.com/urdh/skdoc]{skdoc}
 % \repository{https://github.com/urdh/skdoc}
-% \title{The \pkg{skdoc} document class}
+% \title{The \thepkg{} document class}
 % \author{Simon Sigurdhsson}
 % \email{sigurdhsson@gmail.com}
-% \version{0.9}
+% \version{0.99}
 % \maketitle
 %
 % \begin{abstract}
-% The \pkg{skdoc} class provides macros to document the functionality
+% The \thepkg{} class provides macros to document the functionality
 % and implementation of \LaTeX\ packages and document classes. I is
 % loosely based on the \pkg{ydoc} and \pkg{ltxdoc} classes, but has
 % a number of incompatible differences.
@@ -122,6 +123,7 @@
 %
 % \section{Introduction}
 % \section{Documentation}
+% \DescribeMacro\cs*{<macro name>}
 % \subsection{Planned improvements}
 % Planned improvements of this class include
 % \begin{itemize}
@@ -129,8 +131,7 @@
 %           inherited from \pkg{ydoc}.
 %     \item Do things the \LaTeX3 way, rename the variables properly
 %           and generally conform to \pkg{expl3} guidelines when
-%           applicable.
-%     \item Better color scheme.
+%           applicable. (Way future thing.)
 %     \item \cs{DescribeEnvironment} has to be improved. The idea is
 %           to typeset the first line as with the macros, but the
 %           environment contents and \cs{end} command typeset below
@@ -139,8 +140,11 @@
 %           \cs{opt}, \cs{thm} and \cs{bib} must have sensible fonts
 %           and these should be reflected in the implementation details
 %           as well as the description.
-%     \item The uses of \cs{cs} and friens should be recorded in the
-%           index as well.
+%     \item The indexing of macros (not the rest, it seems) is broken.
+%           Some macros have their implementation indexed, others don't,
+%           and some index their implementation as use and their use
+%           as implementation! this is going to be a difficult bug, and
+%           we should verify and test it on a smaller document.
 %     \item Restructure the code.
 %     \item Starred variants of the implementation environments have to
 %           gobble the arguments that are normally printed!
@@ -428,47 +432,98 @@
 %
 % \subsubsection{Inline referencing}
 % We introduce a couple of macros for referencing various constructs
-% in running text, \emph{i.e.} \cs{cs}-like macros.
-% \begin{macro}{\cs}[1]
+% in running text, \emph{i.e.} \cs{cs}-like macros. The starred
+% variants will not index the use, the non-starred variants will.
+%
+% First, though, we introduce a toggle letting us permanently disable
+% indexing inside \emph{e.g.} the table of contents and index.
+%    \begin{macrocode}
+\newtoggle{skdoc@noindex}
+\togglefalse{skdoc@noindex}
+%    \end{macrocode}
+% \begin{macro}{\cs}[2]
+%   {True if this is the starred variant}
 %   {The macro name to be typeset}
 % The \cs{cs} macro typesets a macro.
+% \changes{0.99}{Optionally index the use of the macro name}
 %    \begin{macrocode}
-%\DeclareDocumentCommand\cs{m}{\texttt{\textbackslash #1}}
+\DeclareDocumentCommand\cs{sm}{
+    \texttt{\char`\\#2}
+    \iftoggle{skdoc@noindex}{}{
+        \IfBooleanTF{#1}{}{\index@macro{#2}}
+    }
+}
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\env}[1]
+% \begin{macro}{\env}[2]
+%   {True if this is the starred variant}
 %   {The environment name to be typeset}
 % The \cs{env} macro typesets an environment.
+% \changes{0.99}{Optionally index the use of the environment name}
 %    \begin{macrocode}
-%\DeclareDocumentCommand\env{m}{\texttt{#1}}
+\DeclareDocumentCommand\env{sm}{
+    \texttt{#2}
+    \iftoggle{skdoc@noindex}{}{
+        \IfBooleanTF{#1}{}{\index@environment{#2}}
+    }
+}
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\pkg}[1]
+% \begin{macro}{\pkg}[2]
+%   {True if this is the starred variant}
 %   {The package name to be typeset}
 % The \cs{pkg} macro typesets a package.
+% \changes{0.99}{Optionally index the use of the package name}
 %    \begin{macrocode}
-\DeclareDocumentCommand\pkg{m}{\textsf{#1}}
+\DeclareDocumentCommand\pkg{sm}{
+    \textsf{#2}
+    \iftoggle{skdoc@noindex}{}{
+        \IfBooleanTF{#1}{}{\index@package{#2}}
+    }
+}
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\opt}[1]
+% \begin{macro}{\opt}[2]
+%   {True if this is the starred variant}
 %   {The option name to be typeset}
 % The \cs{opt} macro typesets an option
+% \changes{0.99}{Optionally index the use of the option}
 %    \begin{macrocode}
-\DeclareDocumentCommand\opt{m}{\texttt{#1}}
+\DeclareDocumentCommand\opt{sm}{
+    \texttt{#2}
+    \iftoggle{skdoc@noindex}{}{
+        \IfBooleanTF{#1}{}{\index@option{#2}}
+    }
+}
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\bib}[1]
+% \begin{macro}{\bib}[2]
+%   {True if this is the starred variant}
 %   {The \hologo{BibTeX} entry type name to be typeset}
 % The \cs{bib} macro typesets a \hologo{BibTeX} entry type.
+% \changes{0.99}{Optionally index the use of the \hologo{BibTeX}
+%               entry type}
 %    \begin{macrocode}
-\DeclareDocumentCommand\bib{m}{\texttt{@#1}}
+\DeclareDocumentCommand\bib{sm}{
+    \texttt{@#2}
+    \iftoggle{skdoc@noindex}{}{
+        \IfBooleanTF{#1}{}{\index@bibentry{#2}}
+    }
+}
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\thm}[1]
+% \begin{macro}{\thm}[2]
+%   {True if this is the starred variant}
 %   {The theme name to be typeset}
 % The \cs{thm} macro typesets a theme of some sort.
+% \changes{0.99}{Optionally index the use of the theme name}
 %    \begin{macrocode}
-\DeclareDocumentCommand\thm{m}{\textrm{#1}}
+\DeclareDocumentCommand\thm{sm}{
+    \textrm{#2}
+    \iftoggle{skdoc@noindex}{}{
+        \IfBooleanTF{#1}{}{\index@theme{#2}}
+    }
+}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -522,10 +577,12 @@
 %   {Macro name to be printed}
 % \cs{PrintMacroName} is hooked to also index the macro name while
 % printing it.
+% \changes{0.99}{Using starred variant of \cs{index@macro} to reflect
+%               changes elsewhere}
 %    \begin{macrocode}
 \let\old@PrintMacroName\PrintMacroName
 \DeclareDocumentCommand\PrintMacroName{m}{%
-    \index@macro{#1}
+    \index@macro*{\expandafter\@gobble\string#1}
     \old@PrintMacroName{#1}
 }
 %    \end{macrocode}
@@ -536,11 +593,13 @@
 % Similarly to \cs{PrintMacroName}, the \cs{PrintEnvName} is hooked
 % to index the environment when printing the \cs{begin} part of the
 % environment.
+% \changes{0.99}{Using starred variant of \cs{index@environment} to 
+%               reflect changes elsewhere}
 %    \begin{macrocode}
 \let\old@PrintEnvName\PrintEnvName
 \def\PrintEnvName#1#2{
     \ifx#1\begin
-        \edef\skdoc@temp{\noexpand\index@environment{#2}}
+        \edef\skdoc@temp{\noexpand\index@environment*{#2}}
         \skdoc@temp
     \fi
     \old@PrintEnvName{#1}{#2}
@@ -556,12 +615,14 @@
 %    \end{macrocode}
 % \begin{macro}{\Options}[1]
 %   {A comma-separated list of options}
+% \changes{0.99}{Using starred variant of \cs{index@option} to reflect
+%               changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentCommand\Options{m}{
     \clist_set:Nn\l_tmpa_clist{#1}
     \marginnote{
         \clist_map_inline:Nn\l_tmpa_clist{
-            \index@option{####1}
+            \index@option*{####1}
             \hfill
             \llap{\textcolor{opt}{\opt{####1}}}
             \mbox{}\\
@@ -609,6 +670,10 @@
 %    \end{macrocode}
 % \end{macro}
 %
+% \paragraph{Missing commands}
+% Descriptional commands for \hologo{BibTeX} entry types and themes
+% are not yet implemented.
+%
 % Lastly, we define an envionment for showing examples. It's
 % rediculously simple, really.
 % \begin{environment}{example}
@@ -628,10 +693,12 @@
 %   {Name of the macro being implemented}
 %   {If given, the number of arguments that
 %            \cs{macro@impl@args} will read}
+% \changes{0.99}{Using exclamation variant of \cs{index@macro} to 
+%               reflect changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{macro}{smo}{%
     \@bsphack
-    \index@macro*{#2}
+    \index@macro!{\expandafter\@gobble\string#2}
     \@macroname{#2}%
     \IfBooleanTF{#1}{}{
         \PrintMacroImpl{#2}
@@ -650,10 +717,12 @@
 %   {Name of the environment being implemented}
 %   {If given, the number of arguments that
 %            \cs{macro@impl@args} will read}
+% \changes{0.99}{Using exclamation variant of \cs{index@envionment} to 
+%               reflect changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{environment}{smo}{%
     \@bsphack
-    \index@environment*{#2}
+    \index@environment!{#2}
     \@environmentname{#2}%
     \IfBooleanTF{#1}{}{
         \PrintEnvImplName{#2}
@@ -671,10 +740,12 @@
 %   {True if this is the starred variant}
 %   {Name of the option being implemented}
 %   {Values this key-value option can take}
+% \changes{0.99}{Using exclamation variant of \cs{index@option} to 
+%               reflect changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{option}{smg}{%
     \@bsphack
-    \index@option*{#2}
+    \index@option!{#2}
     \@optionname{#2}%
     \IfBooleanTF{#1}{}{
         \PrintEnvImplName{#2}
@@ -695,10 +766,12 @@
 % \begin{environment}{bibentry}[2]
 %   {True if this is the starred variant}
 %   {Name of the \hologo{BibTeX} entry type being implemented}
+% \changes{0.99}{Using exclamation variant of \cs{index@bibentry} to 
+%               reflect changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{bibentry}{sm}{%
     \@bsphack
-    \index@bibentry*{#2}
+    \index@bibentry!{\expandafter\@gobble\string#2}
     \@bibentryname{#2}%
     \IfBooleanTF{#1}{}{
         \PrintEnvImplName{#2}
@@ -713,10 +786,12 @@
 % \begin{environment}{theme}[2]
 %   {True if this is the starred variant}
 %   {Name of the theme being implemented}
+% \changes{0.99}{Using exclamation variant of \cs{index@theme} to 
+%               reflect changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{theme}{sm}{%
     \@bsphack
-    \index@theme*{#2}
+    \index@theme!{#2}
     \@themename{#2}%
     \IfBooleanTF{#1}{}{
         \PrintEnvImplName{#2}
@@ -897,99 +972,154 @@
 % \subsubsection{Adding index entries}
 % These macros add an index entry with different contents depending
 % on the thing (macro, environment, etc.) that is being indexed. They
-% all have starred variants which are used by the implementation
-% environments, and non-starred variants used by the description
-% macros (the star affects the style of the page number).
+% all have non-starred variants which are used by the referring
+% macros (\cs{cs} \emph{et. al}), and starred variants used by the 
+% description macros (the star affects the style of the page number).
 % Each environment first test wether the given entry key exists, and
 % defines a new entry if it doesn't. Then, a usage of the entry is
 % recorded.
-% \begin{macro}{\index@macro}[2]
+% There is also a exclamation variant that is used by the implementation
+% environments, that typesets a normal use of the entity.
+% \begin{macro}{\index@macro}[3]
 %   {True if this is the starred variant}
-%   {The name of the macro being indexed, including backslash}
+%   {True if this is the exclamation variant}
+%   {The name of the macro being indexed, without backslash}
+% \changes{0.99}{Added exclamation version (refers to implementation),
+%               reversed meaning of starred variant}
 %    \begin{macrocode}
-\DeclareDocumentCommand\index@macro{sm}{
-    \def\skdoc@temp{\expandafter\@gobble\string#2}
+\DeclareDocumentCommand\index@macro{st!m}{
+    \def\skdoc@temp{#3}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\expandafter\@gobble\string#2}
-                {\cs{\expandafter\@gobble\string#2}}
+        \@index@{#3}{\cs*{#3}}
     }
-    \IfBooleanTF{#1}{
-        \glsadd[types=index]{index-\skdoc@temp}
-    }{
+    \IfBooleanTF{#2}{
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }{
+        \IfBooleanTF{#1}{
+            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+        }{
+            \glsadd[types=index]{index-\skdoc@temp}
+        }
     }
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\index@environment}[2]
+% \begin{macro}{\index@environment}[3]
 %   {True if this is the starred variant}
+%   {True if this is the exclamation variant}
 %   {The name of the environment being indexed}
+% \changes{0.99}{Added exclamation version (refers to implementation),
+%               reversed meaning of starred variant}
 %    \begin{macrocode}
-\DeclareDocumentCommand\index@environment{sm}{
-    \def\skdoc@temp{\string#2}
+\DeclareDocumentCommand\index@environment{st!m}{
+    \def\skdoc@temp{\string#3}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#2}
-                {\env{\string#2}~(environment)}
+        \@index@{\string#3}{\env*{\string#3}~(environment)}
     }
-    \IfBooleanTF{#1}{
-        \glsadd[types=index]{index-\skdoc@temp}
-    }{
+    \IfBooleanTF{#2}{
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }{
+        \IfBooleanTF{#1}{
+            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+        }{
+            \glsadd[types=index]{index-\skdoc@temp}
+        }
     }
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\index@option}[2]
+% \begin{macro}{\index@option}[3]
 %   {True if this is the starred variant}
+%   {True if this is the exclamation variant}
 %   {The name of the option being indexed}
+% \changes{0.99}{Added exclamation version (refers to implementation),
+%               reversed meaning of starred variant}
 %    \begin{macrocode}
-\DeclareDocumentCommand\index@option{sm}{
-    \def\skdoc@temp{\string#2}
+\DeclareDocumentCommand\index@option{st!m}{
+    \def\skdoc@temp{\string#3}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#2}
-                {\opt{\string#2}~(option)}
+        \@index@{\string#3}{\opt*{\string#3}~(option)}
     }
-    \IfBooleanTF{#1}{
-        \glsadd[types=index]{index-\skdoc@temp}
-    }{
+    \IfBooleanTF{#2}{
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }{
+        \IfBooleanTF{#1}{
+            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+        }{
+            \glsadd[types=index]{index-\skdoc@temp}
+        }
     }
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\index@bibentry}[2]
+% \begin{macro}{\index@bibentry}[3]
 %   {True if this is the starred variant}
+%   {True if this is the exclamation variant}
 %   {The name of the \hologo{BibTeX} entry type
-%       being indexed, including initial \texttt{@} sign}
+%       being indexed, without initial \texttt{@} sign}
+% \changes{0.99}{Added exclamation version (refers to implementation),
+%               reversed meaning of starred variant}
 %    \begin{macrocode}
-\DeclareDocumentCommand\index@bibentry{sm}{
-    \def\skdoc@temp{\expandafter\@gobble\string#2}
+\DeclareDocumentCommand\index@bibentry{st!m}{
+    \def\skdoc@temp{#3}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\expandafter\@gobble\string#2}
-                {\bib{\expandafter\@gobble\string#2}~(\hologoRobust{BibTeX}~entry~type)}
+        \@index@{#3}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
     }
-    \IfBooleanTF{#1}{
-        \glsadd[types=index]{index-\skdoc@temp}
-    }{
+    \IfBooleanTF{#2}{
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }{
+        \IfBooleanTF{#1}{
+            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+        }{
+            \glsadd[types=index]{index-\skdoc@temp}
+        }
     }
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\index@theme}[2]
+% \begin{macro}{\index@theme}[3]
 %   {True if this is the starred variant}
+%   {True if this is the exclamation variant}
 %   {The name of the theme being indexed}
+% \changes{0.99}{Added exclamation version (refers to implementation),
+%               reversed meaning of starred variant}
 %    \begin{macrocode}
-\DeclareDocumentCommand\index@theme{sm}{
-    \def\skdoc@temp{\string#2}
+\DeclareDocumentCommand\index@theme{st!m}{
+    \def\skdoc@temp{\string#3}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#2}
-                {\thm{\string#2}~(theme)}
+        \@index@{\string#3}{\thm*{\string#3}~(theme)}
     }
-    \IfBooleanTF{#1}{
-        \glsadd[types=index]{index-\skdoc@temp}
-    }{
+    \IfBooleanTF{#2}{
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }{
+        \IfBooleanTF{#1}{
+            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+        }{
+            \glsadd[types=index]{index-\skdoc@temp}
+        }
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\index@package}[3]
+%   {True if this is the starred variant}
+%   {True if this is the exclamation variant}
+%   {The name of the package being indexed}
+% \changes{0.99}{Added macro to index mentions of packages}
+%    \begin{macrocode}
+\DeclareDocumentCommand\index@package{st!m}{
+    \def\skdoc@temp{\string#3}
+    \ifglsentryexists{index-\skdoc@temp}{}{
+        \@index@{\string#3}{\pkg*{\string#3}~(package)}
+    }
+    \IfBooleanTF{#2}{
+        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }{
+        \IfBooleanTF{#1}{
+            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+        }{
+            \glsadd[types=index]{index-\skdoc@temp}
+        }
     }
 }
 %    \end{macrocode}
@@ -1003,12 +1133,14 @@
     \glossarystyle{indexgroup}
     \renewcommand*{\glspostdescription}{\unskip\leaders\hbox to 2.9mm{\hss.}\hfill\strut}
     \renewenvironment{theglossary}{
+        \toggletrue{skdoc@noindex}
         \begin{multicols}{2}
         \setlength{\parindent}{0pt}
         \setlength{\parskip}{0pt plus 0.3pt}
         \let\item\@idxitem
     }{
         \end{multicols}
+        \togglefalse{skdoc@noindex}
     }
     \renewcommand*{\glossaryentryfield}[5]{
         \item\glsentryitem{##1}\glstarget{##1}{##2}
@@ -1039,9 +1171,11 @@
 \providecommand*\PrintIndex{%
     \begingroup
     \renewcommand*{\glossarypreamble}{
-        Numbers~written~in~italic~refer~to~the~page~where~the~
-        corresponding~entry~is~described;~numbers~in~roman~
-        refer~to~the~code~line~of~the~definition.\par
+        Numbers~written~in~boldface~refer~to~the~page~where~the~
+        corresponding~entry~is~described;~numbers~in~italic~refer~
+        to~the~page~were~the~implementation~of~the~corresponding~
+        entry~is~discussed.~Numbers~in~roman~refer~to~other~
+        mentions~of~the~entry.\par
     }
     \printglossary[type=index,style=docindex]
     \endgroup
@@ -1064,7 +1198,7 @@
 %   {Name of the macro being described}
 %    \begin{macrocode}
 \DeclareDocumentCommand\@macroname{m}{
-    \def\skdoc@macroname@stylized{\cs{\expandafter\@gobble\string#1}}
+    \def\skdoc@macroname@stylized{\cs*{\expandafter\@gobble\string#1}}
     \def\skdoc@macroname@key{macro-\expandafter\@gobble\string#1}
 }
 %    \end{macrocode}
@@ -1073,7 +1207,7 @@
 %   {Name of the environment being described}
 %    \begin{macrocode}
 \DeclareDocumentCommand\@environmentname{m}{
-    \def\skdoc@macroname@stylized{\env{\string#1}}
+    \def\skdoc@macroname@stylized{\env*{\string#1}}
     \def\skdoc@macroname@key{env-#1}
 }
 %    \end{macrocode}
@@ -1082,7 +1216,7 @@
 %   {Name of the option being described}
 %    \begin{macrocode}
 \DeclareDocumentCommand\@optionname{m}{
-    \def\skdoc@macroname@stylized{\opt{\string#1}}
+    \def\skdoc@macroname@stylized{\opt*{\string#1}}
     \def\skdoc@macroname@key{opt-#1}
 }
 %    \end{macrocode}
@@ -1091,7 +1225,7 @@
 %   {Name of the \hologo{BibTeX} entry being described}
 %    \begin{macrocode}
 \DeclareDocumentCommand\@bibentryname{m}{
-    \def\skdoc@macroname@stylized{\bib{\expandafter\@gobble\string#1}}
+    \def\skdoc@macroname@stylized{\bib*{\expandafter\@gobble\string#1}}
     \def\skdoc@macroname@key{bibentry-\expandafter\@gobble\string#1}
 }
 %    \end{macrocode}
@@ -1100,7 +1234,7 @@
 %   {Name of the theme being described}
 %    \begin{macrocode}
 \DeclareDocumentCommand\@themename{m}{
-    \def\skdoc@macroname@stylized{\thm{\string#1}}
+    \def\skdoc@macroname@stylized{\thm*{\string#1}}
     \def\skdoc@macroname@key{thm-#1}
 }
 %    \end{macrocode}
@@ -1159,9 +1293,11 @@
 \newglossarystyle{changelog}{
     \glossarystyle{altlist}
     \renewenvironment{theglossary}{
+        \toggletrue{skdoc@noindex}
         \begin{multicols}{2}\begin{description}
     }{
         \end{description}\end{multicols}
+        \togglefalse{skdoc@noindex}
     }
     \renewcommand*{\glossaryentryfield}[5]{
         \par\vspace{5\p@}\relax
@@ -1303,7 +1439,7 @@
     }%
     \IfNoValueTF{#1}{}{\keys_set:nn{skdoc@package}{#1}}%
     \def\@package{#2}%
-    \title{The~\textsf{\textbf{\@package}}~package}%
+    \title{The~\textbf{\pkg*{\@package}}~package}%
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1355,7 +1491,12 @@
 % \end{macro}
 % \begin{macro}{\thepackage}
 %    \begin{macrocode}
-\DeclareDocumentCommand\thepackage{}{\pkg{\@package}}
+\DeclareDocumentCommand\thepackage{}{\pkg*{\@package}}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\thepkg}
+%    \begin{macrocode}
+\DeclareDocumentCommand\thepkg{}{\thepackage}
 %    \end{macrocode}
 % \end{macro}
 % Additionally we define \cs{skdocpdfsettings}, which is also used
@@ -1498,9 +1639,11 @@
 %    \begin{macrocode}
 \let\old@tableofcontents\tableofcontents
 \DeclareDocumentCommand\tableofcontents{}{
+    \toggletrue{skdoc@noindex}
     \microtypesetup{protrusion=false}
     \old@tableofcontents
     \microtypesetup{protrusion=true}
+    \togglefalse{skdoc@noindex}
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1512,7 +1655,7 @@
 %    \begin{macrocode}
 \deftripstyle{skdoc}%
     {}{}{}%
-    {\small The~\textsf{\textbf{\@package}}~package,~v\@version}{}{\small\pagemark}
+    {\small The~\textbf{\pkg*{\@package}}~package,~v\@version}{}{\small\pagemark}
 \AfterBeginDocument{\pagestyle{skdoc}}
 %    \end{macrocode}
 % We also redefine the section level format to set the section numbers
