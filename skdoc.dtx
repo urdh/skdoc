@@ -15,9 +15,55 @@
 %% 
 %% The Current Maintainer of this work is Simon Sigurdhsson.
 %% 
-%% This work consists of the files skdoc.dtx, skdoc.ins and Makefile
+%% This work consists of the files skdoc.dtx and Makefile
 %% and the derived filebase skdoc.cls.
 %
+%<*ignore>
+\begingroup
+  \catcode123=1 %
+  \catcode125=2 %
+  \def\x{LaTeX2e}%
+\expandafter\endgroup
+\ifcase 0\ifx\install y1\fi\expandafter
+        \ifx\csname processbatchFile\endcsname\relax\else1\fi
+        \ifx\fmtname\x\else 1\fi\relax
+\else\csname fi\endcsname
+%</ignore>
+%<*install>
+\input docstrip.tex
+
+\preamble
+\endpreamble
+
+\keepsilent
+\askforoverwritefalse
+
+\generate{%
+    \file{skdoc.cls}{\from{skdoc.dtx}{class}}%
+}
+
+\begingroup
+\obeyspaces
+\Msg{*************************************************************}%
+\Msg{*                                                           *}%
+\Msg{* To finish the installation you have to move the following *}%
+\Msg{* file into a directory searched by TeX:                    *}%
+\Msg{*                                                           *}%
+\Msg{*     skdoc.cls                                             *}%
+\Msg{*                                                           *}%
+\Msg{* To produce the documentation run the file skdoc.dtx       *}%
+\Msg{* through LaTeX.                                            *}%
+\Msg{*                                                           *}%
+\Msg{* Happy TeXing!                                             *}%
+\Msg{*                                                           *}%
+\Msg{*************************************************************}%
+\endgroup%
+
+\endbatchfile
+%</install>
+%<*ignore>
+\fi
+%</ignore>
 %<*class>
 \RequirePackage{expl3}
 %</class>

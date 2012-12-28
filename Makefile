@@ -14,16 +14,17 @@
 ## 
 ## The Current Maintainer of this work is Simon Sigurdhsson.
 ## 
-## This work consists of the files skdoc.dtx, skdoc.ins and Makefile
+## This work consists of the files skdoc.dtx and Makefile
 ## and the derived filebase skdoc.cls.
 .PHONY: all
 all: skdoc.cls skdoc.pdf
 
 skdoc.cls:
-	latex skdoc.ins
+	tex skdoc.dtx
 
 skdoc.pdf:
 	pdflatex skdoc.dtx
 	makeglossaries skdoc
 	pdflatex skdoc.dtx
+	makeglossaries skdoc
 	pdflatex skdoc.dtx
