@@ -16,8 +16,11 @@
 ## 
 ## This work consists of the files skdoc.dtx and Makefile
 ## and the derived filebase skdoc.cls.
-.PHONY: all
+.PHONY: all clean distclean
 all: skdoc.cls skdoc.pdf
+clean:
+	rm -f skdoc.cls
+distclean: clean
 
 skdoc.cls:
 	tex skdoc.dtx
