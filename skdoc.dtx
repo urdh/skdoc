@@ -1,0 +1,1500 @@
+% \iffalse
+%% skdoc documentation class
+%%
+%% Copyright (C) 2012 by Simon Sigurdhsson <sigurdhsson@gmail.com>
+%% 
+%% This work may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%   http://www.latex-project.org/lppl.txt
+%% and version 1.3 or later is part of all distributions of LaTeX
+%% version 2005/12/01 or later.
+%% 
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is Simon Sigurdhsson.
+%% 
+%% This work consists of the files skdoc.dtx, skdoc.ins and Makefile
+%% and the derived filebase skdoc.cls.
+%
+%<*class>
+\RequirePackage{expl3}
+%</class>
+%<*driver>
+\RequirePackage{xparse}
+\ProvidesExplFile{skdoc.dtx}
+%</driver>
+%<class>\ProvidesExplClass{skdoc}
+%<*class>
+    {2012/12/26}{0.9}{skdoc documentation class}
+%</class>
+%
+%<*driver>
+\msg_new:nnn{skdoc-dtx}{not-installed}
+    {Run~`latex'~on~skdoc.ins~before~generating~the~documentation!}
+\IfFileExists{skdoc.cls}{}{
+    \msg_fatal:nn{skdoc-dtx}{not-installed}
+}
+\ExplSyntaxOff
+\DeclareDocumentCommand\MakePercentIgnore{}{\catcode`\%9\relax}
+\DeclareDocumentCommand\MakePercentComment{}{\catcode`\%14\relax}
+\DeclareDocumentCommand\DocInput{m}{
+    \MakePercentIgnore\input{#1}\MakePercentComment
+}
+\documentclass{skdoc}
+\usepackage{hologo}
+\begin{document}
+    \DocInput{skdoc.dtx}
+\end{document}
+% \fi
+%
+% \changes{0.9}{Pre-release version with most of the general
+%               functionality implemented}
+%
+% \package[ctan]{skdoc}
+% \repository{https://github.com/urdh/skdoc}
+% \title{The \pkg{skdoc} document class}
+% \author{Simon Sigurdhsson}
+% \email{sigurdhsson@gmail.com}
+% \version{0.9}
+% \maketitle
+%
+% \begin{abstract}
+% The \pkg{skdoc} class provides macros to document the functionality
+% and implementation of \LaTeX\ packages and document classes. I is
+% loosely based on the \pkg{ydoc} and \pkg{ltxdoc} classes, but has
+% a number of incompatible differences.
+%
+% The class defines a \env{MacroCode} environment which substitutes
+% the usual \pkg{docstrip} method of installing packages. It has the
+% ability to generate both documentation and code in a single run of
+% a single file.
+% \end{abstract}
+%
+% \tableofcontents
+%
+% \section{Introduction}
+% \section{Documentation}
+% \subsection{Planned improvements}
+% Planned improvements of this class include
+% \begin{itemize}
+%     \item Proper documentation of all features, including those
+%           inherited from \pkg{ydoc}.
+%     \item Do things the \LaTeX3 way, rename the variables properly
+%           and generally conform to \pkg{expl3} guidelines when
+%           applicable.
+%     \item Better color scheme.
+%     \item \cs{DescribeEnvironment} has to be improved. The idea is
+%           to typeset the first line as with the macros, but the
+%           environment contents and \cs{end} command typeset below
+%           in a \cs{marginnote}.
+%     \item More organized font scheme. \cs{cs}, \cs{env}, \cs{pkg},
+%           \cs{opt}, \cs{thm} and \cs{bib} must have sensible fonts
+%           and these should be reflected in the implementation details
+%           as well as the description.
+%     \item The uses of \cs{cs} and friens should be recorded in the
+%           index as well.
+%     \item Restructure the code.
+%     \item Starred variants of the implementation environments have to
+%           gobble the arguments that are normally printed!
+%     \item Themes and \hologo{BibTeX} entry types need macros in the
+%           spirit of \cs{Option} and friends.
+% \end{itemize}
+%
+% \Implementation
+% \section{Implementation}
+% \iffalse
+%</driver>
+%<*class>
+% \fi
+% \subsection{Require packages}
+% We begin with loading the \pkg{scrartcl} KOMA-script class and a
+% few packages we'll be needing.
+%    \begin{macrocode}
+\LoadClass[ DIV7,
+            headings=big,
+            numbers=noenddot,
+            abstracton,
+            bibliography=totoc,
+            index=totoc
+        ]{scrartcl}
+%    \end{macrocode}
+% These packages are basic low-level things that we use to declare
+% commands, work with strings and so on.
+%    \begin{macrocode}
+\RequirePackage{etoolbox,xstring,xparse,atbegshi,kvoptions}
+%    \end{macrocode}
+% Now, higher-level packages we use in our definitions.
+%    \begin{macrocode}
+\RequirePackage{verbatim,marginnote,calc,hyperref,multicol,hologo}
+\RequirePackage[nomain,xindy,numberedsection,order=letter,
+                sanitize={description=false,sort=false}]{glossaries}
+%    \end{macrocode}
+% We also include the \pkg{ydoc} packages we'll be extending.
+%    \begin{macrocode}
+\RequirePackage{ydoc-code,ydoc-desc}
+%    \end{macrocode}
+% The rest is basically just styling.
+%    \begin{macrocode}
+\RequirePackage[british]{babel}
+\RequirePackage[babel]{microtype}
+\RequirePackage{scrpage2,PTSerif,ascii}
+\RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
+%    \end{macrocode}
+% \subsection{Error messages}
+% Set up some error message texts for later use.
+%    \begin{macrocode}
+\msg_new:nnn{skdoc}{key-exists}{File~key~"#1"~already~declared!}
+\msg_new:nnn{skdoc}{key-nexists}{File~key~"#1"~hasn't~been~declared!}
+\msg_new:nnn{skdoc}{wrote-file}{Writing~things~to~file~"#1".}
+\msg_new:nnn{skdoc}{read-preamble}{Reading~preamble~from~file~"#1".}
+%    \end{macrocode}
+% \subsection{Options}
+% Define the (as of version 1.0) only option, and process it.
+%    \begin{macrocode}
+\SetupKeyvalOptions{
+    family=skdoc,
+    prefix=skdoc@
+}
+\DeclareStringOption{load}[\jobname]
+\ProcessKeyvalOptions*
+%    \end{macrocode}
+% If the option was used, load the given package if it exists.
+%    \begin{macrocode}
+\IfStrEq{\skdoc@load}{}{}{%
+    \IfFileExists{\skdoc@load.sty}{%
+        \RequirePackage{\skdoc@load}
+    }{}
+}
+%    \end{macrocode}
+% \subsection{The \env{MacroCode} environment}
+% We need a token list and input/output.
+%    \begin{macrocode}
+\tl_new:N\skdoc@temptl
+\ior_new:N\skdoc@input
+\iow_new:N\skdoc@output
+%    \end{macrocode}
+% \begin{macro}{\DeclareFile}[2]
+%   {A list of key-value parameters}
+%   {Filename of the file being declared}
+% This declares a file as part of the bundle, which means we will be
+% writing things to it.
+%    \begin{macrocode}
+\DeclareDocumentCommand\DeclareFile{om}{
+    \group_begin:
+    \keys_define:nn{skdoc@declarefile}{%
+        preamble .value_required:,
+        preamble .code:n = \edef\skdoc@preamble{##1},
+        key .value_required:,
+        key .code:n = \def\skdoc@key{##1}
+    }%
+    \def\skdoc@preamble{}%
+    \def\skdoc@key{#2}%
+    \IfNoValueTF{#1}{}{\keys_set:nn{skdoc@declarefile}{#1}}
+    \tl_new:c{skdoc@output@\skdoc@key}
+    \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{
+        \msg_critical:nnx{skdoc}{key-exists}{\skdoc@key}
+    }{
+        \int_zero_new:c{skdoc@output@\skdoc@key @line}
+    }
+    \IfStrEq{\skdoc@preamble}{}{}{
+        \tl_set:Nx\l_tmpa_tl{\skdoc@preamble}
+        \edef\skdoc@temp{\tl_head:N\l_tmpa_tl}
+        \def\skdoc@preamble@extra{
+            \skdoc@temp\skdoc@temp\space~This~is~file~`#2',~generated~from~`\c_job_name_tl.tex'~(key~`\skdoc@key').
+        }
+    }
+    \expandafter\xdef\csname skdoc@write@#2\endcsname{%
+        \noexpand\msg_log:nnn{skdoc}{wrote-file}{#2}
+        \noexpand\iow_open:Nn\noexpand\skdoc@output{#2}
+        \noexpand\IfStrEq{\skdoc@preamble}{}{}{
+            \noexpand\iow_now:Nx\noexpand\skdoc@output{\skdoc@preamble@extra}
+            \noexpand\iow_now:Nx\noexpand\skdoc@output{\skdoc@preamble}
+        }
+        \noexpand\iow_now:Nx\noexpand\skdoc@output{\noexpand\tl_to_str:c{skdoc@output@\skdoc@key}}
+        \noexpand\iow_close:N\noexpand\skdoc@output
+    }
+    \AfterEndDocument{\csname skdoc@write@#2\endcsname}
+    \group_end:
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{environment}{skdoc@verbatim}[1]
+%   {The key of the file being described}
+% This environment does all the actual work for \env{MacroCode}.
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
+    \iftoggle{skdoc@impl}{\@bsphack}{}
+    \def\skdoc@key{#1}
+    \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
+        \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
+    }%
+    \marginnote{
+        \leavevmode
+        \llap{
+            \scriptsize\color{gray}
+            $\langle$\skdoc@key$\rangle$
+            \makebox[2ex]{\strut}
+        }
+    }
+    \def\verbatim@processline{%
+        \tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
+        \int_gincr:c{skdoc@output@\skdoc@key @line}%
+        \iftoggle{skdoc@impl}{
+            \noindent\leavevmode%
+            \hspace*{-5ex}
+            \begin{minipage}[c][1ex]{\textwidth}
+                \makebox[4ex]{%
+                    \leavevmode
+                    \tiny\color{lightgray}\hfill%
+                    \int_use:c{skdoc@output@\skdoc@key @line}%
+                }%
+                \hspace*{1ex}%
+                {
+                    \verbatim@font\footnotesize
+                    \the\verbatim@line
+                }
+            \end{minipage}
+            \vskip-.75ex\par
+        }{}
+    }%
+    \let\do\@makeother\dospecials\catcode`\^^M\active%
+    \iftoggle{skdoc@impl}{
+        \frenchspacing\@vobeyspaces
+    }{}
+    \verbatim@start%
+}{%
+    \iftoggle{skdoc@impl}{\@esphack}{}%
+}
+%    \end{macrocode}
+% \end{environment}
+% \begin{environment}{MacroCode}[1]
+%   {The key of the file being described}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{MacroCode}{m}{
+    \iftoggle{skdoc@impl}{
+        \vspace{.2\baselineskip}
+        \par\noindent
+    }{}
+    \skdoc@verbatim{#1}
+}{
+    \endskdoc@verbatim
+    \iftoggle{skdoc@impl}{
+        \vspace{.5\baselineskip}
+    }{}
+}
+%    \end{macrocode}
+% \end{environment}
+%
+% \subsubsection{Reading a preamble}
+% \begin{macro}{\PreambleTo}[2]
+%   {A token to which we will save the preamble}
+%   {File to read the preamble from}
+% Read preamble from a document and store in variable.
+%    \begin{macrocode}
+\DeclareDocumentCommand\PreambleTo{mm}{%
+    \group_begin:
+    \msg_info:nnn{skdoc}{read-preamble}{#2}
+    \ior_open:Nn\skdoc@input{#2}
+    \bool_until_do:nn{\ior_if_eof_p:N\skdoc@input}{%
+        \tl_if_empty:NTF\skdoc@temptl{}{%
+            \tl_put_right:Nx\skdoc@temptl{\iow_newline:}
+        }
+        \tl_clear:N\l_tmpb_tl
+        \ior_get_str:NN\skdoc@input\l_tmpa_tl
+        \tl_put_right:Nx\l_tmpb_tl{\tl_head:N\l_tmpa_tl}
+        \IfStrEq{\tl_to_str:N\l_tmpb_tl}{\@percentchar}{%
+            \tl_set_eq:NN\l_tmpb_tl\skdoc@temptl
+            \tl_concat:NNN\skdoc@temptl\l_tmpb_tl\l_tmpa_tl
+        }{%
+            \ior_close:N\skdoc@input
+        }
+    }
+    \xdef#1{\tl_to_str:N\skdoc@temptl}
+    \group_end:
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\SelfPreambleTo}[1]
+%   {A token to which we will save the preamble}
+% Shorthand to read preamble from current document.
+%    \begin{macrocode}
+\DeclareDocumentCommand\SelfPreambleTo{m}{%
+    \PreambleTo{#1}{\c_job_name_tl}%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Styling}
+% \subsubsection{Colors}
+% First, we redefine a couple of colors from \pkg{ydoc} as well as
+% defining a couple for ourselves.
+%    \begin{macrocode}
+\providecolorset{RGB}{}{}{
+    section,11,72,107;
+    extlink,73,10,61;
+    intlink,140,35,24;
+    sharp,250,105,0;
+    bright,198,229,217;
+    macrodesc,73,10,61;
+    keydesc,140,35,24;
+    macroimpl,73,10,61;
+    meta,11,72,107;
+    scriptcolor,140,35,24;
+    optioncolor,250,105,0;
+    opt,250,205,0
+}
+%    \end{macrocode}
+% \subsubsection{Fonts}
+% Then we redefine a couple of the KOMA-script font commands to use
+% our newly defined colors, along with other fixes.
+%    \begin{macrocode}
+\RenewDocumentCommand\descfont{}{\sffamily\fontseries{sb}}
+\RenewDocumentCommand\sectfont{}{\sffamily\fontseries{sb}}
+\addtokomafont{minisec}{\bfseries}
+\addtokomafont{paragraph}{\color{section}}
+\addtokomafont{section}{\color{section}}
+\addtokomafont{subsection}{\color{section}}
+\addtokomafont{subsubsection}{\color{section}}
+\addtokomafont{descriptionlabel}{\color{section}}
+\addtokomafont{sectionentry}{\rmfamily\bfseries}
+\addtokomafont{sectionentrypagenumber}{\rmfamily\bfseries}
+%    \end{macrocode}
+% \subsubsection{Configuring \pkg{hyperref}}
+% Finally, we set up \pkg{hyperref} to also use our colors.
+%    \begin{macrocode}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=intlink,
+    anchorcolor=intlink,
+    citecolor=black,
+    urlcolor=extlink
+}
+%    \end{macrocode}
+%
+% \subsection{Documentation macros}
+% We can now start defining the documentation macros.
+%
+% \subsubsection{Inline referencing}
+% We introduce a couple of macros for referencing various constructs
+% in running text, \emph{i.e.} \cs{cs}-like macros.
+% \begin{macro}{\cs}[1]
+%   {The macro name to be typeset}
+% The \cs{cs} macro typesets a macro.
+%    \begin{macrocode}
+%\DeclareDocumentCommand\cs{m}{\texttt{\textbackslash #1}}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\env}[1]
+%   {The environment name to be typeset}
+% The \cs{env} macro typesets an environment.
+%    \begin{macrocode}
+%\DeclareDocumentCommand\env{m}{\texttt{#1}}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\pkg}[1]
+%   {The package name to be typeset}
+% The \cs{pkg} macro typesets a package.
+%    \begin{macrocode}
+\DeclareDocumentCommand\pkg{m}{\textsf{#1}}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\opt}[1]
+%   {The option name to be typeset}
+% The \cs{opt} macro typesets an option
+%    \begin{macrocode}
+\DeclareDocumentCommand\opt{m}{\texttt{#1}}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\bib}[1]
+%   {The \hologo{BibTeX} entry type name to be typeset}
+% The \cs{bib} macro typesets a \hologo{BibTeX} entry type.
+%    \begin{macrocode}
+\DeclareDocumentCommand\bib{m}{\texttt{@#1}}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\thm}[1]
+%   {The theme name to be typeset}
+% The \cs{thm} macro typesets a theme of some sort.
+%    \begin{macrocode}
+\DeclareDocumentCommand\thm{m}{\textrm{#1}}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsubsection{Descriptional macros}
+% A range of descriptional macros are made available by the \pkg{ydoc}
+% package, but we need to redefine and extend them.
+%
+% We begin with extending.
+% \begin{macro}{\Describe@Macro}[1]
+%   {The macro name, including leading backslash}
+% The \cs{Describe@Macro} macro is changed to typeset its agument in
+% a \cs{marginnote} instead of an \cs{fbox}.
+%    \begin{macrocode}
+\def\Describe@Macro#1{%
+    \endgroup
+    \edef\name{\expandafter\@gobble\string#1}%
+    \global\@namedef{href@desc@\name}{}%
+    \immediate\write\@mainaux{%
+        \global\noexpand\@namedef{href@desc@\name}{}%
+    }%
+    \hbox\y@bgroup
+    \@ifundefined{href@impl@\name}{}{\hyperlink{impl:\name}}%
+    {%
+        \hbox{
+            \vbox to 0pt{
+                \vss\hbox{
+                    \raisebox{4ex}{\hypertarget{desc:\name}{}
+                }
+            }
+        }%
+        \marginnote{\llap{\PrintMacroName{#1}}}
+        }%
+    }%
+    \ydoc@macrocatcodes
+    \macroargsstyle
+    \read@Macro@arg
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\descframe}[1]
+%   {Contents to be framed}
+% Similarly, \cs{descframe} is changed to produce an \cs{mbox}
+% instead of an \cs{fbox}.
+%    \begin{macrocode}
+\def\descframe#1{%
+    \mbox{\hspace*{1.5\descsep}#1\hspace*{2\descsep}}%
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\PrintMacroName}[1]
+%   {Macro name to be printed}
+% \cs{PrintMacroName} is hooked to also index the macro name while
+% printing it.
+%    \begin{macrocode}
+\let\old@PrintMacroName\PrintMacroName
+\DeclareDocumentCommand\PrintMacroName{m}{%
+    \index@macro{#1}
+    \old@PrintMacroName{#1}
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\PrintEnvName}[2]
+%   {Either \cs{end} or \cs{begin}}
+%   {Name of the environment to be printed}
+% Similarly to \cs{PrintMacroName}, the \cs{PrintEnvName} is hooked
+% to index the environment when printing the \cs{begin} part of the
+% environment.
+%    \begin{macrocode}
+\let\old@PrintEnvName\PrintEnvName
+\def\PrintEnvName#1#2{
+    \ifx#1\begin
+        \edef\skdoc@temp{\noexpand\index@environment{#2}}
+        \skdoc@temp
+    \fi
+    \old@PrintEnvName{#1}{#2}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% Then we add a few of our own. For instance, we add macros to
+% typeset descriptions of options. We also undefine the \cs{optpar}
+% macro defined by \pkg{ydoc}, since we supersede it with \cs{Option}.
+%    \begin{macrocode}
+\let\optpar\relax
+%    \end{macrocode}
+% \begin{macro}{\Options}[1]
+%   {A comma-separated list of options}
+%    \begin{macrocode}
+\DeclareDocumentCommand\Options{m}{
+    \clist_set:Nn\l_tmpa_clist{#1}
+    \marginnote{
+        \clist_map_inline:Nn\l_tmpa_clist{
+            \index@option{####1}
+            \hfill
+            \llap{\textcolor{opt}{\opt{####1}}}
+            \mbox{}\\
+        }
+    }
+    \nobreak
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\Option}[1]
+%   {And option}
+%    \begin{macrocode}
+\DeclareDocumentCommand\Option{m}{
+    \Options{#1}
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro*}{\skdoc@WithValues@peek}
+%    \begin{macrocode}
+\def\skdoc@WithValues@peek{
+    \ifx\@let@token\AndDefault\else\par\nobreak\fi
+}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro}{\WithValues}[1]
+%   {Values of a key-value option}
+% The \cs{WithValues} macro peeks ahead to see if there's an
+% \cs{AndDefault} macro further down. It typesets the values of 
+% a key-vaue option
+%    \begin{macrocode}
+\DeclareDocumentCommand\WithValues{m}{
+    \noindent\makebox[\linewidth][l]{\texttt{\textcolor{gray}{#1}}}
+    \futurelet\@let@token\skdoc@WithValues@peek
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\AndDefault}[1]
+%   {The value of a key-value option}
+% Typesets the default value of a key-value option. To the far
+% right of the line.
+%    \begin{macrocode}
+\DeclareDocumentCommand\AndDefault{m}{
+    \llap{\textcolor{gray}{\texttt{(#1)}}}\par\nobreak
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% Lastly, we define an envionment for showing examples. It's
+% rediculously simple, really.
+% \begin{environment}{example}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{example}{}{
+    \minisec{Example:}
+}{}
+%    \end{macrocode}
+% \end{environment}
+%
+% \subsubsection{Implementation environment}
+% We define environments that encase the implementation of macros,
+% environments, options, \hologo{BibTeX} entry types and themes.
+% Watch out---there's a lot of duplicate code here.
+% \begin{environment}{macro}[3]
+%   {True if this is the starred variant}
+%   {Name of the macro being implemented}
+%   {If given, the number of arguments that
+%            \cs{macro@impl@args} will read}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{macro}{smo}{%
+    \@bsphack
+    \index@macro*{#2}
+    \@macroname{#2}%
+    \IfBooleanTF{#1}{}{
+        \PrintMacroImpl{#2}
+        \IfNoValueTF{#3}{
+            \macro@impl@argline@noarg{(no~arguments)}
+        }{\macro@impl@args[#3]}
+    }%
+}{
+    \let\skdoc@macroname@key\@empty
+    \@esphack
+}
+%    \end{macrocode}
+% \end{environment}
+% \begin{environment}{environment}[3]
+%   {True if this is the starred variant}
+%   {Name of the environment being implemented}
+%   {If given, the number of arguments that
+%            \cs{macro@impl@args} will read}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{environment}{smo}{%
+    \@bsphack
+    \index@environment*{#2}
+    \@environmentname{#2}%
+    \IfBooleanTF{#1}{}{
+        \PrintEnvImplName{#2}
+        \IfNoValueTF{#3}{
+            \macro@impl@argline@noarg{(no~arguments)}
+        }{\macro@impl@args[#3]}
+    }%
+}{
+    \let\skdoc@macroname@key\@empty
+    \@esphack
+}
+%    \end{macrocode}
+% \end{environment}
+% \begin{environment}{option}[3]
+%   {True if this is the starred variant}
+%   {Name of the option being implemented}
+%   {Values this key-value option can take}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{option}{smg}{%
+    \@bsphack
+    \index@option*{#2}
+    \@optionname{#2}%
+    \IfBooleanTF{#1}{}{
+        \PrintEnvImplName{#2}
+        \IfNoValueTF{#3}{
+            \macro@impl@argline@noarg{(option)}
+        }{
+            \macro@impl@argline@noarg{
+                Option~with~values~\texttt{\textcolor{gray}{#3}}
+            }
+        }
+    }%
+}{
+    \let\skdoc@macroname@key\@empty
+    \@esphack
+}
+%    \end{macrocode}
+% \end{environment}
+% \begin{environment}{bibentry}[2]
+%   {True if this is the starred variant}
+%   {Name of the \hologo{BibTeX} entry type being implemented}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{bibentry}{sm}{%
+    \@bsphack
+    \index@bibentry*{#2}
+    \@bibentryname{#2}%
+    \IfBooleanTF{#1}{}{
+        \PrintEnvImplName{#2}
+        \macro@impl@argline@noarg{(\hologoRobust{BibTeX}~entry~type)}
+    }%
+}{
+    \let\skdoc@macroname@key\@empty
+    \@esphack
+}
+%    \end{macrocode}
+% \end{environment}
+% \begin{environment}{theme}[2]
+%   {True if this is the starred variant}
+%   {Name of the theme being implemented}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{theme}{sm}{%
+    \@bsphack
+    \index@theme*{#2}
+    \@themename{#2}%
+    \IfBooleanTF{#1}{}{
+        \PrintEnvImplName{#2}
+        \macro@impl@argline@noarg{(theme)}
+    }%
+}{
+    \let\skdoc@macroname@key\@empty
+    \@esphack
+}
+%    \end{macrocode}
+% \end{environment}
+% We also provide starred variants of the environments, which will
+% add the implementation to the index but not print anything.
+% \begin{environment}{macro*}[2]
+%   {Name of the macro being implemented}
+%   {If given, the number of arguments that
+%            \cs{macro@impl@args} will read}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{macro*}{mo}%
+    {\begin{macro}*{#1}[#2]}{\end{macro}}
+%    \end{macrocode}
+% \end{environment}
+% \begin{environment}{environment*}[2]
+%   {Name of the environment being implemented}
+%   {If given, the number of arguments that
+%            \cs{macro@impl@args} will read}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{environment*}{mo}%
+    {\begin{environment}*{#1}[#2]}{\end{environment}}
+%    \end{macrocode}
+% \end{environment}
+% \begin{environment}{option*}[2]
+%   {Name of the option being implemented}
+%   {Values this key-value option can take}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{option*}{mg}%
+    {\begin{option}*{#1}{#2}}{\end{option}}
+%    \end{macrocode}
+% \end{environment}
+% \begin{environment}{bibentry*}[1]
+%   {Name of the \hologo{BibTeX} entry type being implemented}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{bibentry*}{m}%
+    {\begin{bibentry}*{#1}}{\end{bibentry}}
+%    \end{macrocode}
+% \end{environment}
+% \begin{environment}{theme*}[1]
+%   {Name of the theme being implemented}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{theme*}{m}%
+    {\begin{theme}*{#1}}{\end{theme}}
+%    \end{macrocode}
+% \end{environment}
+% And finally, we redefine some of the underlying \pkg{ydoc} macros
+% to behave the way we want them to.
+% For instance, we redefine the commands that print environment and
+% macro implementation names so that they typeset the name i a
+% \cs{marginnote} rather than in an \cs{fbox}.
+% \begin{macro}{\PrintEnvImplName}[1]
+%   {The environment name to be printed}
+%    \begin{macrocode}
+\def\PrintEnvImplName#1{%
+    \par\mbox{}
+    \marginnote{\llap{\implstyle{#1}}}
+    \par
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\PrintMacroImpl}[1]
+%   {The macro name to be printed}
+%    \begin{macrocode}
+\def\PrintMacroImpl#1{%
+    \par
+    \hbox{%
+        \edef\name{\expandafter\@gobble\string#1}%
+        \global\@namedef{href@impl@\name}{}%
+        \immediate\write\@mainaux{%
+            \global\noexpand\@namedef{href@impl@\name}{}%
+        }%
+        \raisebox{4ex}[4ex]{\hypertarget{impl:\name}{}}%
+        \@ifundefined{href@desc@\name}{}{\hyperlink{desc:\name}}%
+        \marginnote{\llap{\PrintMacroImplName{#1}}}%
+    }%
+    \par
+}
+%    \end{macrocode}
+% \end{macro}
+% We also redefine the utility macros belonging to \cs{macro@impl@arg}.
+% \begin{macro*}{\macro@impl@argline}[2]
+%   {The argument number}
+%   {Description of the argument}
+%    \begin{macrocode}
+\def\macro@impl@argline#1#2{%
+    \par\noindent{\texttt{\##1}:~#2\strut}%
+}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\macro@impl@args}[1]
+%   {The number of arguments to read}
+%    \begin{macrocode}
+\def\macro@impl@args[#1]{%
+    \vspace*{-\baselineskip}
+    \begingroup
+    \let\macro@impl@argcnt\@tempcnta
+    \let\macro@impl@curarg\@tempcntb
+    \macro@impl@argcnt=#1\relax
+    \macro@impl@curarg=0\relax
+    \ifnum\macro@impl@curarg<\macro@impl@argcnt\relax
+        \expandafter\macro@impl@arg
+    \else
+        \expandafter\macro@impl@endargs
+    \fi
+}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\macro@impl@endargs}
+%    \begin{macrocode}
+\def\macro@impl@endargs{
+    \endgroup\par
+}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\macro@impl@argline@noarg}[1]
+%   {The line to print instead of an argument line}
+% This last macro is a replacement used when there are no arguments
+% or if the implementation is an option or something like that. It
+% behaves pretty much like \cs{macro@impl@args}, but with only one
+% argument to read.
+%    \begin{macrocode}
+\def\macro@impl@argline@noarg#1{%
+    \vspace*{-\baselineskip}
+    \par\noindent{#1\strut}\par\medskip%
+}
+%    \end{macrocode}
+% \end{macro*}
+%
+% \subsection{The index}
+% The index is based on \pkg{glossaries}, and as such the whole
+% process of adding entries to the index is reduced to adding
+% glossary entries. This is done through two wrapper macros around
+% the \cs{newglossaryentry} macro.
+% \begin{macro}{\@index@}[1]
+%   {The key of the index entry}
+%   {The text of the index entry}
+% What \cs{@index@} does is to decide wether we are hiding the
+% implementation part of the documentation (discussed later), and
+% wether we are in the actual implementation or not. If we are in
+% the implementation and aren't printing it, we shouldn't add an
+% index entry.
+%    \begin{macrocode}
+\DeclareDocumentCommand\@index@{mm}{
+    \iftoggle{skdoc@impl}{
+        \@index@@{#1}{#2}
+    }{
+        \iftoggle{skdoc@in@impl}{}{
+            \@index@@{#1}{#2}
+        }
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\@index@@}[2]
+%   {The key of the index entry}
+%   {The text of the index entry}
+% This macro does the actual adding to the glossary.
+%    \begin{macrocode}
+\DeclareDocumentCommand\@index@@{mm}{
+    \newglossaryentry{index-#1}{
+        type=index,
+        name={#2},
+        description={\nopostdesc},
+        sort={#1}
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsubsection{Adding index entries}
+% These macros add an index entry with different contents depending
+% on the thing (macro, environment, etc.) that is being indexed. They
+% all have starred variants which are used by the implementation
+% environments, and non-starred variants used by the description
+% macros (the star affects the style of the page number).
+% Each environment first test wether the given entry key exists, and
+% defines a new entry if it doesn't. Then, a usage of the entry is
+% recorded.
+% \begin{macro}{\index@macro}[2]
+%   {True if this is the starred variant}
+%   {The name of the macro being indexed, including backslash}
+%    \begin{macrocode}
+\DeclareDocumentCommand\index@macro{sm}{
+    \def\skdoc@temp{\expandafter\@gobble\string#2}
+    \ifglsentryexists{index-\skdoc@temp}{}{
+        \@index@{\expandafter\@gobble\string#2}
+                {\cs{\expandafter\@gobble\string#2}}
+    }
+    \IfBooleanTF{#1}{
+        \glsadd[types=index]{index-\skdoc@temp}
+    }{
+        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\index@environment}[2]
+%   {True if this is the starred variant}
+%   {The name of the environment being indexed}
+%    \begin{macrocode}
+\DeclareDocumentCommand\index@environment{sm}{
+    \def\skdoc@temp{\string#2}
+    \ifglsentryexists{index-\skdoc@temp}{}{
+        \@index@{\string#2}
+                {\env{\string#2}~(environment)}
+    }
+    \IfBooleanTF{#1}{
+        \glsadd[types=index]{index-\skdoc@temp}
+    }{
+        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\index@option}[2]
+%   {True if this is the starred variant}
+%   {The name of the option being indexed}
+%    \begin{macrocode}
+\DeclareDocumentCommand\index@option{sm}{
+    \def\skdoc@temp{\string#2}
+    \ifglsentryexists{index-\skdoc@temp}{}{
+        \@index@{\string#2}
+                {\opt{\string#2}~(option)}
+    }
+    \IfBooleanTF{#1}{
+        \glsadd[types=index]{index-\skdoc@temp}
+    }{
+        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\index@bibentry}[2]
+%   {True if this is the starred variant}
+%   {The name of the \hologo{BibTeX} entry type
+%       being indexed, including initial \texttt{@} sign}
+%    \begin{macrocode}
+\DeclareDocumentCommand\index@bibentry{sm}{
+    \def\skdoc@temp{\expandafter\@gobble\string#2}
+    \ifglsentryexists{index-\skdoc@temp}{}{
+        \@index@{\expandafter\@gobble\string#2}
+                {\bib{\expandafter\@gobble\string#2}~(\hologoRobust{BibTeX}~entry~type)}
+    }
+    \IfBooleanTF{#1}{
+        \glsadd[types=index]{index-\skdoc@temp}
+    }{
+        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\index@theme}[2]
+%   {True if this is the starred variant}
+%   {The name of the theme being indexed}
+%    \begin{macrocode}
+\DeclareDocumentCommand\index@theme{sm}{
+    \def\skdoc@temp{\string#2}
+    \ifglsentryexists{index-\skdoc@temp}{}{
+        \@index@{\string#2}
+                {\thm{\string#2}~(theme)}
+    }
+    \IfBooleanTF{#1}{
+        \glsadd[types=index]{index-\skdoc@temp}
+    }{
+        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsubsection{Displaying the index}
+% Displaying the index is very simple. We begin by defining
+% our own \pkg{glossaries} style.
+%    \begin{macrocode}
+\newglossarystyle{docindex}{
+    \glossarystyle{indexgroup}
+    \renewcommand*{\glspostdescription}{\unskip\leaders\hbox to 2.9mm{\hss.}\hfill\strut}
+    \renewenvironment{theglossary}{
+        \begin{multicols}{2}
+        \setlength{\parindent}{0pt}
+        \setlength{\parskip}{0pt plus 0.3pt}
+        \let\item\@idxitem
+    }{
+        \end{multicols}
+    }
+    \renewcommand*{\glossaryentryfield}[5]{
+        \item\glsentryitem{##1}\glstarget{##1}{##2}
+            \ifx\relax##4\relax\else\space(##4)\fi
+            ##3\glspostdescription\space ##5}
+    \renewcommand*{\glsgroupheading}[1]{
+        \IfStrEq{##1}{default}{
+            \item{\descfont\glssymbolsgroupname}
+        }{
+            \item{\descfont\glsgetgrouptitle{##1}}
+        }
+    }
+    \renewcommand*{\glsgroupskip}{
+        \par\vspace{15\p@}\relax
+    }
+}
+%    \end{macrocode}
+% We follow that up by defining the actual glossay, and making sure
+% to run \cs{makeglossaries} when the preamble is complete.
+%    \begin{macrocode}
+\newglossary{index}{ids}{ido}{Index}
+\AtBeginDocument{\makeglossaries}
+%    \end{macrocode}
+% \begin{macro}{\PrintIndex}
+% Finally, we define a command \cs{PrintIndex} that prints the index.
+% Note the preamble that describes how the index page numbers work.
+%    \begin{macrocode}
+\providecommand*\PrintIndex{%
+    \begingroup
+    \renewcommand*{\glossarypreamble}{
+        Numbers~written~in~italic~refer~to~the~page~where~the~
+        corresponding~entry~is~described;~numbers~in~roman~
+        refer~to~the~code~line~of~the~definition.\par
+    }
+    \printglossary[type=index,style=docindex]
+    \endgroup
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{The changelog}
+% The changelog is implemented as a glossary using the
+% \pkg{glossaries} package. We begin by defining a name
+% for general changes, and commands that save the name of
+% the current macro, environment or similar for use by the
+% \cs{changes} macro.
+% \begin{macro}{\generalname}
+%    \begin{macrocode}
+\DeclareDocumentCommand\generalname{}{General}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro*}{\@macroname}[1]
+%   {Name of the macro being described}
+%    \begin{macrocode}
+\DeclareDocumentCommand\@macroname{m}{
+    \def\skdoc@macroname@stylized{\cs{\expandafter\@gobble\string#1}}
+    \def\skdoc@macroname@key{macro-\expandafter\@gobble\string#1}
+}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\@environmentname}[1]
+%   {Name of the environment being described}
+%    \begin{macrocode}
+\DeclareDocumentCommand\@environmentname{m}{
+    \def\skdoc@macroname@stylized{\env{\string#1}}
+    \def\skdoc@macroname@key{env-#1}
+}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\@optionname}[1]
+%   {Name of the option being described}
+%    \begin{macrocode}
+\DeclareDocumentCommand\@optionname{m}{
+    \def\skdoc@macroname@stylized{\opt{\string#1}}
+    \def\skdoc@macroname@key{opt-#1}
+}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\@ebibentryname}[1]
+%   {Name of the \hologo{BibTeX} entry being described}
+%    \begin{macrocode}
+\DeclareDocumentCommand\@bibentryname{m}{
+    \def\skdoc@macroname@stylized{\bib{\expandafter\@gobble\string#1}}
+    \def\skdoc@macroname@key{bibentry-\expandafter\@gobble\string#1}
+}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\@themename}[1]
+%   {Name of the theme being described}
+%    \begin{macrocode}
+\DeclareDocumentCommand\@themename{m}{
+    \def\skdoc@macroname@stylized{\thm{\string#1}}
+    \def\skdoc@macroname@key{thm-#1}
+}
+%    \end{macrocode}
+% \end{macro*}
+% Along with these we also define the variables they affect as empty.
+%    \begin{macrocode}
+\def\skdoc@macroname@stylized{}
+\let\skdoc@macroname@key\@empty
+%    \end{macrocode}
+%
+% \subsubsection{Adding changes}
+% Since the changelog is based on \pkg{glossaries}, adding changes
+% amounts to simply adding a glossary entry.
+% \begin{macro}{\changes}[2]
+%   {The version in which the changes were made}
+%   {A short description of the changes}
+%    \begin{macrocode}
+\DeclareDocumentCommand\changes{mm}{%
+    \@bsphack
+    \ifglsentryexists{#1}{}{
+        \newglossaryentry{#1}{
+            type=changes,
+            name={v#1},
+            description={\nopostdesc},
+            nonumberlist=true
+        }
+    }
+    \ifx\skdoc@macroname@key\@empty
+        \newglossaryentry{#1-general}{
+            type=changes,
+            description={\generalname{}:~#2},
+            parent={#1},
+            sort={0},
+            nonumberlist=true
+        }
+        \glsadd[types=changes]{#1-general}
+    \else
+        \newglossaryentry{#1-\skdoc@macroname@key}{
+            type=changes,
+            description={\skdoc@macroname@stylized{}:~#2},
+            parent={#1},
+            sort={\skdoc@macroname@key},
+            nonumberlist=true
+        }
+        \glsadd[types=changes]{#1-\skdoc@macroname@key}
+    \fi
+    \@esphack
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsubsection{Displaying the changelog}
+% Displaying the changelog is equally simple. We begin by defining
+% our own \pkg{glossaries} style.
+%    \begin{macrocode}
+\newglossarystyle{changelog}{
+    \glossarystyle{altlist}
+    \renewenvironment{theglossary}{
+        \begin{multicols}{2}\begin{description}
+    }{
+        \end{description}\end{multicols}
+    }
+    \renewcommand*{\glossaryentryfield}[5]{
+        \par\vspace{5\p@}\relax
+        \item[\glsentryitem{##1}\glstarget{##1}{##2}]
+                    \mbox{}\par\nobreak\@afterheading
+    }
+    \renewcommand{\glossarysubentryfield}[6]{%
+        \par\hspace*{\itemindent}
+        \glssubentryitem{##2}%
+        \glstarget{##2}{\strut}##4\glspostdescription\space ##6
+    }
+}
+%    \end{macrocode}
+% We follow that up by defining the actual glossay, and making sure
+% to run \cs{makeglossaries} when the preamble is complete.
+%    \begin{macrocode}
+\newglossary{changes}{gls}{glo}{Changes}
+\AtBeginDocument{\makeglossaries}
+%    \end{macrocode}
+% \begin{macro}{\PrintChanges}
+% Finally, we define a command \cs{PrintChanges} that prints the
+% list of changes.
+%    \begin{macrocode}
+\DeclareDocumentCommand\PrintChanges{}{%
+    \begingroup
+    \printglossary[type=changes,style=changelog]
+    \endgroup
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Hiding the implementation}
+% We define commands to hide the implementation from the documentation.
+% Here, the ``implementation'' is understood to be everything between
+% the \cs{Implementation} and \cs{Finale} macros. What we do is disable
+% and/or reset page and section counters for the duration of the
+% implementation, and set a shipout hook that simply discards the pages
+% while we are in the implementation. A consquence of this is that we
+% must force a page break between what's before the implementation and
+% what's after, which might look horrible.
+%
+% Anyway, we define two toggles that keep track of things. One keeps
+% track of wether to (not) hide the implementation, and one keeps track 
+% of wether we are in the implementation or not. These are provided with
+% sensible defaults (\emph{i.e.} true and false, respectively).
+% We also define a counter in which we save the page number we had when
+% the implementation started.
+%    \begin{macrocode}
+\newtoggle{skdoc@impl}
+\newtoggle{skdoc@in@impl}
+\toggletrue{skdoc@impl}
+\togglefalse{skdoc@in@impl}
+\newcounter{skdoc@impl@page}
+%    \end{macrocode}
+% Then we define the shipout hook. Fairly straight-forward.
+%    \begin{macrocode}
+\AtBeginShipout{
+    \iftoggle{skdoc@impl}{}{
+        \iftoggle{skdoc@in@impl}{\AtBeginShipoutDiscard}{}
+    }
+}
+%    \end{macrocode}
+% \begin{macro}{\OnlyDescription}
+% The \cs{OnlyDescription} macro simply toggles the appropriate toggle.
+%    \begin{macrocode}
+\DeclareDocumentCommand\OnlyDescription{}{\togglefalse{skdoc@impl}}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\Implementation}
+% The \cs{Implementation} macro defines all the sectioning commands
+% to be empty (saving the old ones), clears the page, saves the page
+% number and toggles the appropriate toggle.
+%    \begin{macrocode}
+\DeclareDocumentCommand\Implementation{}{
+    \iftoggle{skdoc@impl}{}{
+        \clearpage
+        \toggletrue{skdoc@in@impl}
+        \let\skdoc@old@part\part
+        \DeclareDocumentCommand\part{som}{}
+        \let\skdoc@old@section\section
+        \DeclareDocumentCommand\section{som}{}
+        \let\skdoc@old@subsection\subsection
+        \DeclareDocumentCommand\subsection{som}{}
+        \let\skdoc@old@subsubsection\subsubsection
+        \DeclareDocumentCommand\subsubsection{som}{}
+        \let\skdoc@old@paragraph\paragraph
+        \DeclareDocumentCommand\paragraph{som}{}
+        \let\skdoc@old@subparagraph\subparagraph
+        \DeclareDocumentCommand\subparagraph{som}{}
+        \setcounter{skdoc@impl@page}{\value{page}}
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\Finale}
+% The \cs{Finale} macro basically just undoes what the 
+% \cs{Implementation} macro did.
+%    \begin{macrocode}
+\DeclareDocumentCommand\Finale{}{
+    \iftoggle{skdoc@impl}{}{
+        \clearpage
+        \togglefalse{skdoc@in@impl}
+        \let\part\skdoc@old@part
+        \let\section\skdoc@old@section
+        \let\subsection\skdoc@old@subsection
+        \let\subsubsection\skdoc@old@subsubsection
+        \let\paragraph\skdoc@old@paragraph
+        \let\subparagraph\skdoc@old@subparagraph
+        \setcounter{page}{\value{skdoc@impl@page}}
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Document metadata}
+% \subsubsection{Setting metadata}
+% We override a bunch of the general titlepage macros and add a few
+% of our own. First, we initialize the underlying variables.
+%    \begin{macrocode}
+\let\@ctan\@empty%
+\let\@repository\@empty%
+\let\@plainemail\@empty%
+\let\@email\@empty%
+\let\@version\@empty%
+%    \end{macrocode}
+% Then, we define the actual macros.
+% \begin{macro}{\package}[2]
+%   {A list of key-value options}
+%   {The package name}
+% The \cs{package} macro sets the package name of the documentation.
+% The key-value options are \opt{vcs} and \opt{ctan}.
+%    \begin{macrocode}
+\DeclareDocumentCommand\package{om}{%
+    \keys_define:nn{skdoc@package}{%
+        vcs .value_required:,%
+        vcs .code:n = \repository{##1},%
+        ctan .code:n = \ctan{##1},%
+        ctan .default:n = #2%
+    }%
+    \IfNoValueTF{#1}{}{\keys_set:nn{skdoc@package}{#1}}%
+    \def\@package{#2}%
+    \title{The~\textsf{\textbf{\@package}}~package}%
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\ctan}[1]
+%   {The name of a package or bundle on CTAN}
+%    \begin{macrocode}
+\DeclareDocumentCommand\ctan{m}{%
+    \def\@ctan{\url{http://www.ctan.org/pkg/#1}}%
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\repository}[1]
+%   {The URI of an online repository}
+%    \begin{macrocode}
+\DeclareDocumentCommand\repository{m}{%
+    \def\@repository{\url{#1}}%
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\email}[1]
+%   {The email address of the author}
+%    \begin{macrocode}
+\DeclareDocumentCommand\email{m}{%
+    \def\@plainemail{#1}%
+    \def\@email{\href{mailto:\@plainemail}{\@plainemail}}%
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\version}[1]
+%   {The version of the package, with no leading ``v''}
+%    \begin{macrocode}
+\DeclareDocumentCommand\version{m}{%
+    \def\@version{#1}%
+}
+%    \end{macrocode}
+% \end{macro}
+% Finally, we set the default package name to \cs{jobname}.
+%    \begin{macrocode}
+\package{\jobname}
+%    \end{macrocode}
+%
+% \subsubsection{Using metadata}
+% We define two macros that read useful metadata; \cs{theversion}
+% and \cs{thepackage}. These are used internally by \cs{maketitle}.
+% \begin{macro}{\theversion}
+%    \begin{macrocode}
+\DeclareDocumentCommand\theversion{}{v\@version}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\thepackage}
+%    \begin{macrocode}
+\DeclareDocumentCommand\thepackage{}{\pkg{\@package}}
+%    \end{macrocode}
+% \end{macro}
+% Additionally we define \cs{skdocpdfsettings}, which is also used
+% by \cs{maketitle}, to include PDF metadata if the documentation
+% is being compiled using \hologo{pdfLaTeX}.
+%    \begin{macrocode}
+\ifpdf
+    \def\skdocpdfsettings{%
+        \hypersetup{%
+            pdfauthor   = {\@author\space<\@plainemail>},
+            pdftitle    = {\@title},
+            pdfsubject  = {Documentation~of~LaTeX~package~\@package},
+            pdfkeywords = {\@package,~LaTeX,~TeX}
+        }%
+    }%
+\else
+    \let\skdocpdfsettings\empty%
+\fi
+%    \end{macrocode}
+%
+% \subsection{General document commands}
+% Most of the general document commands are defined by the
+% \pkg{scrartcl} document class we base ourselves on, but a few
+% of them have to be redefined.
+%
+% \subsubsection{The title page}
+% The title page consists of the \cs{maketitle} and the \env{abstract}.
+% We redefine both, inspired slightly by the Prac\TeX\ journal and the
+% \pkg{skrapport} document class.
+% \begin{macro}{\@maketitle}
+%    \begin{macrocode}
+\def\@maketitle{%
+    \newpage
+    \null
+    \begin{flushleft}%
+    {%
+        \Huge\sectfont\@title%
+        \ifx\@ctan\@empty\else%
+            \footnote{Available~on~\@ctan.}%
+        \fi
+        \ifx\@repository\@empty\else%
+            \footnote{Development~version~available~on~\@repository.}%
+        \fi%
+        \par%
+    }%
+    \vskip 1em
+    {%
+        \Large\@author
+        \ifx\@email\@empty\else%
+            \space
+            \newlength\skdoc@minipage@ew%
+            \settowidth{\skdoc@minipage@ew}{%
+                \normalsize{$\lceil${\@email}$\rfloor$}}
+            \begin{minipage}[b]{\skdoc@minipage@ew}
+                \normalsize{$\lceil${\@email}$\rfloor$}
+            \end{minipage}\par%
+        \fi%
+    }%
+    \ifx\@version\@empty\else
+        \vskip .5em
+        {%
+            \large Version~\@version\par%
+        }%
+    \fi
+    \end{flushleft}%
+    \par\bigskip%
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\maketitle}
+%    \begin{macrocode}
+\def\maketitle{%
+    \skdocpdfsettings
+    \renewcommand\thefootnote{\@fnsymbol\c@footnote}
+    \@maketitle
+    \skdocpdfsettings
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{environment}{abstract}
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{abstract}{}{
+    \newlength\skdoc@abstract@tw%
+    \newlength\skdoc@abstract@aw%
+    \settowidth{\skdoc@abstract@tw}{\descfont\abstractname}%
+    \setlength{\skdoc@abstract@aw}{\the\textwidth-\the\skdoc@abstract@tw-2em}%
+    \begin{minipage}{\textwidth}
+        \begin{minipage}[t]{\skdoc@abstract@tw}%
+            \begin{flushright}%
+                \leavevmode\descfont\abstractname%
+            \end{flushright}%
+        \end{minipage}%
+        \hspace{1em}%
+        \begin{minipage}[t]{\skdoc@abstract@aw}%
+}{
+        \end{minipage}
+    \end{minipage}
+}
+%    \end{macrocode}
+% \end{environment}
+%
+% \subsubsection{Table of contents}
+% The table of contents are redefined to imitate the excellent table
+% of contents of the \pkg{microtype} manual.
+% \begin{macro*}{\l@section}
+%    \begin{macrocode}
+\let\l@section@\l@section
+\def\l@section{\vskip -.75ex\l@section@}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\l@subsection}
+%    \begin{macrocode}
+\def\l@subsection{\vskip.35ex\penalty\@secpenalty\@dottedtocline{2}{1.5em}{2.7em}}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{l@subsubsection}
+%    \begin{macrocode}
+\def\l@subsubsection#1#2{
+    \leftskip 4.2em
+    \parindent 0pt
+    {\let\numberline\@gobble{\small #1~[#2]}}
+}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\l@table}
+%    \begin{macrocode}
+\def\l@table{\@dottedtocline{1}{0pt}{1.5em}}
+%    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\l@figure}
+%    \begin{macrocode}
+\def\l@figure{\@dottedtocline{1}{0pt}{1.5em}}
+%    \end{macrocode}
+% \end{macro*}
+%    \begin{macrocode}
+\def\@pnumwidth{1.7em}
+\AtEndDocument{\addtocontents{toc}{\par}}
+%    \end{macrocode}
+% \begin{macro}{\tableofcontents}
+%    \begin{macrocode}
+\let\old@tableofcontents\tableofcontents
+\DeclareDocumentCommand\tableofcontents{}{
+    \microtypesetup{protrusion=false}
+    \old@tableofcontents
+    \microtypesetup{protrusion=true}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Cosmetic changes}
+% We perform a couple of cosmetic changes to existing features as
+% well. First, we set a new header/footer style using the KOMA-script
+% \cs{deftripstyle} macro.
+%    \begin{macrocode}
+\deftripstyle{skdoc}%
+    {}{}{}%
+    {\small The~\textsf{\textbf{\@package}}~package,~v\@version}{}{\small\pagemark}
+\AfterBeginDocument{\pagestyle{skdoc}}
+%    \end{macrocode}
+% We also redefine the section level format to set the section numbers
+% in the margin, much like the \pkg{microtype} manual.
+%    \begin{macrocode}
+\RenewDocumentCommand{\othersectionlevelsformat}{m}{%
+    \makebox[0pt][r]{%
+    \fontfamily{fos}\mdseries\selectfont
+    \csname the#1\endcsname\enskip}%
+}
+%    \end{macrocode}
+% Finally, we actually use \pkg{microtype} in the document class, and
+% make sure to disable it in the verbatim environments.
+% Set up microtype properly
+%    \begin{macrocode}
+\g@addto@macro\@verbatim{\microtypesetup{activate=false}}
+\microtypesetup{expansion,kerning,spacing,tracking}
+\DisableLigatures{family = tt*}
+%    \end{macrocode}
+% Oh, and we want \cs{marginpar}s on the left, not on the right.
+%    \begin{macrocode}
+\AtBeginDocument{\reversemarginpar}
+%    \end{macrocode}
+%
+% That's it, we're done!
+%    \begin{macrocode}
+\endinput
+%    \end{macrocode}
+% \iffalse
+%</class>
+% \fi
+% \Finale
+% \PrintChanges
+% \PrintIndex
+% \endinput

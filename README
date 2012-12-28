@@ -14,16 +14,17 @@
 %% 
 %% The Current Maintainer of this work is Simon Sigurdhsson.
 %% 
-%% This work consists of the files skdoc.dtx and skdoc.ins and the
-%% derived filebase skdoc.cls.
+%% This work consists of the files skdoc.dtx, skdoc.ins and Makefile
+%% and the derived filebase skdoc.cls.
 
-This is version 0.0 of the skdoc document class. It is designed to
+This is version 0.9 of the skdoc document class. It is designed to
 generate both documentation and derivative files using only LaTeX,
 i.e. without using docstrip and ins/dtx files.
 
 The following files are enclosed.
 
   README        - This file
+  Makefile      - GNU Makefile for making the package and documentation
   skdoc.dtx     - LaTeX source code of the package
   skdoc.ins     - LaTeX installation file generating .bst and .sty files
   skdoc.pdf     - PDF version of the documentation
