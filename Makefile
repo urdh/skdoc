@@ -28,6 +28,7 @@ distclean: clean
 %.pdf:
 	pdflatex $*.dtx
 	makeglossaries $*
+	biber $*
 	pdflatex $*.dtx
 	makeglossaries $*
 	pdflatex $*.dtx

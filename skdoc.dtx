@@ -90,6 +90,18 @@
 }
 \documentclass{skdoc}
 \usepackage{hologo}
+\usepackage[style=authoryear]{biblatex}
+%%\usepackage{chslacite}
+\begin{filecontents}{skdoc.bib}
+@online{Lazarides12,
+    author = {Yannis Lazarides},
+    title = {Different approach to literate programming for \LaTeX},
+    year = {2012},
+    url = {http://tex.stackexchange.com/questions/47237/different-approach-to-literate-programming-for-latex}
+}
+\end{filecontents}
+\addbibresource{skdoc.bib}
+%\OnlyDescription
 \begin{document}
     \DocInput{skdoc.dtx}
 \end{document}
@@ -119,11 +131,86 @@
 % a single file.
 % \end{abstract}
 %
-% \tableofcontents
+% \clearpage
 %
 % \section{Introduction}
+% This document class, inspired by a question on the \TeX\ Stack
+% Exchange\footcite{Lazarides12}, aims to provide an alternative to
+% the standard \pkg{docstrip} method of literate programming for
+% \LaTeX\ packages. It also aims to provide a more modern, appealing
+% style for \LaTeX\ package documentation.
+%
+% In order to achieve this, it builds upon already existing features
+% of the \pkg{expl3}, \pkg{verbatim} and \pkg{ydoc} packages as well
+% as the KOMA-script document classes.
+%
+% So far it is mainly intended to be an experiment to explore a less
+% cumbersome way of writing \LaTeX\ packages, and as such I give no
+% guarantee that this package will continue to exist in a working
+% state (\emph{i.e.} future users may not be able to extract code from
+% package documentation based on \thepkg) or that its public API
+% (commands and environments described by this documentation; consider
+% undocumented macros part of a private API) will be stable.
+%
+% The documentation of \thepkg\ is in fact typeset using the class
+% itself. It does not, however, make use of the main feature of this
+% class (the \env{MacroCode} environment), because bootstrapping the
+% class to generate itself is more complicated than it is useful.
+%
 % \section{Documentation}
-% \DescribeMacro\cs*{<macro name>}
+%
+% \subsection{Options}
+% Only one: `load`
+%
+% \subsection{General macros}
+% \subsubsection{Metadata}
+% \cs{package}, \cs{ctan}, \cs{repository}, \cs{email},
+% \cs{version}, \cs{author}, \cs{title},
+% \cs{theversion}, \cs{thepackage}, \cs{thepkg}
+% \subsubsection{The preamble}
+% \cs{maketitle}, \env{abstract}, \cs{tableofcontents}
+% \subsubsection{The LPPL license}
+% \cs{PrintLPPL}
+%
+% \subsection{Referential macros}
+% \cs{cs}, \cs{end}, \cs{pkg}, \cs{opt}, \cs{bib},
+% \cs{thm}, \cs{file}
+%
+% \subsection{Documenting the package}
+% Refer to \pkg{ydoc} documentation but point out that macros
+% not also described here are not guaranteed to work
+% \subsubsection{Options}
+% \cs{Options}, \cs{Option}, \cs{WithValues}, \cs{AndDefault}
+% \subsubsection{Macros}
+% \cs{DescribeMacro}, \cs{Macro}, \cs{MacroArgs}, \cs{AlsoMacro}
+% explain that the corresponding environments are unsupported
+% (they should emit a warning to be honest)
+% \subsubsection{Environments}
+% \env{DescribeEnv}, \cs{DescribeEnv}
+% \subsubsection{Other entities}
+% \hologo{BibTeX} entry types (not implemented),
+% themes (not implemented), special files (not implemented)
+%
+% \subsection{Describing the implementation}
+% \subsubsection{Implementation environments}
+% \env{macro}, \env{environment}, \env{option}, \env{bibentry},
+% \env{theme}
+% \subsubsection{The \env{MacroCode} environment}
+% \env{MacroCode}, \cs{DeclareFile}, \cs{PreambleTo}, 
+% \cs{SelfPreambleTo}
+% \subsubsection{Hiding the implementation}
+% \cs{OnlyDescription}, \cs{Implementation}, \cs{Finale}
+%
+% \subsection{Documenting changes}
+% Explain: don't forget to run makeglossaries!
+% \cs{changes}, \cs{PrintChanges}
+%
+% \subsection{Producing an index}
+% Explain that all previously mentioned macros, (\emph{i.e.} \cs{cs},
+% \cs{DescribeMacro} and \env{macro} for macros) automatically index
+% all uses. Also: don't forget to run makeglossaries!
+% \cs{PrintIndex}
+%
 % \subsection{Planned improvements}
 % Planned improvements of this class include
 % \begin{itemize}
@@ -155,6 +242,7 @@
 %           be supported at all, or maybe fixed if possible.
 %     \item We might have to \cs{leavevmode} at the beginning of
 %           \env{macro} \emph{et. al}.
+%     \item Apparently, \cs{OnlyDescription} breaks indexing badly.
 % \end{itemize}
 %
 % \Implementation
@@ -171,7 +259,7 @@
             headings=big,
             numbers=noenddot,
             abstracton,
-            bibliography=totoc,
+            bibliography=totocnumbered,
             index=totoc
         ]{scrartcl}
 %    \end{macrocode}
@@ -1606,12 +1694,16 @@
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro}{\maketitle}
+% \changes{0.99}{Added group to make footnote symbol change local}
 %    \begin{macrocode}
 \def\maketitle{%
+    \begingroup
     \skdocpdfsettings
     \renewcommand\thefootnote{\@fnsymbol\c@footnote}
     \@maketitle
+    \setcounter{footnote}{0}
     \skdocpdfsettings
+    \endgroup
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1773,6 +1865,15 @@
 \microtypesetup{expansion,kerning,spacing,tracking}
 \DisableLigatures{family = tt*}
 %    \end{macrocode}
+% We also want numbers on the bibliography headings, if we are loading
+% \pkg{biblatex}.
+%    \begin{macrocode}
+\AtBeginDocument{
+    \ifdefined\defbibheading
+        \defbibheading{bibliography}[\bibname]{\section{#1}}
+    \fi
+}
+%    \end{macrocode}
 % Oh, and we want \cs{marginpar}s on the left, not on the right.
 %    \begin{macrocode}
 \AtBeginDocument{\reversemarginpar}
@@ -1788,4 +1889,5 @@
 % \Finale
 % \PrintChanges
 % \PrintIndex
+% \printbibliography
 % \endinput

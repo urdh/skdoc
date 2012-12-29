@@ -43,3 +43,6 @@
 *.tmp
 *.ido
 *.ids
+*.bcf
+*.bib
+*.xml
