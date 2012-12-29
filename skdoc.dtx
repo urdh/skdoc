@@ -140,11 +140,10 @@
 %           \cs{opt}, \cs{thm} and \cs{bib} must have sensible fonts
 %           and these should be reflected in the implementation details
 %           as well as the description.
-%     \item The indexing of macros (not the rest, it seems) is broken.
-%           Some macros have their implementation indexed, others don't,
-%           and some index their implementation as use and their use
-%           as implementation! this is going to be a difficult bug, and
-%           we should verify and test it on a smaller document.
+%     \item Macro indexing is probably not broken, something in
+%           \file{skdoc.dtx} is breaking it. Oh well, hopefully it
+%           won't affect other documentation.
+%     \item Boldfaced page numbers in the index are not obvious.
 %     \item Restructure the code.
 %     \item Starred variants of the implementation environments have to
 %           gobble the arguments that are normally printed!
@@ -154,6 +153,8 @@
 %           by arguments.
 %     \item \cs{DescribeMacrosTab} is completely broken and should not
 %           be supported at all, or maybe fixed if possible.
+%     \item We might have to \cs{leavevmode} at the beginning of
+%           \env{macro} \emph{et. al}.
 % \end{itemize}
 %
 % \Implementation
@@ -203,6 +204,7 @@
 \msg_new:nnn{skdoc}{key-nexists}{File~key~"#1"~hasn't~been~declared!}
 \msg_new:nnn{skdoc}{wrote-file}{Writing~things~to~file~"#1".}
 \msg_new:nnn{skdoc}{read-preamble}{Reading~preamble~from~file~"#1".}
+\msg_new:nnn{skdoc}{no-lppl}{Could~not~include~LPPL:~lppl.tex~does~not~exist!}
 %    \end{macrocode}
 % \subsection{Options}
 % Define the (as of version 1.0) only option, and process it.
@@ -522,6 +524,20 @@
     \textrm{#2}
     \iftoggle{skdoc@noindex}{}{
         \IfBooleanTF{#1}{}{\index@theme{#2}}
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\file}[2]
+%   {True if this is the starred variant}
+%   {The file name to be typeset}
+% The \cs{file} macro typesets a file name.
+% \changes{0.99}{Added \cs{file} macro to typeset file names}
+%    \begin{macrocode}
+\DeclareDocumentCommand\file{sm}{
+    \texttt{#2}
+    \iftoggle{skdoc@noindex}{}{
+        \IfBooleanTF{#1}{}{\index@file{#2}}
     }
 }
 %    \end{macrocode}
@@ -1124,6 +1140,29 @@
 }
 %    \end{macrocode}
 % \end{macro}
+% \begin{macro}{\index@file}[3]
+%   {True if this is the starred variant}
+%   {True if this is the exclamation variant}
+%   {The name of the file being indexed}
+% \changes{0.99}{Added macro to index mentions of files}
+%    \begin{macrocode}
+\DeclareDocumentCommand\index@file{st!m}{
+    \def\skdoc@temp{\string#3}
+    \ifglsentryexists{index-\skdoc@temp}{}{
+        \@index@{\string#3}{\file*{\string#3}~(file)}
+    }
+    \IfBooleanTF{#2}{
+        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    }{
+        \IfBooleanTF{#1}{
+            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+        }{
+            \glsadd[types=index]{index-\skdoc@temp}
+        }
+    }
+}
+%    \end{macrocode}
+% \end{macro}
 %
 % \subsubsection{Displaying the index}
 % Displaying the index is very simple. We begin by defining
@@ -1644,6 +1683,65 @@
     \old@tableofcontents
     \microtypesetup{protrusion=true}
     \togglefalse{skdoc@noindex}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsubsection{Including the LPPL license}
+% A helper macro that includes the LPPL license is also provided.
+% \begin{macro}{\PrintLPPL}
+% \changes{0.99}{Added \cs{PrintLPPL} macro}
+%    \begin{macrocode}
+\DeclareDocumentCommand\PrintLPPL{}{
+    \begingroup
+    \IfFileExists{lppl.tex}{
+        \let\old@verbatim@font\verbatim@font
+        \def\verbatim@font{
+            \old@verbatim@font\tiny
+        }
+        \def\LPPLicense{\begingroup\small}
+        \def\endLPPLicense{\endmulticols\endgroup}
+        \DeclareDocumentCommand\LPPLsection{m}{
+            \section{####1}
+        }
+        \DeclareDocumentCommand\skdoc@lppl@hack{m}{
+            \end{multicols}
+            \begin{multicols}{2}
+                [\subsection*{####1}][6\baselineskip]
+        }
+        \DeclareDocumentCommand\LPPLsubsection{m}{
+            \subsection*{####1}
+            \let\LPPLsubsection\skdoc@lppl@hack
+            \begin{multicols}{2}
+        }
+        \DeclareDocumentCommand\LPPLsubsubsection{m}{
+            \subsubsection*{####1}
+        }
+        \DeclareDocumentCommand\LPPLparagraph{m}{\paragraph*{####1}}
+        \DeclareDocumentCommand\LPPLfile{m}{\file{####1}}
+        \let\oldmakeatletter\makeatletter
+        \long\def\makeatletter####1\makeatother{
+            \let\makeatletter\oldmakeatletter
+        }
+        \setlength\leftmargini{15pt}
+        \setlength\leftmarginii{12.5pt}
+        \setlength\leftmarginiii{10pt}
+        \newenvironment{enum}[1][0]{
+            \list\labelenumi{
+                \usecounter{enumi}
+                \setcounter{enumi}{####1}
+                \addtocounter{enumi}{-1}
+                \leftmargin 30pt
+                \itemindent-15pt
+                \labelwidth 15pt
+                \labelsep 0pt
+                \def\makelabel########1{########1\hss}}
+        }{\endlist}
+        \input{lppl}
+    }{
+        \msg_warning:nn{skdoc}{no-lppl}
+    }
+    \endgroup
 }
 %    \end{macrocode}
 % \end{macro}
