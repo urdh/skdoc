@@ -90,7 +90,7 @@
 }
 \documentclass{skdoc}
 \usepackage{hologo}
-\usepackage[style=authoryear]{biblatex}
+\usepackage[style=authoryear,backend=biber]{biblatex}
 %%\usepackage{chslacite}
 \begin{filecontents}{skdoc.bib}
 @online{Lazarides12,
@@ -129,7 +129,7 @@
 % a single file.
 % \end{abstract}
 %
-% \clearpage
+% \tableofcontents
 %
 % \section{Introduction}
 % This document class, inspired by a question on the \TeX\ Stack
@@ -228,7 +228,6 @@
 %     \item Macro indexing is probably not broken, something in
 %           \file{skdoc.dtx} is breaking it. Oh well, hopefully it
 %           won't affect other documentation.
-%     \item Boldfaced page numbers in the index are not obvious.
 %     \item Restructure the code.
 %     \item Starred variants of the implementation environments have to
 %           gobble the arguments that are normally printed!
@@ -279,6 +278,7 @@
 %    \end{macrocode}
 % The rest is basically just styling.
 %    \begin{macrocode}
+\RequirePackage{csquotes}
 \RequirePackage[british]{babel}
 \RequirePackage[babel]{microtype}
 \RequirePackage{scrpage2,PTSerif,ascii}
@@ -1073,7 +1073,7 @@
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1095,7 +1095,7 @@
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1117,7 +1117,7 @@
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1140,7 +1140,7 @@
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1162,7 +1162,7 @@
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1184,7 +1184,7 @@
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1206,11 +1206,23 @@
         \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperbf]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
     }
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% Notice the references to \cs{hyperul}? We need to define that as
+% well. It's simple enough:
+% \begin{macro}{\hyperul}[1]
+%   {Word to underline and link}
+%    \begin{macrocode}
+\AtBeginDocument{\GlsAddXdyAttribute{hyperul}}
+\ProvideDocumentCommand\hyperul{m}{
+    \underline{\hyperup{#1}}
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1262,7 +1274,7 @@
     \begingroup
     \renewcommand*{\glossarypreamble}{
         Numbers~written~in~boldface~refer~to~the~page~where~the~
-        corresponding~entry~is~described;~numbers~in~italic~refer~
+        corresponding~entry~is~described;~numbers~underlined~refer~
         to~the~page~were~the~implementation~of~the~corresponding~
         entry~is~discussed.~Numbers~in~roman~refer~to~other~
         mentions~of~the~entry.\par
