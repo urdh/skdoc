@@ -73,7 +73,7 @@
 %</driver>
 %<class>\ProvidesExplClass{skdoc}
 %<*class>
-    {2012/12/26}{0.99}{skdoc documentation class}
+    {2012/12/26}{1.0}{skdoc documentation class}
 %</class>
 %
 %<*driver>
@@ -107,16 +107,14 @@
 \end{document}
 % \fi
 %
-% \changes{1.0}{First version released on CTAN}
-% \changes{0.99}{Implementing various todo items}
-% \changes{0.9}{Initial version}
+% \changes{1.0}{Initial version}
 %
 % \package[ctan=skbundle,vcs=https://github.com/urdh/skdoc]{skdoc}
 % \repository{https://github.com/urdh/skdoc}
 % \title{The \thepkg{} document class}
 % \author{Simon Sigurdhsson}
 % \email{sigurdhsson@gmail.com}
-% \version{0.99}
+% \version{1.0}
 % \maketitle
 %
 % \begin{abstract}
@@ -255,6 +253,7 @@
 % We begin with loading the \pkg{scrartcl} KOMA-script class and a
 % few packages we'll be needing.
 %    \begin{macrocode}
+\PassOptionsToPackage{log-declarations=false}{xparse}
 \LoadClass[ DIV7,
             headings=big,
             numbers=noenddot,
@@ -535,7 +534,6 @@
 %   {True if this is the starred variant}
 %   {The macro name to be typeset}
 % The \cs{cs} macro typesets a macro.
-% \changes{0.99}{Optionally index the use of the macro name}
 %    \begin{macrocode}
 \DeclareDocumentCommand\cs{sm}{
     \texttt{\char`\\#2}
@@ -549,7 +547,6 @@
 %   {True if this is the starred variant}
 %   {The environment name to be typeset}
 % The \cs{env} macro typesets an environment.
-% \changes{0.99}{Optionally index the use of the environment name}
 %    \begin{macrocode}
 \DeclareDocumentCommand\env{sm}{
     \texttt{#2}
@@ -563,7 +560,6 @@
 %   {True if this is the starred variant}
 %   {The package name to be typeset}
 % The \cs{pkg} macro typesets a package.
-% \changes{0.99}{Optionally index the use of the package name}
 %    \begin{macrocode}
 \DeclareDocumentCommand\pkg{sm}{
     \textsf{#2}
@@ -577,7 +573,6 @@
 %   {True if this is the starred variant}
 %   {The option name to be typeset}
 % The \cs{opt} macro typesets an option
-% \changes{0.99}{Optionally index the use of the option}
 %    \begin{macrocode}
 \DeclareDocumentCommand\opt{sm}{
     \texttt{#2}
@@ -591,8 +586,6 @@
 %   {True if this is the starred variant}
 %   {The \hologo{BibTeX} entry type name to be typeset}
 % The \cs{bib} macro typesets a \hologo{BibTeX} entry type.
-% \changes{0.99}{Optionally index the use of the \hologo{BibTeX}
-%               entry type}
 %    \begin{macrocode}
 \DeclareDocumentCommand\bib{sm}{
     \texttt{@#2}
@@ -606,7 +599,6 @@
 %   {True if this is the starred variant}
 %   {The theme name to be typeset}
 % The \cs{thm} macro typesets a theme of some sort.
-% \changes{0.99}{Optionally index the use of the theme name}
 %    \begin{macrocode}
 \DeclareDocumentCommand\thm{sm}{
     \textrm{#2}
@@ -620,7 +612,6 @@
 %   {True if this is the starred variant}
 %   {The file name to be typeset}
 % The \cs{file} macro typesets a file name.
-% \changes{0.99}{Added \cs{file} macro to typeset file names}
 %    \begin{macrocode}
 \DeclareDocumentCommand\file{sm}{
     \texttt{#2}
@@ -681,8 +672,6 @@
 %   {Macro name to be printed}
 % \cs{PrintMacroName} is hooked to also index the macro name while
 % printing it.
-% \changes{0.99}{Using starred variant of \cs{index@macro} to reflect
-%               changes elsewhere}
 %    \begin{macrocode}
 \let\old@PrintMacroName\PrintMacroName
 \DeclareDocumentCommand\PrintMacroName{m}{%
@@ -697,8 +686,6 @@
 % Similarly to \cs{PrintMacroName}, the \cs{PrintEnvName} is hooked
 % to index the environment when printing the \cs{begin} part of the
 % environment.
-% \changes{0.99}{Using starred variant of \cs{index@environment} to 
-%               reflect changes elsewhere}
 %    \begin{macrocode}
 \let\old@PrintEnvName\PrintEnvName
 \def\PrintEnvName#1#2{
@@ -719,8 +706,6 @@
 %    \end{macrocode}
 % \begin{macro}{\Options}[1]
 %   {A comma-separated list of options}
-% \changes{0.99}{Using starred variant of \cs{index@option} to reflect
-%               changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentCommand\Options{m}{
     \clist_set:Nn\l_tmpa_clist{#1}
@@ -797,8 +782,6 @@
 %   {Name of the macro being implemented}
 %   {If given, the number of arguments that
 %            \cs{macro@impl@args} will read}
-% \changes{0.99}{Using exclamation variant of \cs{index@macro} to 
-%               reflect changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{macro}{smo}{%
     \@bsphack
@@ -821,8 +804,6 @@
 %   {Name of the environment being implemented}
 %   {If given, the number of arguments that
 %            \cs{macro@impl@args} will read}
-% \changes{0.99}{Using exclamation variant of \cs{index@envionment} to 
-%               reflect changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{environment}{smo}{%
     \@bsphack
@@ -844,8 +825,6 @@
 %   {True if this is the starred variant}
 %   {Name of the option being implemented}
 %   {Values this key-value option can take}
-% \changes{0.99}{Using exclamation variant of \cs{index@option} to 
-%               reflect changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{option}{smg}{%
     \@bsphack
@@ -870,8 +849,6 @@
 % \begin{environment}{bibentry}[2]
 %   {True if this is the starred variant}
 %   {Name of the \hologo{BibTeX} entry type being implemented}
-% \changes{0.99}{Using exclamation variant of \cs{index@bibentry} to 
-%               reflect changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{bibentry}{sm}{%
     \@bsphack
@@ -890,8 +867,6 @@
 % \begin{environment}{theme}[2]
 %   {True if this is the starred variant}
 %   {Name of the theme being implemented}
-% \changes{0.99}{Using exclamation variant of \cs{index@theme} to 
-%               reflect changes elsewhere}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{theme}{sm}{%
     \@bsphack
@@ -1088,8 +1063,6 @@
 %   {True if this is the starred variant}
 %   {True if this is the exclamation variant}
 %   {The name of the macro being indexed, without backslash}
-% \changes{0.99}{Added exclamation version (refers to implementation),
-%               reversed meaning of starred variant}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@macro{st!m}{
     \def\skdoc@temp{#3}
@@ -1112,8 +1085,6 @@
 %   {True if this is the starred variant}
 %   {True if this is the exclamation variant}
 %   {The name of the environment being indexed}
-% \changes{0.99}{Added exclamation version (refers to implementation),
-%               reversed meaning of starred variant}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@environment{st!m}{
     \def\skdoc@temp{\string#3}
@@ -1136,8 +1107,6 @@
 %   {True if this is the starred variant}
 %   {True if this is the exclamation variant}
 %   {The name of the option being indexed}
-% \changes{0.99}{Added exclamation version (refers to implementation),
-%               reversed meaning of starred variant}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@option{st!m}{
     \def\skdoc@temp{\string#3}
@@ -1161,8 +1130,6 @@
 %   {True if this is the exclamation variant}
 %   {The name of the \hologo{BibTeX} entry type
 %       being indexed, without initial \texttt{@} sign}
-% \changes{0.99}{Added exclamation version (refers to implementation),
-%               reversed meaning of starred variant}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@bibentry{st!m}{
     \def\skdoc@temp{#3}
@@ -1185,8 +1152,6 @@
 %   {True if this is the starred variant}
 %   {True if this is the exclamation variant}
 %   {The name of the theme being indexed}
-% \changes{0.99}{Added exclamation version (refers to implementation),
-%               reversed meaning of starred variant}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@theme{st!m}{
     \def\skdoc@temp{\string#3}
@@ -1209,7 +1174,6 @@
 %   {True if this is the starred variant}
 %   {True if this is the exclamation variant}
 %   {The name of the package being indexed}
-% \changes{0.99}{Added macro to index mentions of packages}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@package{st!m}{
     \def\skdoc@temp{\string#3}
@@ -1232,7 +1196,6 @@
 %   {True if this is the starred variant}
 %   {True if this is the exclamation variant}
 %   {The name of the file being indexed}
-% \changes{0.99}{Added macro to index mentions of files}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@file{st!m}{
     \def\skdoc@temp{\string#3}
@@ -1694,7 +1657,6 @@
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro}{\maketitle}
-% \changes{0.99}{Added group to make footnote symbol change local}
 %    \begin{macrocode}
 \def\maketitle{%
     \begingroup
@@ -1782,7 +1744,6 @@
 % \subsubsection{Including the LPPL license}
 % A helper macro that includes the LPPL license is also provided.
 % \begin{macro}{\PrintLPPL}
-% \changes{0.99}{Added \cs{PrintLPPL} macro}
 %    \begin{macrocode}
 \DeclareDocumentCommand\PrintLPPL{}{
     \begingroup
