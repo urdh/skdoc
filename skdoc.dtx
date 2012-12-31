@@ -156,13 +156,54 @@
 % class to generate itself is more complicated than it is useful.
 %
 % \section{Documentation}
+% Since \thepkg\ is based on \pkg{ydoc} many of the macros and
+% environment present in that package are also available in \thepkg,
+% in a possibly redefined incanation. However, any macros or
+% environment present in \pkg{ydoc} but not described in this
+% documentation should be considered part of the private API of
+% \thepkg. In the future, the removal of the \pkg{ydoc} dependency
+% may result in such macros being unavailable, and at present changes
+% made by \thepkg\ may break such macros without notice.
 %
 % \subsection{Options}
-% Only one: `load`
+% \Option{load}\WithValues{\meta{package}}\AndDefault{\cs{jobname}}
+% The \thepkg\ document class has only one option. The \opt{load}
+% option declares that if the package specified exists, it should
+% be loaded. This is intended to load any package provided in the
+% implementation, but requires that the documentation provides
+% stub variants of the macros used in the documentation so that
+% \LaTeX\ still completes its first run. \Warning{The \opt{load}
+% option will likely disappear in a future version.}
 %
 % \subsection{General macros}
+% The document class defines a number of general macros intended for
+% use in parts of the document not strictly considered
+% \enquote{documentation} or \enquote{implementation}, in addition to
+% being used in those parts. These \enquote{general} macros include
+% macros that define metadata, generate the title page, typeset
+% notices or warnings and those that refer to macros, environments,
+% packages and such.
+%
 % \subsubsection{Metadata}
-% \cs{package}, \cs{ctan}, \cs{repository}, \cs{email},
+% Several macros for defining metadata (\emph{i.e.} information about
+% the package and its documentation) are made available. These mostly
+% set an internal variable which is used to typeset the title page,
+% and to insert PDF metadata whenever \hologo{pdfLaTeX} is used to
+% generate the documentation.
+%
+% \DescribeMacro\package[ctan=<identifier>,vcs=<url>]{<package name>}
+% The \cs{package} macro defines the package name used by \cs{thepkg},
+% \cs{maketitle} and similar macros. It also calls \cs{title} to set
+% a sensible default title based on the package name. The optional
+% key-value argument takes two keys: \texttt{ctan} and \texttt{vcs}.
+% The first one accepts an optional value \meta{identifier}, which
+% should be the identifier the package has on CTAN (the default is
+% \cs{jobname}), while the other takes a mandatory argument \meta{url}
+% specifying the URL of a VCS repository where development versions
+% of the package are available. The two optional keys imply calls to
+% the \cs{ctan} and \cs{repository} macros, respectively.
+%
+% \cs{ctan}, \cs{repository}, \cs{email},
 % \cs{version}, \cs{author}, \cs{title},
 % \cs{theversion}, \cs{thepackage}, \cs{thepkg}
 % \subsubsection{The preamble}
@@ -170,13 +211,15 @@
 % \subsubsection{The LPPL license}
 % \cs{PrintLPPL}
 %
-% \subsection{Referential macros}
+% \subsubsection{Notices and warnings}
+% \cs{Warning}, \cs{Notice}, \cs{LongWarning}
+%
+% \subsubsection{Referential macros}
 % \cs{cs}, \cs{end}, \cs{pkg}, \cs{opt}, \cs{bib},
 % \cs{thm}, \cs{file}
 %
 % \subsection{Documenting the package}
-% Refer to \pkg{ydoc} documentation but point out that macros
-% not also described here are not guaranteed to work
+% \cs{meta}, \cs{marg}, \cs{oarg}, \cs{parg}, \cs{aarg}, \cs{sarg}
 % \subsubsection{Options}
 % \cs{Options}, \cs{Option}, \cs{WithValues}, \cs{AndDefault}
 % \subsubsection{Macros}
@@ -278,8 +321,8 @@
 %    \end{macrocode}
 % The rest is basically just styling.
 %    \begin{macrocode}
-\RequirePackage{csquotes}
 \RequirePackage[british]{babel}
+\RequirePackage[english=british]{csquotes}
 \RequirePackage[babel]{microtype}
 \RequirePackage{scrpage2,PTSerif,ascii}
 \RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
@@ -1623,6 +1666,50 @@
 % Most of the general document commands are defined by the
 % \pkg{scrartcl} document class we base ourselves on, but a few
 % of them have to be redefined.
+%
+% \subsubsection{Notices and warnings}
+% We define macros to typeset notices and warnings in the documentation
+% text. Notices are typeset as \Notice{this is a notice}, and warnings
+% are typeset as follows: \Warning{this is a warning}
+% A macro for longer warnings is also available:
+% \LongWarning{This is a longer warning.}
+%
+% \begin{macro}{\Notice}[1]
+%   {Notice text}
+%    \begin{macrocode}
+\DeclareDocumentCommand\Notice{m}{
+    (\emph{\textbf{Note:}~#1})
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\Warning}[1]
+%   {Warning text}
+%    \begin{macrocode}
+\DeclareDocumentCommand\Warning{+m}{
+    \vspace{\baselineskip}
+    \par\noindent
+    \fbox{\begin{minipage}[c]{\textwidth}
+        \centering
+        \textbf{Warning:}~#1
+    \end{minipage}}
+    \vspace{\baselineskip}
+    \par
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\LongWarning}[1]
+%   {Warning text}
+%    \begin{macrocode}
+\DeclareDocumentCommand\LongWarning{+m}{
+    \Warning{
+        \par\noindent
+        \begin{minipage}{\textwidth}
+            #1
+        \end{minipage}
+    }
+}
+%    \end{macrocode}
+% \end{macro}
 %
 % \subsubsection{The title page}
 % The title page consists of the \cs{maketitle} and the \env{abstract}.
