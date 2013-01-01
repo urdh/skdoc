@@ -15,7 +15,7 @@
 %% 
 %% The Current Maintainer of this work is Simon Sigurdhsson.
 %% 
-%% This work consists of the files skdoc.dtx and Makefile
+%% This work consists of the files skdoc.dtx
 %% and the derived filebase skdoc.cls.
 %
 %<*ignore>
@@ -107,6 +107,12 @@
 \end{document}
 % \fi
 %
+% \deftripstyle{skdoc-class}{}{}{}%
+% {\small The~\textbf{\thepkg}~document~class,~\theversion}%
+% {}{\small\pagemark}
+% \pagestyle{skdoc-class}
+%
+% \version{1.0}
 % \changes{1.0}{Initial version}
 %
 % \package[ctan=skbundle,vcs=https://github.com/urdh/skdoc]{skdoc}
@@ -114,7 +120,6 @@
 % \title{The \thepkg{} document class}
 % \author{Simon Sigurdhsson}
 % \email{sigurdhsson@gmail.com}
-% \version{1.0}
 % \maketitle
 %
 % \begin{abstract}
@@ -203,20 +208,142 @@
 % of the package are available. The two optional keys imply calls to
 % the \cs{ctan} and \cs{repository} macros, respectively.
 %
-% \cs{ctan}, \cs{repository}, \cs{email},
-% \cs{version}, \cs{author}, \cs{title},
-% \cs{theversion}, \cs{thepackage}, \cs{thepkg}
+% \DescribeMacro\version{<version>}
+% Sets the version number of the package the documentation describes.
+% Here, \meta{version} should not include the initial \enquote{v},
+% \emph{i.e.} the argument should be the same as that given to
+% \emph{e.g.} the \LaTeX3 \cs{ProvidesExplPackage} or the standard
+% \pkg{ltxdoc} \cs{changes}.
+%
+% \DescribeMacro\ctan{<identifier>}
+% As detailed above, this macro defines the CTAN identifier of the
+% package, which is (optionally) used in the \cs{maketitle} macro.
+%
+% \DescribeMacro\repository{<url>}
+% Again, as detailed above this macro defines the URL of a source code
+% repository containing a development version of the package, which
+% is optionally used by \cs{maketitle}.
+%
+% \DescribeMacro\author{<name>}
+% Defines the name of the package author. This is used by
+% \cs{maketitle} and is mandatory if \cs{maketitle} is used.
+%
+% \DescribeMacro\email{<email>}
+% Defines the email of the package author. This is used by
+% \cs{maketitle} and is mandatory if \cs{maketitle} is used.
+%
+% \DescribeMacro\title{<title>}
+% Defines the package title. By default, the \cs{package} macro sets
+% a sensible title that should suit most packages, but using \cs{title}
+% will override this title (useful for \emph{e.g.} document classes or
+% \hologo{BibTeX} styles).
+%
+% Three macros retrieving the set metadata are also available. They
+% can be used to typeset the current version of the package, and the
+% package name, respectively.
+%
+% \DescribeMacro\theversion
+% Returns the version as defined by \cs{version}, with a leading
+% \enquote{v}. That is, issuing \Macro\version{1.0} makes 
+% \cs{theversion} print \enquote{v1.0}.
+%
+% \DescribeMacro\thepackage
+% \DescribeMacro\thepkg
+% The \cs{thepackage} and \cs{thepkg} macros return the package name
+% as defined by the \cs{package} macro, enclosed in \cs{pkg*}. That is,
+% the package name is typeset as a package but not indexed.
+%
 % \subsubsection{The preamble}
-% \cs{maketitle}, \env{abstract}, \cs{tableofcontents}
+% The preamble of any documentation most often consists of a title page
+% containing an abstract, and possibly a table of contents. The \thepkg
+% \ package provides macros and environments that typeset such things,
+% and these should be fully compatible with most other document classes.
+%
+% \DescribeMacro\maketitle
+% The \cs{maketitle} macro typesets a title page. This title page uses
+% the metadata defined by the macros described earlier, and typesets
+% them in a manner which is illustrated by the documentation of this
+% class. This style is inspired by \pkg{skrapport}, which is in turn
+% inspired by the title pages of the Prac\TeX\ Journal.
+%
+% \DescribeEnv[<package abstract>]{abstract}
+% The \env{abstract} environment typesets an abstract of the package.
+% Again, its style is illustrated by this document and it is inspired
+% by the \pkg{skrapport} package as well as the Prac\TeX\ Journal.
+%
+% \DescribeMacro\tableofcontents
+% Finally, a Table of Contents may be printed. The actual table of
+% contents is provided by the \pkg{scrartcl} document class, but \thepkg
+% \ redefines a couple of the internal macros to style the Table of
+% Contents in a manner similar to that of the \pkg{microtype} manual.
+%
 % \subsubsection{The LPPL license}
-% \cs{PrintLPPL}
+% \DescribeMacro\PrintLPPL
+% If the LPPL license is present in a directory where \LaTeX\ can find
+% it, in a file called \file{lppl.tex}, then \cs{PrintLPPL} will
+% include the entire LPPL license in the document, and typeset it in
+% a fairly compact manner.
 %
 % \subsubsection{Notices and warnings}
-% \cs{Warning}, \cs{Notice}, \cs{LongWarning}
+% The document class provides macros to indicate information that may
+% be of extra importance in the documentation. Such information is
+% categorized as either notices or warnings, which are treated
+% differently.
+% 
+% \DescribeMacro\Notice{<notice>}
+% A notice is a short piece of text that contains information that may
+% explain some unexpected but unharmful behaviour of a macro or similar.
+% It is typeset inline, emphasized and in parantheses --- as such, the
+% sequence \Macro\Notice{a notice} yields \Notice{a notice}.
+%
+% \DescribeMacro\Warning{<warning>}
+% A warning is a short comment that conveys information that the user
+% must be aware of. This includes unexpected potentially harmful
+% behaviour, deprecation notices and so on. It is typeset in its own
+% \cs{fbox} --- the sequence \Macro\Warning{a warning} yields the
+% following: \Warning{a warning}
+%
+% \DescribeMacro\LongWarning{<warning>}
+% The \cs{LongWarning} macro is a variant of \cs{Warning} that has been
+% adapted for longer texts, possibly including paragraph breaks. Like
+% \cs{Warning}, it is typeset in a box: \LongWarning{a long warning}
 %
 % \subsubsection{Referential macros}
-% \cs{cs}, \cs{end}, \cs{pkg}, \cs{opt}, \cs{bib},
-% \cs{thm}, \cs{file}
+% The family of macros originating from \cs{cs} are used to typeset
+% various concepts in running text. In addition to adhering to the
+% general format of the corresponding concept, they index their
+% argument. Each of these macros have a starred variant which does
+% not index its argument; use these when appropriate.
+%
+% \DescribeMacro\cs{<command sequence>}
+% Typesets a command sequence, or macro. The argument should be
+% provided without the leading backslash, and the command sequence
+% will be typeset in a monospaced font.
+%
+% \DescribeMacro\env{<environment name>}
+% Typesets an environment name, which will be typeset in a monospace
+% font.
+%
+% \DescribeMacro\pkg{<package name>}
+% Typesets a package, document class or bundle name. The name will
+% be typeset in a sans-serif font.
+%
+% \DescribeMacro\opt{<option>}
+% Typesets a package or document class option. As of \theversion,
+% options are typeset using a monospace font.
+%
+% \DescribeMacro\bib{<\hologo{BibTeX} entry type>}
+% Typesets a \hologo{BibTeX} entry type. The agument should be provided
+% without the leading \texttt{@} sign. The entry type will be typeset
+% in a monospace font.
+% 
+% \DescribeMacro\thm{<theme name>}
+% Typesets a theme name. As of \theversion, the theme name will be
+% typeset in an upright serif font.
+%
+% \DescribeMacro\file{<filename>}
+% Typesets a filename. As of \theversion, the filename will be typeset
+% in a monospace font.
 %
 % \subsection{Documenting the package}
 % \cs{meta}, \cs{marg}, \cs{oarg}, \cs{parg}, \cs{aarg}, \cs{sarg}
@@ -268,10 +395,10 @@
 %           \cs{opt}, \cs{thm} and \cs{bib} must have sensible fonts
 %           and these should be reflected in the implementation details
 %           as well as the description.
-%     \item Macro indexing is probably not broken, something in
-%           \file{skdoc.dtx} is breaking it. Oh well, hopefully it
-%           won't affect other documentation.
-%     \item Restructure the code.
+%     \item Macro indexing has a problem, if two occurrences are on the
+%           same page the first one dictates formatting. Figure out how
+%           to make italic/underlined have preference.
+%     \item Better color scheme!
 %     \item Starred variants of the implementation environments have to
 %           gobble the arguments that are normally printed!
 %     \item Themes and \hologo{BibTeX} entry types need macros in the
