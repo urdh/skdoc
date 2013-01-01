@@ -90,6 +90,7 @@
 }
 \documentclass{skdoc}
 \usepackage{hologo}
+\usepackage{booktabs}
 \usepackage[style=authoryear,backend=biber]{biblatex}
 %%\usepackage{chslacite}
 \begin{filecontents}{skdoc.bib}
@@ -346,9 +347,79 @@
 % in a monospace font.
 %
 % \subsection{Documenting the package}
-% \cs{meta}, \cs{marg}, \cs{oarg}, \cs{parg}, \cs{aarg}, \cs{sarg}
+% The documentation part of any \LaTeX\ manual is arguably the most
+% important one, and to facilitate proper typesetting of the
+% documentation \thepkg\ povides a number of different macros, all
+% inspired by or inherited from \pkg{ydoc}. The first of these
+% macros that will be discussed are the macros that typeset differen
+% kinds of arguments in running text.
+%
+% \DescribeMacro\meta{<meta text>}
+% The \cs{meta} macro typesets a placeholder to be placed in an
+% argument. This can be used to refer to arguments and contents of
+% macros and environments described by commands discussed later in
+% this documentation. It is typeset in brackets: \meta{meta text}.
+%
+% \DescribeMacro\marg{<mandatory argument>}
+% \DescribeMacro\oarg{<optional argument>}
+% \DescribeMacro\parg{<picture-style argument>}
+% \DescribeMacro\aarg{<beamer-style argument>}
+% \DescribeMacro\sarg
+% These macros typeset different kinds of arguments (mandatory,
+% optional, picture-style, beamer-style and star arguments,
+% respetively). These can be used to describe arguments, but
+% are mostly used internally. See table~\ref{tab:args} for
+% examples of how these macros are typeset.
+%
+% \begin{table}[tb]
+%   \centering
+%   \caption{Typesetting arguments}
+%   \label{tab:args}
+%   \begin{tabular}{ll}
+%      \toprule
+%      Invokation            % Result          \\
+%      \midrule
+%      \Macro\marg{argument} & \marg{argument} \\
+%      \Macro\oarg{argument} & \oarg{argument} \\
+%      \Macro\parg{argument} & \parg{argument} \\
+%      \Macro\aarg{argument} & \aarg{argument} \\
+%      \Macro\sarg           & \sarg           \\
+%      \bottomrule
+%   \end{tabular}
+% \end{table}
+%
 % \subsubsection{Options}
-% \cs{Options}, \cs{Option}, \cs{WithValues}, \cs{AndDefault}
+% Package options are of course important to describe, and to this
+% end four macros are provided. They aid in describing options of
+% both regular boolean and the more modern key-value syntax. They
+% are intended to be used in a sequence: \\ 
+% \mbox{\Macro\Option{...}\Macro\WithValues{...}\Macro\AndDefault{...}}
+%
+% \DescribeMacro\Option{<option>}
+% \DescribeMacro\Options{<option>,...}
+% These macros typeset an option, and may be followed by the
+% \cs{WithValues} macro \Notice{the with \cs{Options}, only the
+% first option in the list will work with \cs{WithValues}}.
+%
+% \DescribeMacro\WithValues{<value>,...}
+% This macro typesets a comma-separated list of values a specific
+% option can take. It may be followed by the \cs{AndDefault} macro.
+%
+% \DescribeMacro\AndDefault{<default value>}
+% This macro typesets the default value of an option. It may follow
+% either \cs{Options} or \cs{WithValues}.
+%
+% Common constructs using these macros include:
+% \begin{itemize}
+% \item \mbox{\small
+%       \Macro\Option{<option>}
+%       \Macro\WithValues{<value>,...}
+%       \Macro\AndDefault{<default>}}
+% \item \mbox{\small
+%       \Macro\Options{<option>,no\meta{option}}
+%       \Macro\AndDefault{no\meta{option}}}
+% \end{itemize}
+% 
 % \subsubsection{Macros}
 % \cs{DescribeMacro}, \cs{Macro}, \cs{MacroArgs}, \cs{AlsoMacro}
 % explain that the corresponding environments are unsupported
@@ -379,7 +450,7 @@
 % all uses. Also: don't forget to run makeglossaries!
 % \cs{PrintIndex}
 %
-% \subsection{Planned improvements}
+% \section{Planned improvements}
 % Planned improvements of this class include
 % \begin{itemize}
 %     \item Proper documentation of all features, including those
@@ -397,7 +468,9 @@
 %           as well as the description.
 %     \item Macro indexing has a problem, if two occurrences are on the
 %           same page the first one dictates formatting. Figure out how
-%           to make italic/underlined have preference.
+%           to make italic/underlined have precedence.
+%     \item May have mixed underline/italic up in the index. Switch if
+%           that is the case.
 %     \item Better color scheme!
 %     \item Starred variants of the implementation environments have to
 %           gobble the arguments that are normally printed!
@@ -451,6 +524,7 @@
 \RequirePackage[british]{babel}
 \RequirePackage[english=british]{csquotes}
 \RequirePackage[babel]{microtype}
+\RequirePackage[font=small,labelfont=bf,textfont=it]{caption}
 \RequirePackage{scrpage2,PTSerif,ascii}
 \RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
 %    \end{macrocode}
