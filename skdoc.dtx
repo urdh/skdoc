@@ -393,7 +393,9 @@
 % end four macros are provided. They aid in describing options of
 % both regular boolean and the more modern key-value syntax. They
 % are intended to be used in a sequence: \\ 
-% \mbox{\Macro\Option{...}\Macro\WithValues{...}\Macro\AndDefault{...}}
+% \mbox{\Macro\Option{...}
+%       \AlsoMacro\WithValues{...}
+%       \AlsoMacro\AndDefault{...}}
 %
 % \DescribeMacro\Option{<option>}
 % \DescribeMacro\Options{<option>,...}
@@ -413,32 +415,188 @@
 % \begin{itemize}
 % \item \mbox{\small
 %       \Macro\Option{<option>}
-%       \Macro\WithValues{<value>,...}
-%       \Macro\AndDefault{<default>}}
+%       \AlsoMacro\WithValues{<value>,...}
+%       \AlsoMacro\AndDefault{<default>}}
 % \item \mbox{\small
 %       \Macro\Options{<option>,no\meta{option}}
-%       \Macro\AndDefault{no\meta{option}}}
+%       \AlsoMacro\AndDefault{no\meta{option}}}
 % \end{itemize}
 % 
 % \subsubsection{Macros}
-% \cs{DescribeMacro}, \cs{Macro}, \cs{MacroArgs}, \cs{AlsoMacro}
-% explain that the corresponding environments are unsupported
-% (they should emit a warning to be honest)
+% The \thepkg\ class inherits a number of macros for describing the
+% package macros from the \pkg{ydoc} package. Only four of them are
+% to be considered stable.
+% \LongWarning{
+% The macros \cs{MakeShortMacroArgs} and \cs{DeleteShortMacroArgs}
+% and the environments \env{DescribeMacros} and \env{DescribeMacrosTab}
+% provided by \pkg{ydoc} are unsupported as of \thepkg\ \theversion. 
+% They may work, but this is
+% not a guarantee and they are most likely broken or may break other
+% features of \thepkg.
+% }
+%
+% \DescribeMacro\DescribeMacro<\textbackslash macro><macro arguments>
+% The \cs{DescribeMacro} is used to document a macro along with its
+% arguments. Any number of \meta{macro arguments} may follow the macro,
+% and \cs{DescribeMacro} will stop reading arguments on the first
+% non-argument token. The macro will be indexed.
+% \LongWarning{Although \meta{\textbackslash macro} can include
+% \texttt{@} signs, it is not possible to document \LaTeX3-style
+% macros (with underscores and colons) without the following hack:
+% \par \medskip \begingroup
+% \cs*{ExplSyntaxOn} \\
+% \cs*{cs\_set\_protected\_nopar:Npn}\cs*{ExplHack}\texttt{\{} \\
+% \hspace*{2ex}\cs*{char\_set\_catcode\_letter:n}\texttt{\{~58~\}} \\
+% \hspace*{2ex}\cs*{char\_set\_catcode\_letter:n}\texttt{\{~95~\}} \\
+% \texttt{\}} \\
+% \cs*{ExplSyntaxOff} \\
+% \cs*{ExplHack} \\
+% \endgroup }
+%
+% \DescribeMacro\Macro<\textbackslash macro><macro arguments>
+% This is simply a variant of \cs{DescribeMacro} for use in running
+% text. It is equivalent to \cs{MacroArgs}\cs{AlsoMacro}.
+%
+% \DescribeMacro\MacroArgs<macro aguments>
+% This macro formats \meta{macro arguments} the same way
+% \cs{DescribeMacro} does. As with \cs{Macro}, it is used in
+% running text.
+%
+% \DescribeMacro\AlsoMacro<\textbackslash macro><further arguments>
+% This macro should be used inside \meta{macro arguments} of the macros
+% described above, and typesets an additional macro as part of the
+% syntax of the described macro. For instance, the \cs{csname} macro
+% could be described with the sequence
+% \cs*{Macro}\cs*{csname}\texttt{<command sequence name>}
+% \cs*{AlsoMacro}\cs{endcsname}, which would be rendered as
+% \Macro\csname<command sequence name>\AlsoMacro\endcsname\relax.
+%
 % \subsubsection{Environments}
-% \env{DescribeEnv}, \cs{DescribeEnv}
+% In addition to the macros describing macros, \thepkg\ also inherits
+% one environment and one macro to describe environments. These are
+% similar to the macros described previously in both form and function,
+% but lack equivalents for running text.
+%
+% \DescribeEnv[<body content>]{DescribeEnv}{<name>}<arguments>
+% This environment describes an environment, in the same way
+% \cs{DescribeMacro} does for macros. The \meta{body content}, which
+% is optional, may be used to indicate what kind of content the
+% environment is designed to contain.
+%
+% \DescribeMacro\DescribeEnv[<body content>]{<name>}<arguments>
+% This is simply a macro equivalent of the \env{DescribeEnv}
+% environment. There is one difference in that an \cs{MacroArgs}
+% macro is automatically inserted before \meta{body content}.
+%
 % \subsubsection{Other entities}
 % \hologo{BibTeX} entry types (not implemented),
 % themes (not implemented), special files (not implemented)
 %
 % \subsection{Describing the implementation}
+% In true \TeX\ (and literal programming) fashion the document class
+% also provides ways to describe, in detail, parts of the
+% implementation. The most essential of the implementation environments,
+% without which \thepkg\ doesn't generate any files, is the
+% \env{MacroCode} environment. Other than that, the implementation
+% environments should be compatible with or analogous to the standard
+% \pkg{ltxdoc} document class.
+% 
 % \subsubsection{Implementation environments}
-% \env{macro}, \env{environment}, \env{option}, \env{bibentry},
-% \env{theme}
+% The environments described in this section indicate the
+% implementation of different concepts including macros, environments
+% and options. They each have a starred variant which doesn't print
+% the concept name (only indexes it), and a non-starred variant which
+% does \Notice{inside these environments, \cs{changes} will refer to
+% the relevant entity instead of logging \enquote{general} changes}.
+%
+% Some of the following environment can typeset descriptions of the 
+% internal arguments (\texttt{\#1}, \texttt{\#2} \emph{etc.}) to
+% improve readability of the implementation code.
+%
+% \DescribeEnv[<description>]{macro}{<\textbackslash macro>}
+%                     <\# of args>{<arg 1 description>}'...'
+%                                 {<arg n description>}
+% With this environment, the implementation of a macro is described.
+% Note that as with \cs{DescribeMacro}, \LaTeX3-style macros can not
+% be used in \meta{\textbackslash macro} without the catcode hack
+% mentioned earlier.
+%
+% \DescribeEnv[<description>]{environment}{<environment>}
+%                     <\# of args>{<arg 1 description>}'...'
+%                                 {<arg n description>}
+% This environment describes the implementation of an environment.
+%
+% \DescribeEnv[<description>]{option}{<option>}
+% This environment describes the implementation of an option.
+%
+% \DescribeEnv[<description>]{bibentry}{<@entry>}
+% This environment describes the implementation of a \hologo{BibTeX}
+% entry type.
+%
+% \DescribeEnv[<description>]{theme}{<theme>}
+% This environment describes the implementation of a theme.
+%
 % \subsubsection{The \env{MacroCode} environment}
-% \env{MacroCode}, \cs{DeclareFile}, \cs{PreambleTo}, 
-% \cs{SelfPreambleTo}
+% The \enquote{main event} of the \thepkg\ document class is the
+% \env{MacroCode} environment. It has roughly the same role the 
+% \env{macrocode} environment has in the \pkg{docstrip} system, except
+% that it in addition to typesetting the implementation also saves it
+% to the target files.
+%
+% The workflow is simple; before using \env{MacroCode} to export code
+% to a file the file must be declared using \cs{DeclareFile}, which
+% also assigns a key to the file (the default is the filename). This
+% key is passed to the \env{MacroCode} environment, which saves the
+% code to the specified file.
+%
+% \DescribeMacro\DeclareFile['key='<key>',preamble='<preamble>]{<filename>}
+% The \cs{DeclareFile} macro declares a file for future use with
+% \env{MacroCode}. The optional argument is a comma separated list of
+% key-value options, where the possible keys are \texttt{key} and
+% \texttt{preamble}. Here \meta{key} is a key that is used instead
+% of the filename in \env{MacroCode}, and \meta{preamble} is a
+% token or command sequence expanding to a preamble which will be 
+% prepended to the file on output.
+%
+% \DescribeMacro\PreambleTo{<\textbackslash token>}{<filename>}
+% Reads the preamble from \meta{filename}. Lines from the file are
+% appended to \meta{\textbackslash token} until a line which does not
+% begin with \texttt{\%\%} is encountered.
+%
+% \DescribeMacro\SelfPreambleTo{<\textbackslash token>}
+% This reads the preamble from the curent file. It is equivalent to
+% the sequence
+% \Macro\PreambleTo{<\textbackslash token>}{\cs*{jobname}.tex}.
+%
+% \DescribeEnv[<implementation>]{MacroCode}{<key>}
+% The \env{MacroCode} environment typesets and exports
+% \meta{implementation} verbatim to the file associated with \meta{key}.
+% As such, it is the analogue of the \env{macrocode} environment from
+% \pkg{ltxdoc}, but does not suffer from some of its drawbacks (the
+% sensitivity to whitespace, for instance).
+%
 % \subsubsection{Hiding the implementation}
-% \cs{OnlyDescription}, \cs{Implementation}, \cs{Finale}
+% For lagre packages it may be of interest to hide the implementation
+% from the documentation. This is accomplished using the two marker
+% macros \cs{Implementation} and \cs{Finale} (which should be present
+% even if not hiding the implementation), and the switch macro
+% \cs{OnlyDescription}.
+%
+% \DescribeMacro\Implementation
+% This macro indicates the start of the implementation. Normally, this
+% would directly precede the \cs{section} under which the implementation
+% is organized.
+%
+% \DescribeMacro\Finale
+% This macro indicates the end of the implementation. Usually the only
+% things happening after this is the printing of indices, the change
+% log, bibliographies and the end of the \env{document} environment.
+%
+% \DescribeMacro\OnlyDescription
+% This macro, which should be issued in the preamble, indicates that the
+% implementation should be hidden. \Warning{this has the side effect
+% that a page break is inserted where the implementation would normally
+% reside.}
 %
 % \subsection{Documenting changes}
 % Explain: don't forget to run makeglossaries!
@@ -523,10 +681,10 @@
 %    \begin{macrocode}
 \RequirePackage[british]{babel}
 \RequirePackage[english=british]{csquotes}
-\RequirePackage[babel]{microtype}
 \RequirePackage[font=small,labelfont=bf,textfont=it]{caption}
 \RequirePackage{scrpage2,PTSerif,ascii}
 \RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
+\RequirePackage[babel]{microtype}
 %    \end{macrocode}
 % \subsection{Error messages}
 % Set up some error message texts for later use.
