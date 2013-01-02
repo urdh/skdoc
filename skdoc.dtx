@@ -309,7 +309,7 @@
 % adapted for longer texts, possibly including paragraph breaks. Like
 % \cs{Warning}, it is typeset in a box: \LongWarning{a long warning}
 %
-% \subsubsection{Referential macros}
+% \subsubsection{Referential macros}\label{sec:ref-macros}
 % The family of macros originating from \cs{cs} are used to typeset
 % various concepts in running text. In addition to adhering to the
 % general format of the corresponding concept, they index their
@@ -346,7 +346,7 @@
 % Typesets a filename. As of \theversion, the filename will be typeset
 % in a monospace font.
 %
-% \subsection{Documenting the package}
+% \subsection{Documenting the package}\label{sec:doc-macros}
 % The documentation part of any \LaTeX\ manual is arguably the most
 % important one, and to facilitate proper typesetting of the
 % documentation \thepkg\ povides a number of different macros, all
@@ -501,7 +501,7 @@
 % environments should be compatible with or analogous to the standard
 % \pkg{ltxdoc} document class.
 % 
-% \subsubsection{Implementation environments}
+% \subsubsection{Implementation environments}\label{sec:impl-env}
 % The environments described in this section indicate the
 % implementation of different concepts including macros, environments
 % and options. They each have a starred variant which doesn't print
@@ -599,14 +599,39 @@
 % reside.}
 %
 % \subsection{Documenting changes}
-% Explain: don't forget to run makeglossaries!
-% \cs{changes}, \cs{PrintChanges}
+% One type of useful information you should provide in your
+% documentation is a list of changes. The \thepkg\ document class
+% provides a change list system based on the \pkg{glossaries} package.
+% As such, including a change list in your documentation requires you
+% to run \texttt{makeglossaries} between the first and second \LaTeX\
+% run.
+%
+% \DescribeMacro\changes{<version>}{<description>}
+% The \cs{changes} macro provides the main interface to the change
+% list system, and adds changes to the change list. Each change is
+% added with a \emph{context}; if the macro is issued inside one of
+% the macros described in section~\ref{sec:impl-env}, the concept
+% currenly being described will be the context. Outside these
+% environment, the context is \enquote{general}. For every context
+% and \meta{version}, only one change may be recorded, otherwise
+% \pkg{glossaries} will issue a warning.
+%
+% \DeclareMacro\PrintChanges
+% This macro prints the list of changes. As explained earlier, this
+% requires you to run \texttt{makeglossaries} between the two \LaTeX\ 
+% runs.
 %
 % \subsection{Producing an index}
-% Explain that all previously mentioned macros, (\emph{i.e.} \cs{cs},
-% \cs{DescribeMacro} and \env{macro} for macros) automatically index
-% all uses. Also: don't forget to run makeglossaries!
-% \cs{PrintIndex}
+% The macros previously discussed in sections~\ref{sec:ref-macros},
+% \ref{sec:doc-macros} and \ref{sec:impl-env} automatically index their
+% aguments using \pkg{glossaries}. By running \texttt{makeglossaries}
+% you can include an index of all macros, environments, packages and 
+% such that are discussed, documented or implemented in your package.
+%
+% \DescribeMacro\PrintIndex
+% Much like the \cs{PrintChanges} macro, this prints the index. As with
+% the list of changes, this requires that you run 
+% \texttt{makeglossaries} between the two \LaTeX\ runs.
 %
 % \section{Planned improvements}
 % Planned improvements of this class include
