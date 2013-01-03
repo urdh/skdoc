@@ -477,15 +477,11 @@
 % similar to the macros described previously in both form and function,
 % but lack equivalents for running text.
 %
-% \DescribeEnv[<body content>]{DescribeEnv}{<name>}<arguments>
-% This environment describes an environment, in the same way
+% \DescribeMacro\DescribeEnv[<body content>]{<name>}<arguments>
+% This macro describes an environment, in the same way
 % \cs{DescribeMacro} does for macros. The \meta{body content}, which
 % is optional, may be used to indicate what kind of content the
-% environment is designed to contain.
-%
-% \DescribeMacro\DescribeEnv[<body content>]{<name>}<arguments>
-% This is simply a macro equivalent of the \env{DescribeEnv}
-% environment. There is one difference in that an \cs{MacroArgs}
+% environment is designed to contain. The \cs{MacroArgs}
 % macro is automatically inserted before \meta{body content}.
 %
 % \subsubsection{Other entities}
@@ -616,7 +612,7 @@
 % and \meta{version}, only one change may be recorded, otherwise
 % \pkg{glossaries} will issue a warning.
 %
-% \DeclareMacro\PrintChanges
+% \DescribeMacro\PrintChanges
 % This macro prints the list of changes. As explained earlier, this
 % requires you to run \texttt{makeglossaries} between the two \LaTeX\ 
 % runs.
@@ -636,15 +632,9 @@
 % \section{Planned improvements}
 % Planned improvements of this class include
 % \begin{itemize}
-%     \item Proper documentation of all features, including those
-%           inherited from \pkg{ydoc}.
 %     \item Do things the \LaTeX3 way, rename the variables properly
 %           and generally conform to \pkg{expl3} guidelines when
 %           applicable. (Way future thing.)
-%     \item \cs{DescribeEnvironment} has to be improved. The idea is
-%           to typeset the first line as with the macros, but the
-%           environment contents and \cs{end} command typeset below
-%           in a \cs{marginnote}.
 %     \item More organized font scheme. \cs{cs}, \cs{env}, \cs{pkg},
 %           \cs{opt}, \cs{thm} and \cs{bib} must have sensible fonts
 %           and these should be reflected in the implementation details
@@ -659,10 +649,6 @@
 %           gobble the arguments that are normally printed!
 %     \item Themes and \hologo{BibTeX} entry types need macros in the
 %           spirit of \cs{Option} and friends.
-%     \item \cs{DescribeMacro} should output a \cs{par} if not followed
-%           by arguments.
-%     \item \cs{DescribeMacrosTab} is completely broken and should not
-%           be supported at all, or maybe fixed if possible.
 %     \item We might have to \cs{leavevmode} at the beginning of
 %           \env{macro} \emph{et. al}.
 %     \item Apparently, \cs{OnlyDescription} breaks indexing badly.
@@ -1124,6 +1110,31 @@
 }
 %    \end{macrocode}
 % \end{macro}
+% \begin{macro}{\DescribeEnv}[2]
+%   {Environment body or \cs{NoValue}}
+%   {Environment name}
+%    \begin{macrocode}
+\DeclareDocumentCommand\DescribeEnv{om}{
+    \medskip\par\noindent
+    \marginnote{
+        \envcodestyle
+        \hfill\llap{\PrintEnvName{\begin}{#2}}\mbox{}\\
+        \IfNoValueTF{#1}{}{\hfill\llap{\MacroArgs#1}\mbox{}\\}
+        \hfill\llap{\PrintEnvName{\end}{#2}}\mbox{}\\
+    }
+    \begingroup
+    \def\after@Macro@args{\endDescribeEnv}
+    \y@bgroup
+    \ydoc@macrocatcodes
+    \macroargsstyle
+    \read@Macro@arg
+}
+\DeclareDocumentCommand\endDescribeEnv{}{
+    \endgroup
+    \smallskip\par\noindent
+}
+%    \end{macrocode}
+% \end{macro}
 %
 % Then we add a few of our own. For instance, we add macros to
 % typeset descriptions of options. We also undefine the \cs{optpar}
@@ -1159,7 +1170,7 @@
 % \begin{macro*}{\skdoc@WithValues@peek}
 %    \begin{macrocode}
 \def\skdoc@WithValues@peek{
-    \ifx\@let@token\AndDefault\else\par\nobreak\fi
+    \ifx\@let@token\AndDefault\else\par\noindent\nobreak\fi
 }
 %    \end{macrocode}
 % \end{macro*}
@@ -1181,7 +1192,7 @@
 % right of the line.
 %    \begin{macrocode}
 \DeclareDocumentCommand\AndDefault{m}{
-    \llap{\textcolor{gray}{\texttt{(#1)}}}\par\nobreak
+    \llap{\textcolor{gray}{\texttt{(#1)}}}\par\noindent\nobreak
 }
 %    \end{macrocode}
 % \end{macro}
