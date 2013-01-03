@@ -642,8 +642,6 @@
 %     \item Macro indexing has a problem, if two occurrences are on the
 %           same page the first one dictates formatting. Figure out how
 %           to make italic/underlined have precedence.
-%     \item May have mixed underline/italic up in the index. Switch if
-%           that is the case.
 %     \item Better color scheme!
 %     \item Starred variants of the implementation environments have to
 %           gobble the arguments that are normally printed!
@@ -1508,10 +1506,10 @@
         \@index@{#3}{\cs*{#3}}
     }
     \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1530,10 +1528,10 @@
         \@index@{\string#3}{\env*{\string#3}~(environment)}
     }
     \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1552,10 +1550,10 @@
         \@index@{\string#3}{\opt*{\string#3}~(option)}
     }
     \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1575,10 +1573,10 @@
         \@index@{#3}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
     }
     \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1597,10 +1595,10 @@
         \@index@{\string#3}{\thm*{\string#3}~(theme)}
     }
     \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1619,10 +1617,10 @@
         \@index@{\string#3}{\pkg*{\string#3}~(package)}
     }
     \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -1641,10 +1639,10 @@
         \@index@{\string#3}{\file*{\string#3}~(file)}
     }
     \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
     }{
         \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
         }{
             \glsadd[types=index]{index-\skdoc@temp}
         }
@@ -2342,6 +2340,9 @@
 %</class>
 % \fi
 % \Finale
+%
+% % \section{Known issues}
+%
 % \PrintChanges
 % \PrintIndex
 % \printbibliography
