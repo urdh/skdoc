@@ -125,7 +125,7 @@
 %
 % \begin{abstract}
 % The \thepkg{} class provides macros to document the functionality
-% and implementation of \LaTeX\ packages and document classes. I is
+% and implementation of \LaTeX\ packages and document classes. It is
 % loosely based on the \pkg{ydoc} and \pkg{ltxdoc} classes, but has
 % a number of incompatible differences.
 %
@@ -197,7 +197,7 @@
 % and to insert PDF metadata whenever \hologo{pdfLaTeX} is used to
 % generate the documentation.
 %
-% \DescribeMacro\package[ctan=<identifier>,vcs=<url>]{<package name>}
+% \DescribeMacro\package['ctan='<identifier>',vcs='<url>]{<package name>}
 % The \cs{package} macro defines the package name used by \cs{thepkg},
 % \cs{maketitle} and similar macros. It also calls \cs{title} to set
 % a sensible default title based on the package name. The optional
@@ -485,8 +485,26 @@
 % macro is automatically inserted before \meta{body content}.
 %
 % \subsubsection{Other entities}
-% \hologo{BibTeX} entry types (not implemented),
-% themes (not implemented), special files (not implemented)
+% The document class also provides macros to describe \hologo{BibTeX}
+% entries and generic themes. The \hologo{BibTeX} entries are described
+% using the \cs{BibEntry} and \cs{WithFields} macros, while themes are
+% described using the \cs{Theme} macro.
+%
+% \DescribeMacro\BibEntry{<entry name>}
+% \AlsoMacro\WithFields[<optional fields>]{<mandatory fields>}
+% These two macros describe a \hologo{BibTeX} entry named
+% \meta{entry name} (\emph{i.e.}, \bib*{\meta{entry name}}) along with
+% its optional and mandatory fields.
+%
+% \DescribeMacro\Theme{<theme name>}
+% This macro describes a theme named \meta{theme name}. These could be
+% used to describe any kind of theme, such as color themes of a
+% document class.
+%
+% \DescribeMacro\DescribeFile{<filename>}
+% This macro describes a special file named \meta{filename}. This
+% could be a configuration file or similar that is either part of
+% the package or something the package reads if available.
 %
 % \subsection{Describing the implementation}
 % In true \TeX\ (and literal programming) fashion the document class
@@ -635,17 +653,13 @@
 %     \item Do things the \LaTeX3 way, rename the variables properly
 %           and generally conform to \pkg{expl3} guidelines when
 %           applicable. (Way future thing.)
-%     \item More organized font scheme. \cs{cs}, \cs{env}, \cs{pkg},
-%           \cs{opt}, \cs{thm} and \cs{bib} must have sensible fonts
-%           and these should be reflected in the implementation details
-%           as well as the description.
 %     \item Macro indexing has a problem, if two occurrences are on the
 %           same page the first one dictates formatting. Figure out how
-%           to make italic/underlined have precedence.
+%           to make italic/underlined have precedence. The fake page
+%           counters approach showed promise, but there was problems
+%           with xindy I think.
 %     \item Starred variants of the implementation environments have to
 %           gobble the arguments that are normally printed!
-%     \item Themes and \hologo{BibTeX} entry types need macros in the
-%           spirit of \cs{Option} and friends.
 % \end{itemize}
 %
 % \Implementation
@@ -892,8 +906,8 @@
     macroimpl,73,10,61;
     meta,11,72,107;
     scriptcolor,140,35,24;
-    optioncolor,250,105,0;
-    opt,250,205,0
+    optioncolor,73,10,61;
+    opt,73,10,61
 }
 %    \end{macrocode}
 % \subsubsection{Fonts}
@@ -1175,7 +1189,7 @@
 % a key-vaue option
 %    \begin{macrocode}
 \DeclareDocumentCommand\WithValues{m}{
-    \noindent\makebox[\linewidth][l]{\texttt{\textcolor{gray}{#1}}}
+    \noindent\makebox[\linewidth][l]{\texttt{#1}}
     \futurelet\@let@token\skdoc@WithValues@peek
 }
 %    \end{macrocode}
@@ -1187,6 +1201,63 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\AndDefault{m}{
     \llap{\textcolor{gray}{\texttt{(#1)}}}\par\noindent\nobreak
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% Similar macros are provided for \hologo{BibTeX} entries.
+% \begin{macro}{\BibEntry}[1]
+%   {The name of the \hologo{BibTeX} entry}
+%    \begin{macrocode}
+\DeclareDocumentCommand\BibEntry{m}{
+    \marginnote{
+        \index@bibentry*{#1}
+        \hfill\llap{\textcolor{macrodesc}{\bib{#1}}}
+    }
+    \nobreak
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\WithFields}[2]
+%   {Optional fields}
+%   {Mandatory fields}
+%    \begin{macrocode}
+\DeclareDocumentCommand\WithFields{om}{
+    \noindent\makebox[\linewidth]{
+        \texttt{#2}
+        \IfNoValueTF{#1}{}{
+            \textcolor{gray}{\texttt{,#2}}
+        }
+    }
+    \par\noindent\nobreak
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% A macro for describing themes is supplied.
+% \begin{macro}{\Theme}[1]
+%   {The theme name}
+%    \begin{macrocode}
+\DeclareDocumentCommand\Theme{m}{
+    \marginnote{
+        \index@theme*{#1}
+        \hfill\llap{\textcolor{macrodesc}{\theme{#1}}}
+    }
+    \nobreak\par\noindent\nobreak
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% And finally, a macro for describing files is provided.
+% \begin{macro}{\DescribeFile}[1]
+%   {The filename}
+%    \begin{macrocode}
+\DeclareDocumentCommand\DescribeFile{m}{
+    \marginnote{
+        \index@file*{#1}
+        \hfill\llap{\textcolor{macrodesc}{\file{#1}}}
+    }
+    \nobreak\par\noindent\nobreak
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2365,7 +2436,9 @@
 % \fi
 % \Finale
 %
-% % \section{Known issues}
+% \iffalse
+% \section{Known issues}
+% \fi
 %
 % \PrintChanges
 % \PrintIndex
