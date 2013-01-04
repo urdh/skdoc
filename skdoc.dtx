@@ -102,7 +102,7 @@
 }
 \end{filecontents}
 \addbibresource{skdoc.bib}
-%\OnlyDescription
+\OnlyDescription
 \begin{document}
     \DocInput{skdoc.dtx}
 \end{document}
@@ -649,7 +649,6 @@
 %           spirit of \cs{Option} and friends.
 %     \item We might have to \cs{leavevmode} at the beginning of
 %           \env{macro} \emph{et. al}.
-%     \item Apparently, \cs{OnlyDescription} breaks indexing badly.
 % \end{itemize}
 %
 % \Implementation
@@ -1444,6 +1443,19 @@
 % \end{macro*}
 %
 % \subsection{The index}
+%    \begin{macrocode}
+\prg_new_conditional:Nnn\__skdoc_do_index:{p}{
+    \iftoggle{skdoc@impl}{
+        \prg_return_true:
+    }{
+        \iftoggle{skdoc@in@impl}{
+            \prg_return_false:
+        }{
+            \prg_return_true:
+        }
+    }
+}
+%    \end{macrocode}
 % The index is based on \pkg{glossaries}, and as such the whole
 % process of adding entries to the index is reduced to adding
 % glossary entries. This is done through two wrapper macros around
@@ -1458,13 +1470,9 @@
 % index entry.
 %    \begin{macrocode}
 \DeclareDocumentCommand\@index@{mm}{
-    \iftoggle{skdoc@impl}{
+    \if_predicate:w\__skdoc_do_index_p:
         \@index@@{#1}{#2}
-    }{
-        \iftoggle{skdoc@in@impl}{}{
-            \@index@@{#1}{#2}
-        }
-    }
+    \fi:
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1495,6 +1503,11 @@
 % recorded.
 % There is also a exclamation variant that is used by the implementation
 % environments, that typesets a normal use of the entity.
+%
+% Note the duplicate use of \cs{ifglsentryexists} --- this is needed
+% since \cs{@index@} doesn't always add the entity to the index
+% \emph{i.e.} nothing in the implementation is added when we're hiding
+% the implementation.
 % \begin{macro}{\index@macro}[3]
 %   {True if this is the starred variant}
 %   {True if this is the exclamation variant}
@@ -1505,15 +1518,17 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{#3}{\cs*{#3}}
     }
-    \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
-    }{
-        \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    \if_predicate:w\__skdoc_do_index_p:
+        \IfBooleanTF{#2}{
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
-            \glsadd[types=index]{index-\skdoc@temp}
+            \IfBooleanTF{#1}{
+                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+            }{
+                \glsadd[types=index]{index-\skdoc@temp}
+            }
         }
-    }
+    \fi:
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1527,15 +1542,17 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\env*{\string#3}~(environment)}
     }
-    \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
-    }{
-        \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    \if_predicate:w\__skdoc_do_index_p:
+        \IfBooleanTF{#2}{
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
-            \glsadd[types=index]{index-\skdoc@temp}
+            \IfBooleanTF{#1}{
+                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+            }{
+                \glsadd[types=index]{index-\skdoc@temp}
+            }
         }
-    }
+    \fi:
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1549,15 +1566,17 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\opt*{\string#3}~(option)}
     }
-    \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
-    }{
-        \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    \if_predicate:w\__skdoc_do_index_p:
+        \IfBooleanTF{#2}{
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
-            \glsadd[types=index]{index-\skdoc@temp}
+            \IfBooleanTF{#1}{
+                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+            }{
+                \glsadd[types=index]{index-\skdoc@temp}
+            }
         }
-    }
+    \fi:
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1572,15 +1591,17 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{#3}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
     }
-    \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
-    }{
-        \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    \if_predicate:w\__skdoc_do_index_p:
+        \IfBooleanTF{#2}{
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
-            \glsadd[types=index]{index-\skdoc@temp}
+            \IfBooleanTF{#1}{
+                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+            }{
+                \glsadd[types=index]{index-\skdoc@temp}
+            }
         }
-    }
+    \fi:
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1594,15 +1615,17 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\thm*{\string#3}~(theme)}
     }
-    \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
-    }{
-        \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    \if_predicate:w\__skdoc_do_index_p:
+        \IfBooleanTF{#2}{
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
-            \glsadd[types=index]{index-\skdoc@temp}
+            \IfBooleanTF{#1}{
+                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+            }{
+                \glsadd[types=index]{index-\skdoc@temp}
+            }
         }
-    }
+    \fi:
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1616,15 +1639,17 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\pkg*{\string#3}~(package)}
     }
-    \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
-    }{
-        \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    \if_predicate:w\__skdoc_do_index_p:
+        \IfBooleanTF{#2}{
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
-            \glsadd[types=index]{index-\skdoc@temp}
+            \IfBooleanTF{#1}{
+                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+            }{
+                \glsadd[types=index]{index-\skdoc@temp}
+            }
         }
-    }
+    \fi:
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1638,15 +1663,17 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\file*{\string#3}~(file)}
     }
-    \IfBooleanTF{#2}{
-        \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
-    }{
-        \IfBooleanTF{#1}{
-            \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+    \if_predicate:w\__skdoc_do_index_p:
+        \IfBooleanTF{#2}{
+            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
-            \glsadd[types=index]{index-\skdoc@temp}
+            \IfBooleanTF{#1}{
+                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
+            }{
+                \glsadd[types=index]{index-\skdoc@temp}
+            }
         }
-    }
+    \fi:
 }
 %    \end{macrocode}
 % \end{macro}
