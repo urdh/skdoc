@@ -642,13 +642,10 @@
 %     \item Macro indexing has a problem, if two occurrences are on the
 %           same page the first one dictates formatting. Figure out how
 %           to make italic/underlined have precedence.
-%     \item Better color scheme!
 %     \item Starred variants of the implementation environments have to
 %           gobble the arguments that are normally printed!
 %     \item Themes and \hologo{BibTeX} entry types need macros in the
 %           spirit of \cs{Option} and friends.
-%     \item We might have to \cs{leavevmode} at the beginning of
-%           \env{macro} \emph{et. al}.
 % \end{itemize}
 %
 % \Implementation
@@ -884,7 +881,7 @@
 % First, we redefine a couple of colors from \pkg{ydoc} as well as
 % defining a couple for ourselves.
 %    \begin{macrocode}
-\providecolorset{RGB}{}{}{
+\definecolorset{RGB}{}{}{
     section,11,72,107;
     extlink,73,10,61;
     intlink,140,35,24;
