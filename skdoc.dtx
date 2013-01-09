@@ -98,7 +98,13 @@
     author = {Yannis Lazarides},
     title = {Different approach to literate programming for \LaTeX},
     year = {2012},
-    url = {http://tex.stackexchange.com/questions/47237/different-approach-to-literate-programming-for-latex}
+    url = {http://tex.stackexchange.com/q/47237/66}
+}
+@online{Talbot13,
+    author = {Nicola Talbot},
+    title = {Answer to \enquote{Distinct formatted page numbers with glossaries and Xindy}},
+    year = {2013},
+    url = {http://tex.stackexchange.com/a/89830/66}
 }
 \end{filecontents}
 \addbibresource{skdoc.bib}
@@ -436,7 +442,7 @@
 % }
 %
 % \DescribeMacro\DescribeMacro<\textbackslash macro><macro arguments>
-% The \cs{DescribeMacro} is used to document a macro along with its
+% The \cs{DescribeMacro} macro documents a macro along with its
 % arguments. Any number of \meta{macro arguments} may follow the macro,
 % and \cs{DescribeMacro} will stop reading arguments on the first
 % non-argument token. The macro will be indexed.
@@ -648,16 +654,11 @@
 % \texttt{makeglossaries} between the two \LaTeX\ runs.
 %
 % \section{Planned improvements}
-% Planned improvements of this class include
+%% Planned improvements of this class include
 % \begin{itemize}
-%     \item Do things the \LaTeX3 way, rename the variables properly
-%           and generally conform to \pkg{expl3} guidelines when
-%           applicable. (Way future thing.)
-%     \item Macro indexing has a problem, if two occurrences are on the
-%           same page the first one dictates formatting. Figure out how
-%           to make italic/underlined have precedence. The fake page
-%           counters approach showed promise, but there was problems
-%           with xindy I think.
+%%     \item Do things the \LaTeX3 way, rename the variables properly
+%%           and generally conform to \pkg{expl3} guidelines when
+%%           applicable. (Way future thing.)
 %     \item Starred variants of the implementation environments have to
 %           gobble the arguments that are normally printed!
 % \end{itemize}
@@ -1747,11 +1748,11 @@
 % \end{macro}
 %
 % Notice the references to \cs{hyperul}? We need to define that as
-% well. It's simple enough:
+% well. It's simple enough. Note that \cs{GlsAddXdyAttribute} isn't
+% called until later.
 % \begin{macro}{\hyperul}[1]
 %   {Word to underline and link}
 %    \begin{macrocode}
-\AtBeginDocument{\GlsAddXdyAttribute{hyperul}}
 \ProvideDocumentCommand\hyperul{m}{
     \underline{\hyperup{#1}}
 }
@@ -1812,6 +1813,22 @@
     }
     \printglossary[type=index,style=docindex]
     \endgroup
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsubsection{Hacking \pkg{glossaries}}
+% The following redefinition of an internal \pkg{glossaries} macro,
+% provided by \textcite{Talbot13}, makes sure that the underlined
+% and italic page numbers in the index have precedence over the plain
+% nubmer format. In the event that a macro is described and implemented
+% on the same page, the description format (italic) is used.
+% \begin{macro}{\@gls@addpredefinedattributes}
+%    \begin{macrocode}
+\RenewDocumentCommand\@gls@addpredefinedattributes{}{
+    \GlsAddXdyAttribute{hyperit}
+    \GlsAddXdyAttribute{hyperul}
+    \GlsAddXdyAttribute{glsnumberformat}
 }
 %    \end{macrocode}
 % \end{macro}
