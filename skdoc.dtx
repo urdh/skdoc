@@ -653,15 +653,15 @@
 % the list of changes, this requires that you run 
 % \texttt{makeglossaries} between the two \LaTeX\ runs.
 %
+% \iffalse
 % \section{Planned improvements}
-%% Planned improvements of this class include
+% Planned improvements of this class include
 % \begin{itemize}
-%%     \item Do things the \LaTeX3 way, rename the variables properly
-%%           and generally conform to \pkg{expl3} guidelines when
-%%           applicable. (Way future thing.)
-%     \item Starred variants of the implementation environments have to
-%           gobble the arguments that are normally printed!
+%     \item Do things the \LaTeX3 way, rename the variables properly
+%           and generally conform to \pkg{expl3} guidelines when
+%           applicable. (Way future thing.)
 % \end{itemize}
+% \fi
 %
 % \Implementation
 % \section{Implementation}
@@ -1291,7 +1291,13 @@
     \@bsphack
     \index@macro!{\expandafter\@gobble\string#2}
     \@macroname{#2}%
-    \IfBooleanTF{#1}{}{
+    \IfBooleanTF{#1}{
+        \IfNoValueTF{#3}{}{
+            \int_compare:nNnTF{#3}>{0}{
+                \cs:w use_none:\prg_replicate:nn{#3}{n}\cs_end:
+            }{}
+        }
+    }{
         \PrintMacroImpl{#2}
         \IfNoValueTF{#3}{
             \macro@impl@argline@noarg{(no~arguments)}
@@ -1299,7 +1305,7 @@
     }%
 }{
     \let\skdoc@macroname@key\@empty
-    \@esphack
+    \IfBooleanTF{#1}{}{\@esphack}
 }
 %    \end{macrocode}
 % \end{environment}
@@ -1313,7 +1319,13 @@
     \@bsphack
     \index@environment!{#2}
     \@environmentname{#2}%
-    \IfBooleanTF{#1}{}{
+    \IfBooleanTF{#1}{
+        \IfNoValueTF{#3}{}{
+            \int_compare:nNnTF{#3}>{0}{
+                \cs:w use_none:\prg_replicate:nn{#3}{n}\cs_end:
+            }{}
+        }
+    }{
         \PrintEnvImplName{#2}
         \IfNoValueTF{#3}{
             \macro@impl@argline@noarg{(no~arguments)}
@@ -1321,7 +1333,7 @@
     }%
 }{
     \let\skdoc@macroname@key\@empty
-    \@esphack
+    \IfBooleanTF{#1}{}{\@esphack}
 }
 %    \end{macrocode}
 % \end{environment}
@@ -1346,7 +1358,7 @@
     }%
 }{
     \let\skdoc@macroname@key\@empty
-    \@esphack
+    \IfBooleanTF{#1}{}{\@esphack}
 }
 %    \end{macrocode}
 % \end{environment}
@@ -1364,7 +1376,7 @@
     }%
 }{
     \let\skdoc@macroname@key\@empty
-    \@esphack
+    \IfBooleanTF{#1}{}{\@esphack}
 }
 %    \end{macrocode}
 % \end{environment}
@@ -1382,7 +1394,7 @@
     }%
 }{
     \let\skdoc@macroname@key\@empty
-    \@esphack
+    \IfBooleanTF{#1}{}{\@esphack}
 }
 %    \end{macrocode}
 % \end{environment}
