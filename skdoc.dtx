@@ -711,6 +711,7 @@
 \RequirePackage{scrpage2,PTSerif,ascii}
 \RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
 \RequirePackage[babel]{microtype}
+\RequirePackage{minted}
 %    \end{macrocode}
 % \subsection{Error messages}
 % Set up some error message texts for later use.
@@ -796,8 +797,17 @@
 % This environment does all the actual work for \env{MacroCode}.
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
-    \iftoggle{skdoc@impl}{\@bsphack}{}
     \def\skdoc@key{#1}
+    \expandafter\int_compare:nNnTF%
+        \csname skdoc@output@\skdoc@key @line\endcsname=0%
+        {\int_gincr:c{skdoc@output@\skdoc@key @line}}{}%
+    \iftoggle{skdoc@impl}{%
+        \minted@resetoptions%
+        \@expandtwoargs\setkeys{minted@opt}%
+        {linenos,firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}}%
+        \immediate\openout\minted@code\jobname.pyg%
+        \@bsphack%
+    }{}
     \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
         \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
     }%
@@ -811,32 +821,40 @@
     }
     \def\verbatim@processline{%
         \tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
-        \int_gincr:c{skdoc@output@\skdoc@key @line}%
         \iftoggle{skdoc@impl}{
-            \noindent\leavevmode%
-            \hspace*{-5ex}
-            \begin{minipage}[c][1ex]{\textwidth}
-                \makebox[4ex]{%
-                    \leavevmode
-                    \tiny\color{lightgray}\hfill%
-                    \int_use:c{skdoc@output@\skdoc@key @line}%
-                }%
-                \hspace*{1ex}%
-                {
-                    \verbatim@font\footnotesize
-                    \the\verbatim@line
-                }
-            \end{minipage}
-            \vskip-.75ex\par
+            %\noindent\leavevmode%
+            %\hspace*{-5ex}
+            %\begin{minipage}[c][1ex]{\textwidth}
+            %    \makebox[4ex]{%
+            %        \leavevmode
+            %        \tiny\color{lightgray}\hfill%
+            %        \int_use:c{skdoc@output@\skdoc@key @line}%
+            %    }%
+            %    \hspace*{1ex}%
+            %    {
+            %        \verbatim@font\footnotesize
+            %        \the\verbatim@line
+            %    }
+            %\end{minipage}
+            %\vskip-.75ex\par
+            \immediate\write\minted@code{\the\verbatim@line}%
         }{}
+        \int_gincr:c{skdoc@output@\skdoc@key @line}%
     }%
+    \group_begin:
     \let\do\@makeother\dospecials\catcode`\^^M\active%
     \iftoggle{skdoc@impl}{
         \frenchspacing\@vobeyspaces
     }{}
     \verbatim@start%
 }{%
-    \iftoggle{skdoc@impl}{\@esphack}{}%
+    \group_end:
+    \iftoggle{skdoc@impl}{
+        \immediate\closeout\minted@code%
+        \minted@pygmentize{latex}%
+        \DeleteFile{\jobname.pyg}%
+        \@esphack%
+    }{}%
 }
 %    \end{macrocode}
 % \end{environment}
