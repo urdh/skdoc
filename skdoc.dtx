@@ -183,13 +183,26 @@
 %
 % \subsection{Options}
 % \Option{load}\WithValues{\meta{package}}\AndDefault{\cs{jobname}}
-% The \thepkg\ document class has only one option. The \opt{load}
+% The \opt{load}
 % option declares that if the package specified exists, it should
 % be loaded. This is intended to load any package provided in the
 % implementation, but requires that the documentation provides
 % stub variants of the macros used in the documentation so that
 % \LaTeX\ still completes its first run. \Warning{The \opt{load}
 % option will likely disappear in a future version.}
+%
+% \Option{highlight}\WithValues{true,false}\AndDefault{true}
+% The \opt{highlight} option enables or disabled syntax highlighting
+% of the implementation code. Highlighting is performed using
+% \pkg{minted}, and falls back to no highlighting if there is no
+% \cs{write18} access or if the \texttt{pygmentize} binary can't be
+% found. \Notice{On non-unix platforms, the test for \texttt{pygmentize}
+% will likely fail. Therefore, syntax highlighting is not supported
+% on such platforms.}
+%
+% Generally, there should be no reason to disable syntax highlighting
+% unless the documentation describes a very large package, and the
+% repeated calls to \texttt{pygmentize} take too long.
 %
 % \subsection{General macros}
 % The document class defines a number of general macros intended for
@@ -729,6 +742,26 @@
 \msg_new:nnn{skdoc}{no-pygments}{Syntax~highlighting~disabled:~couldn't~find~"pygmentize".}
 %    \end{macrocode}
 %
+% \subsection{Options}
+% Define the all options, and process them.
+%    \begin{macrocode}
+\SetupKeyvalOptions{
+    family=skdoc,
+    prefix=skdoc@
+}
+\DeclareStringOption{load}[\jobname]
+\DeclareBoolOption[true]{highlight}
+\ProcessKeyvalOptions*
+%    \end{macrocode}
+% If the \opt{load} option was used, load the given package if it exists.
+%    \begin{macrocode}
+\IfStrEq{\skdoc@load}{}{}{%
+    \IfFileExists{\skdoc@load.sty}{%
+        \RequirePackage{\skdoc@load}
+    }{}
+}
+%    \end{macrocode}
+%
 % \subsection{Special case: syntax highlighting}
 % We support syntax highlighting through \pkg{minted}, but only if 
 % we're running with unrestricted \cs{write18} access \emph{and}
@@ -823,40 +856,24 @@
 %
 % Using the macros defined above, we can test for both \cs{write18}
 % and \texttt{pygmentize}, loading \pkg{minted} and setting a flag
-% if both exist.
+% if both exist. If the option \opt{highlight} was supplied and set
+% to \texttt{false}, we do nothing.
 %    \begin{macrocode}
 \newtoggle{skdoc@minted}
 \togglefalse{skdoc@minted}
-\__skdoc_if_shellescape:TF{
-    \__skdoc_if_pygmentize:TF{
-        \toggletrue{skdoc@minted}
-        \RequirePackage{minted}
-        % More setup code here
+\ifskdoc@highlight
+    \__skdoc_if_shellescape:TF{
+        \__skdoc_if_pygmentize:TF{
+            \toggletrue{skdoc@minted}
+            \RequirePackage{minted}
+            % More setup code here
+        }{
+            \msg_warning:nn{skdoc}{no-pygments}
+        }
     }{
-        \msg_warning:nn{skdoc}{no-pygments}
+        \msg_warning:nn{skdoc}{no-shell-escape}
     }
-}{
-    \msg_warning:nn{skdoc}{no-shell-escape}
-}
-%    \end{macrocode}
-%
-% \subsection{Options}
-% Define the (as of version 1.0) only option, and process it.
-%    \begin{macrocode}
-\SetupKeyvalOptions{
-    family=skdoc,
-    prefix=skdoc@
-}
-\DeclareStringOption{load}[\jobname]
-\ProcessKeyvalOptions*
-%    \end{macrocode}
-% If the option was used, load the given package if it exists.
-%    \begin{macrocode}
-\IfStrEq{\skdoc@load}{}{}{%
-    \IfFileExists{\skdoc@load.sty}{%
-        \RequirePackage{\skdoc@load}
-    }{}
-}
+\fi
 %    \end{macrocode}
 % \subsection{The \env{MacroCode} environment}
 % We need a token list and input/output.
