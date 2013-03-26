@@ -195,8 +195,9 @@
 % The \opt{highlight} option enables or disabled syntax highlighting
 % of the implementation code. Highlighting is performed using
 % \pkg{minted}, and falls back to no highlighting if there is no
-% \cs{write18} access or if the \texttt{pygmentize} binary can't be
-% found. \Notice{On non-unix platforms, the test for \texttt{pygmentize}
+% \cs{write18} access, if \pkg{minted} is unavailable or if the
+% \texttt{pygmentize} binary can't be found.
+% \Notice{On non-unix platforms, the test for \texttt{pygmentize}
 % will likely fail. Therefore, syntax highlighting is not supported
 % on such platforms.}
 %
@@ -738,6 +739,7 @@
 \msg_new:nnn{skdoc}{wrote-file}{Writing~things~to~file~"#1".}
 \msg_new:nnn{skdoc}{read-preamble}{Reading~preamble~from~file~"#1".}
 \msg_new:nnn{skdoc}{no-lppl}{Could~not~include~LPPL:~lppl.tex~does~not~exist!}
+\msg_new:nnn{skdoc}{no-minted}{Syntax~highlighting~disabled:~couldn't~find~minted.sty!}
 \msg_new:nnn{skdoc}{no-shell-escape}{Syntax~highlighting~disabled:~running~without~unrestricted~\string\write18.}
 \msg_new:nnn{skdoc}{no-pygments}{Syntax~highlighting~disabled:~couldn't~find~"pygmentize".}
 %    \end{macrocode}
@@ -862,16 +864,20 @@
 \newtoggle{skdoc@minted}
 \togglefalse{skdoc@minted}
 \ifskdoc@highlight
-    \__skdoc_if_shellescape:TF{
-        \__skdoc_if_pygmentize:TF{
-            \toggletrue{skdoc@minted}
-            \RequirePackage{minted}
-            % More setup code here
+    \IfFileExists{\skdoc@load.sty}{
+        \__skdoc_if_shellescape:TF{
+            \__skdoc_if_pygmentize:TF{
+                \toggletrue{skdoc@minted}
+                \RequirePackage{minted}
+                % More setup code here
+            }{
+                \msg_warning:nn{skdoc}{no-pygments}
+            }
         }{
-            \msg_warning:nn{skdoc}{no-pygments}
+            \msg_warning:nn{skdoc}{no-shell-escape}
         }
     }{
-        \msg_warning:nn{skdoc}{no-shell-escape}
+        \msg_warning:nn{skdoc}{no-minted}
     }
 \fi
 %    \end{macrocode}
