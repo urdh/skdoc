@@ -653,15 +653,21 @@
 % the list of changes, this requires that you run 
 % \texttt{makeglossaries} between the two \LaTeX\ runs.
 %
-% \iffalse
-% \section{Planned improvements}
-% Planned improvements of this class include
-% \begin{itemize}
-%     \item Do things the \LaTeX3 way, rename the variables properly
-%           and generally conform to \pkg{expl3} guidelines when
-%           applicable. (Way future thing.)
-% \end{itemize}
-% \fi
+% \section{Known issues}
+% A list of current issues is available in the Github repository of this
+% package\footnote{\url{https://github.com/urdh/skdoc/issues}}, but as
+% of the release of \theversion, there is only one known issue:
+% \begin{description}
+%   \item[\#2]  When referencing in the implementation, using \cs{cite}
+%               and similar commands, the references are included in the
+%               bibliography even though the referencing command is
+%               never typeset. This is a side-effect of the method with
+%               which the implementation is hidden, but it should be
+%               possible to mitigate (in the same way that \cs{section}s
+%               are hidden).
+% \end{description}
+% If you discover any bugs in this package, please report them to the 
+% issue tracker in the \thepackage\ Github repository.
 %
 % \Implementation
 % \section{Implementation}
