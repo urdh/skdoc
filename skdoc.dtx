@@ -73,7 +73,7 @@
 %</driver>
 %<class>\ProvidesExplClass{skdoc}
 %<*class>
-    {2012/12/26}{1.0}{skdoc documentation class}
+    {2012/12/26}{1.1}{skdoc documentation class}
 %</class>
 %
 %<*driver>
@@ -92,9 +92,10 @@
 \DeclareDocumentCommand\DocInput{m}{
     \MakePercentIgnore\input{#1}\MakePercentComment
 }
-\documentclass{skdoc}
+\documentclass[highlight=false]{skdoc}
 \usepackage{hologo}
 \usepackage{booktabs}
+\usepackage{csquotes}
 \usepackage[style=authoryear,backend=biber]{biblatex}
 %%\usepackage{chslacite}
 \begin{filecontents}{skdoc.bib}
@@ -110,6 +111,14 @@
     year = {2013},
     url = {http://tex.stackexchange.com/a/89830/66}
 }
+@manual{Rahtz10,
+    author = {Sebastian Rahtz and Herbert Vo\ss},
+    title = {The \enquote{\textsf{fancyvrb}} package},
+    subtitle = {Fancy Verbatims in \LaTeX},
+    date = {2012-05-15},
+    version = {2.8},
+    url = {http://mirrors.ctan.org/macros/latex/contrib/fancyvrb/fancyvrb.pdf}
+}
 \end{filecontents}
 \addbibresource{skdoc.bib}
 \OnlyDescription
@@ -123,8 +132,9 @@
 % {}{\small\pagemark}
 % \pagestyle{skdoc-class}
 %
-% \version{1.0}
+% \version{1.1}
 % \changes{1.0}{Initial version}
+% \changes{1.1}{Added support for syntax highlighting using \pkg{minted}}
 %
 % \package[ctan=skbundle,vcs=https://github.com/urdh/skdoc]{skdoc}
 % \repository{https://github.com/urdh/skdoc}
@@ -935,6 +945,7 @@
 % \end{macro}
 % \begin{environment}{skdoc@verbatim}[1]
 %   {The key of the file being described}
+% \changes{1.1}{Introducing syntax highlighting}
 % This environment does all the actual work for \env{MacroCode}.
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
@@ -955,6 +966,7 @@
     \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
         \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
     }%
+    \iftoggle{skdoc@minted}{\par\nobreak}{}
     \marginnote{
         \leavevmode
         \llap{
@@ -979,11 +991,11 @@
                     }%
                     \hspace*{1ex}%
                     {
-                        \verbatim@font\footnotesize
+                        \verbatim@font
                         \the\verbatim@line
                     }
                 \end{minipage}
-                \vskip-.75ex\par
+                \par
             }
         }{}
         \int_gincr:c{skdoc@output@\skdoc@key @line}%
@@ -999,8 +1011,17 @@
     \iftoggle{skdoc@impl}{
         \iftoggle{skdoc@minted}{
             \iow_close:N\minted@code%
+%    \end{macrocode}
+% These negative \cs{vspace}s are derived from the \pkg{fancyvrb}
+% documentation \parencite[pp.~46--47]{Rahtz10}.
+%    \begin{macrocode}
+            \vspace*{-\topsep}
+            \vspace*{-\partopsep}
+            \vspace*{-\parskip}
             \minted@pygmentize{latex}%
             \DeleteFile{\jobname.pyg}%
+            \vspace*{-\topsep}
+            \vspace*{-\partopsep}
         }{
             \@esphack%
         }
@@ -1010,11 +1031,12 @@
 % \end{environment}
 % \begin{environment}{MacroCode}[1]
 %   {The key of the file being described}
+% \changes{1.1}{Minor changes due to syntax highlighting}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{MacroCode}{m}{
     \iftoggle{skdoc@impl}{
         \vspace{.2\baselineskip}
-        \par\noindent
+        \iftoggle{skdoc@minted}{}{\par\noindent}
     }{}
     \skdoc@verbatim{#1}
 }{
