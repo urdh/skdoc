@@ -82,6 +82,10 @@
 \IfFileExists{skdoc.cls}{}{
     \msg_fatal:nn{skdoc-dtx}{not-installed}
 }
+\cs_set_protected_nopar:Npn\ExplHack{
+    \char_set_catcode_letter:n{ 58 }
+    \char_set_catcode_letter:n{ 95 }
+}
 \ExplSyntaxOff
 \DeclareDocumentCommand\MakePercentIgnore{}{\catcode`\%9\relax}
 \DeclareDocumentCommand\MakePercentComment{}{\catcode`\%14\relax}
@@ -669,7 +673,7 @@
 % If you discover any bugs in this package, please report them to the 
 % issue tracker in the \thepackage\ Github repository.
 %
-% \Implementation
+% \Implementation \ExplHack
 % \section{Implementation}
 % \iffalse
 %</driver>
@@ -691,7 +695,7 @@
 % These packages are basic low-level things that we use to declare
 % commands, work with strings and so on.
 %    \begin{macrocode}
-\RequirePackage{etoolbox,xstring,xparse,atbegshi,kvoptions}
+\RequirePackage{etoolbox,xstring,xparse,atbegshi,kvoptions,pdftexcmds}
 %    \end{macrocode}
 % Now, higher-level packages we use in our definitions.
 %    \begin{macrocode}
@@ -711,8 +715,8 @@
 \RequirePackage{scrpage2,PTSerif,ascii}
 \RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
 \RequirePackage[babel]{microtype}
-\RequirePackage{minted}
 %    \end{macrocode}
+%
 % \subsection{Error messages}
 % Set up some error message texts for later use.
 %    \begin{macrocode}
@@ -721,7 +725,121 @@
 \msg_new:nnn{skdoc}{wrote-file}{Writing~things~to~file~"#1".}
 \msg_new:nnn{skdoc}{read-preamble}{Reading~preamble~from~file~"#1".}
 \msg_new:nnn{skdoc}{no-lppl}{Could~not~include~LPPL:~lppl.tex~does~not~exist!}
+\msg_new:nnn{skdoc}{no-shell-escape}{Syntax~highlighting~disabled:~running~without~unrestricted~\string\write18.}
+\msg_new:nnn{skdoc}{no-pygments}{Syntax~highlighting~disabled:~couldn't~find~"pygmentize".}
 %    \end{macrocode}
+%
+% \subsection{Special case: syntax highlighting}
+% We support syntax highlighting through \pkg{minted}, but only if 
+% we're running with unrestricted \cs{write18} access \emph{and}
+% there exists a suitable executable (\texttt{pygmentize}). Since
+% \pkg{minted} bails out without \cs{write18} access, we have to test
+% that before even loading it.
+%
+% \subsubsection{A simple \cs{write18} test}
+% Using the \cs{pdf@shellescape} macro from \pkg{pdftexcmds}, we
+% can define a new conditional that decides if we have unrestricted
+% \cs{write18} or not.
+% \begin{macro*}{\__skdoc_if_shellescape:T}
+% \begin{macro*}{\__skdoc_if_shellescape:F}
+% \begin{macro}{\__skdoc_if_shellescape:TF}
+%    \begin{macrocode}
+\prg_new_conditional:Nnn\__skdoc_if_shellescape:{T,F,TF}{
+    \if_cs_exist:N\pdf@shellescape
+%    \end{macrocode}
+% If the command sequence exists (it really should), we test to see
+% if it is equal to one. The \cs{pdf@shellescape} macro will be zero
+% if no \cs{write18} access is available, two if we have restricted
+% access and one if access is unrestricted.
+%    \begin{macrocode}
+        \if_int_compare:w\pdf@shellescape=\c_one
+            \prg_return_true:
+        \else:
+            \prg_return_false:
+        \fi:
+%    \end{macrocode}
+% If the command sequence doesn't exist, we assume that we have
+% unrestricted \cs{write18} access (we probably don't), and let
+% \LaTeX\ complain about it later.
+%    \begin{macrocode}
+    \else:
+        \prg_return_true:
+    \fi:
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro*}
+% \end{macro*}
+%
+% \subsubsection{Testing for an application}
+% In order to find out wether \texttt{pygmentize} is installed, we
+% have to test for its binary. This is done by shelling out to
+% \texttt{which} and reading a temporary file, which means we need
+% a way to delete that file.
+% \begin{macro}{\__skdoc_rm:n}[1]
+%   {The file to be removed}
+%    \begin{macrocode}
+\cs_new:Npn\__skdoc_rm:n#1{
+    \immediate\write18{rm~#1}
+}
+%    \end{macrocode}
+% \end{macro}
+% Now, let's define the actual test. Note that this test will fail
+% on non-unixy platforms (\emph{i.e.} Windows). Deal with it for now.
+% \begin{macro*}{\__skdoc_if_pygmentize:nT}
+% \begin{macro*}{\__skdoc_if_pygmentize:nF}
+% \begin{macro}{\__skdoc_if_pygmentize:nTF}[1]
+%   {The name of the binary to check existence of}
+%    \begin{macrocode}
+\prg_new_conditional:Nnn\__skdoc_if_pygmentize:{T,F,TF}{
+%    \end{macrocode}
+% First, run \texttt{which} to create the temporary file.
+%    \begin{macrocode}
+    \immediate\write18{which~pygmentize~&&~touch~\jobname.aex}
+%    \end{macrocode}
+% A temporary boolean is defined to hold the result of the test (this
+% is a bit of carco cult programming, any clues as to why placing the
+% result inside \cs{file_if_exists:nTF} doesn't work are welcome), and
+% if the test is successful we remove the temporary file.
+%    \begin{macrocode}
+    \bool_set:Nn\l_tmpa_bool{\c_false_bool}
+    \file_if_exist:nT{\jobname.aex}{
+        \__skdoc_rm:n{\jobname.aex}
+        \bool_set:Nn\l_tmpa_bool{\c_true_bool}
+    }
+%    \end{macrocode}
+% Finally, the temporary boolean is used to return a result.
+%    \begin{macrocode}
+    \if_bool:N\l_tmpa_bool
+        \prg_return_true:
+    \else:
+        \prg_return_false:
+    \fi:
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro*}
+% \end{macro*}
+%
+% Using the macros defined above, we can test for both \cs{write18}
+% and \texttt{pygmentize}, loading \pkg{minted} and setting a flag
+% if both exist.
+%    \begin{macrocode}
+\newtoggle{skdoc@minted}
+\togglefalse{skdoc@minted}
+\__skdoc_if_shellescape:TF{
+    \__skdoc_if_pygmentize:TF{
+        \toggletrue{skdoc@minted}
+        \RequirePackage{minted}
+        % More setup code here
+    }{
+        \msg_warning:nn{skdoc}{no-pygments}
+    }
+}{
+    \msg_warning:nn{skdoc}{no-shell-escape}
+}
+%    \end{macrocode}
+%
 % \subsection{Options}
 % Define the (as of version 1.0) only option, and process it.
 %    \begin{macrocode}
@@ -798,15 +916,18 @@
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
     \def\skdoc@key{#1}
-    \expandafter\int_compare:nNnTF%
-        \csname skdoc@output@\skdoc@key @line\endcsname=0%
-        {\int_gincr:c{skdoc@output@\skdoc@key @line}}{}%
+    \expandafter\int_compare:nNnT%
+        \cs:w skdoc@output@\skdoc@key @line\cs_end:=\c_zero%
+        {\int_gincr:c{skdoc@output@\skdoc@key @line}}%
     \iftoggle{skdoc@impl}{%
-        \minted@resetoptions%
-        \@expandtwoargs\setkeys{minted@opt}%
-        {linenos,firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}}%
-        \immediate\openout\minted@code\jobname.pyg%
-        \@bsphack%
+        \iftoggle{skdoc@minted}{
+            \minted@resetoptions%
+            \exp_args:Nnx\setkeys{minted@opt}%
+            {linenos,firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}}%
+            \iow_open:Nn\minted@code{\jobname.pyg}%
+        }{
+            \@bsphack%
+        }
     }{}
     \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
         \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
@@ -822,38 +943,44 @@
     \def\verbatim@processline{%
         \tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
         \iftoggle{skdoc@impl}{
-            %\noindent\leavevmode%
-            %\hspace*{-5ex}
-            %\begin{minipage}[c][1ex]{\textwidth}
-            %    \makebox[4ex]{%
-            %        \leavevmode
-            %        \tiny\color{lightgray}\hfill%
-            %        \int_use:c{skdoc@output@\skdoc@key @line}%
-            %    }%
-            %    \hspace*{1ex}%
-            %    {
-            %        \verbatim@font\footnotesize
-            %        \the\verbatim@line
-            %    }
-            %\end{minipage}
-            %\vskip-.75ex\par
-            \immediate\write\minted@code{\the\verbatim@line}%
+            \iftoggle{skdoc@minted}{
+                \iow_now:Nx\minted@code{\the\verbatim@line}%
+            }{
+                \noindent\leavevmode%
+                \hspace*{-5ex}
+                \begin{minipage}[c][1ex]{\textwidth}
+                    \makebox[4ex]{%
+                        \leavevmode
+                        \tiny\color{lightgray}\hfill%
+                        \int_use:c{skdoc@output@\skdoc@key @line}%
+                    }%
+                    \hspace*{1ex}%
+                    {
+                        \verbatim@font\footnotesize
+                        \the\verbatim@line
+                    }
+                \end{minipage}
+                \vskip-.75ex\par
+            }
         }{}
         \int_gincr:c{skdoc@output@\skdoc@key @line}%
     }%
     \group_begin:
     \let\do\@makeother\dospecials\catcode`\^^M\active%
     \iftoggle{skdoc@impl}{
-        \frenchspacing\@vobeyspaces
+        \iftoggle{skdoc@minted}{}{\frenchspacing\@vobeyspaces}
     }{}
     \verbatim@start%
 }{%
     \group_end:
     \iftoggle{skdoc@impl}{
-        \immediate\closeout\minted@code%
-        \minted@pygmentize{latex}%
-        \DeleteFile{\jobname.pyg}%
-        \@esphack%
+        \iftoggle{skdoc@minted}{
+            \iow_close:N\minted@code%
+            \minted@pygmentize{latex}%
+            \DeleteFile{\jobname.pyg}%
+        }{
+            \@esphack%
+        }
     }{}%
 }
 %    \end{macrocode}
