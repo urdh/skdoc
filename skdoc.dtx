@@ -73,7 +73,7 @@
 %</driver>
 %<class>\ProvidesExplClass{skdoc}
 %<*class>
-    {2012/12/26}{1.0}{skdoc documentation class}
+    {2012/12/26}{1.1}{skdoc documentation class}
 %</class>
 %
 %<*driver>
@@ -82,15 +82,20 @@
 \IfFileExists{skdoc.cls}{}{
     \msg_fatal:nn{skdoc-dtx}{not-installed}
 }
+\cs_set_protected_nopar:Npn\ExplHack{
+    \char_set_catcode_letter:n{ 58 }
+    \char_set_catcode_letter:n{ 95 }
+}
 \ExplSyntaxOff
 \DeclareDocumentCommand\MakePercentIgnore{}{\catcode`\%9\relax}
 \DeclareDocumentCommand\MakePercentComment{}{\catcode`\%14\relax}
 \DeclareDocumentCommand\DocInput{m}{
     \MakePercentIgnore\input{#1}\MakePercentComment
 }
-\documentclass{skdoc}
+\documentclass[highlight=false]{skdoc}
 \usepackage{hologo}
 \usepackage{booktabs}
+\usepackage{csquotes}
 \usepackage[style=authoryear,backend=biber]{biblatex}
 %%\usepackage{chslacite}
 \begin{filecontents}{skdoc.bib}
@@ -106,6 +111,14 @@
     year = {2013},
     url = {http://tex.stackexchange.com/a/89830/66}
 }
+@manual{Rahtz10,
+    author = {Sebastian Rahtz and Herbert Vo\ss},
+    title = {The \enquote{\textsf{fancyvrb}} package},
+    subtitle = {Fancy Verbatims in \LaTeX},
+    date = {2012-05-15},
+    version = {2.8},
+    url = {http://mirrors.ctan.org/macros/latex/contrib/fancyvrb/fancyvrb.pdf}
+}
 \end{filecontents}
 \addbibresource{skdoc.bib}
 \OnlyDescription
@@ -119,8 +132,9 @@
 % {}{\small\pagemark}
 % \pagestyle{skdoc-class}
 %
-% \version{1.0}
+% \version{1.1}
 % \changes{1.0}{Initial version}
+% \changes{1.1}{Added support for syntax highlighting using \pkg{minted}}
 %
 % \package[ctan=skbundle,vcs=https://github.com/urdh/skdoc]{skdoc}
 % \repository{https://github.com/urdh/skdoc}
@@ -179,13 +193,27 @@
 %
 % \subsection{Options}
 % \Option{load}\WithValues{\meta{package}}\AndDefault{\cs{jobname}}
-% The \thepkg\ document class has only one option. The \opt{load}
+% The \opt{load}
 % option declares that if the package specified exists, it should
 % be loaded. This is intended to load any package provided in the
 % implementation, but requires that the documentation provides
 % stub variants of the macros used in the documentation so that
 % \LaTeX\ still completes its first run. \Warning{The \opt{load}
 % option will likely disappear in a future version.}
+%
+% \Option{highlight}\WithValues{true,false}\AndDefault{true}
+% The \opt{highlight} option enables or disabled syntax highlighting
+% of the implementation code. Highlighting is performed using
+% \pkg{minted}, and falls back to no highlighting if there is no
+% \cs{write18} access, if \pkg{minted} is unavailable or if the
+% \texttt{pygmentize} binary can't be found.
+% \Notice{On non-unix platforms, the test for \texttt{pygmentize}
+% will likely fail. Therefore, syntax highlighting is not supported
+% on such platforms.}
+%
+% Generally, there should be no reason to disable syntax highlighting
+% unless the documentation describes a very large package, and the
+% repeated calls to \texttt{pygmentize} take too long.
 %
 % \subsection{General macros}
 % The document class defines a number of general macros intended for
@@ -665,11 +693,15 @@
 %               which the implementation is hidden, but it should be
 %               possible to mitigate (in the same way that \cs{section}s
 %               are hidden).
+%   \item[\#3]  If there is a page break near the beginning of a code
+%               block, the key/label marker may stay on the page while
+%               the code follows after the break. This only happens with
+%               syntax highlighting.
 % \end{description}
 % If you discover any bugs in this package, please report them to the 
 % issue tracker in the \thepackage\ Github repository.
 %
-% \Implementation
+% \Implementation \ExplHack
 % \section{Implementation}
 % \iffalse
 %</driver>
@@ -691,7 +723,7 @@
 % These packages are basic low-level things that we use to declare
 % commands, work with strings and so on.
 %    \begin{macrocode}
-\RequirePackage{etoolbox,xstring,xparse,atbegshi,kvoptions}
+\RequirePackage{etoolbox,xstring,xparse,atbegshi,kvoptions,pdftexcmds}
 %    \end{macrocode}
 % Now, higher-level packages we use in our definitions.
 %    \begin{macrocode}
@@ -712,6 +744,7 @@
 \RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
 \RequirePackage[babel]{microtype}
 %    \end{macrocode}
+%
 % \subsection{Error messages}
 % Set up some error message texts for later use.
 %    \begin{macrocode}
@@ -720,24 +753,321 @@
 \msg_new:nnn{skdoc}{wrote-file}{Writing~things~to~file~"#1".}
 \msg_new:nnn{skdoc}{read-preamble}{Reading~preamble~from~file~"#1".}
 \msg_new:nnn{skdoc}{no-lppl}{Could~not~include~LPPL:~lppl.tex~does~not~exist!}
+\msg_new:nnn{skdoc}{no-minted}{Syntax~highlighting~disabled:~couldn't~find~minted.sty!}
+\msg_new:nnn{skdoc}{no-shell-escape}{Syntax~highlighting~disabled:~running~without~unrestricted~\string\write18.}
+\msg_new:nnn{skdoc}{no-pygments}{Syntax~highlighting~disabled:~couldn't~find~"pygmentize".}
 %    \end{macrocode}
+%
 % \subsection{Options}
-% Define the (as of version 1.0) only option, and process it.
+% Define the all options, and process them.
 %    \begin{macrocode}
 \SetupKeyvalOptions{
     family=skdoc,
     prefix=skdoc@
 }
 \DeclareStringOption{load}[\jobname]
+\DeclareBoolOption[true]{highlight}
 \ProcessKeyvalOptions*
 %    \end{macrocode}
-% If the option was used, load the given package if it exists.
+% If the \opt{load} option was used, load the given package if it exists.
 %    \begin{macrocode}
 \IfStrEq{\skdoc@load}{}{}{%
     \IfFileExists{\skdoc@load.sty}{%
         \RequirePackage{\skdoc@load}
     }{}
 }
+%    \end{macrocode}
+%
+% \subsection{Special case: syntax highlighting}
+% We support syntax highlighting through \pkg{minted}, but only if 
+% we're running with unrestricted \cs{write18} access \emph{and}
+% there exists a suitable executable (\texttt{pygmentize}). Since
+% \pkg{minted} bails out without \cs{write18} access, we have to test
+% that before even loading it.
+%
+% \subsubsection{A simple \cs{write18} test}
+% Using the \cs{pdf@shellescape} macro from \pkg{pdftexcmds}, we
+% can define a new conditional that decides if we have unrestricted
+% \cs{write18} or not.
+% \begin{macro*}{\__skdoc_if_shellescape:T}
+% \begin{macro*}{\__skdoc_if_shellescape:F}
+% \begin{macro}{\__skdoc_if_shellescape:TF}
+%    \begin{macrocode}
+\prg_new_conditional:Nnn\__skdoc_if_shellescape:{T,F,TF}{
+    \if_cs_exist:N\pdf@shellescape
+%    \end{macrocode}
+% If the command sequence exists (it really should), we test to see
+% if it is equal to one. The \cs{pdf@shellescape} macro will be zero
+% if no \cs{write18} access is available, two if we have restricted
+% access and one if access is unrestricted.
+%    \begin{macrocode}
+        \if_int_compare:w\pdf@shellescape=\c_one
+            \prg_return_true:
+        \else:
+            \prg_return_false:
+        \fi:
+%    \end{macrocode}
+% If the command sequence doesn't exist, we assume that we have
+% unrestricted \cs{write18} access (we probably don't), and let
+% \LaTeX\ complain about it later.
+%    \begin{macrocode}
+    \else:
+        \prg_return_true:
+    \fi:
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro*}
+% \end{macro*}
+%
+% \subsubsection{Testing for an application}
+% In order to find out wether \texttt{pygmentize} is installed, we
+% have to test for its binary. This is done by shelling out to
+% \texttt{which} and reading a temporary file, which means we need
+% a way to delete that file.
+% \begin{macro}{\__skdoc_rm:n}[1]
+%   {The file to be removed}
+%    \begin{macrocode}
+\cs_new:Npn\__skdoc_rm:n#1{
+    \immediate\write18{rm~#1}
+}
+%    \end{macrocode}
+% \end{macro}
+% Now, let's define the actual test. Note that this test will fail
+% on non-unixy platforms (\emph{i.e.} Windows). Deal with it for now.
+% \begin{macro*}{\__skdoc_if_pygmentize:nT}
+% \begin{macro*}{\__skdoc_if_pygmentize:nF}
+% \begin{macro}{\__skdoc_if_pygmentize:nTF}[1]
+%   {The name of the binary to check existence of}
+%    \begin{macrocode}
+\prg_new_conditional:Nnn\__skdoc_if_pygmentize:{T,F,TF}{
+%    \end{macrocode}
+% First, run \texttt{which} to create the temporary file.
+%    \begin{macrocode}
+    \immediate\write18{which~pygmentize~&&~touch~\jobname.aex}
+%    \end{macrocode}
+% A temporary boolean is defined to hold the result of the test (this
+% is a bit of carco cult programming, any clues as to why placing the
+% result inside \cs{file_if_exists:nTF} doesn't work are welcome), and
+% if the test is successful we remove the temporary file.
+%    \begin{macrocode}
+    \bool_set:Nn\l_tmpa_bool{\c_false_bool}
+    \file_if_exist:nT{\jobname.aex}{
+        \__skdoc_rm:n{\jobname.aex}
+        \bool_set:Nn\l_tmpa_bool{\c_true_bool}
+    }
+%    \end{macrocode}
+% Finally, the temporary boolean is used to return a result.
+%    \begin{macrocode}
+    \if_bool:N\l_tmpa_bool
+        \prg_return_true:
+    \else:
+        \prg_return_false:
+    \fi:
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro*}
+% \end{macro*}
+%
+% Using the macros defined above, we can test for both \cs{write18}
+% and \texttt{pygmentize}, loading \pkg{minted} and setting a flag
+% if both exist. If the option \opt{highlight} was supplied and set
+% to \texttt{false}, we do nothing.
+%    \begin{macrocode}
+\newtoggle{skdoc@minted}
+\togglefalse{skdoc@minted}
+\ifskdoc@highlight
+    \IfFileExists{\skdoc@load.sty}{
+        \__skdoc_if_shellescape:TF{
+            \__skdoc_if_pygmentize:TF{
+                \toggletrue{skdoc@minted}
+                \RequirePackage{minted}
+%    \end{macrocode}
+% Now that we have \pkg{minted}, we redefine the style of the line
+% numbers to match what we have further down for the non-highlighted
+% mode.
+%    \begin{macrocode}
+                \renewcommand{\theFancyVerbLine}{
+                    \sffamily\tiny\textcolor{lightgray}{
+                    \oldstylenums{\arabic{FancyVerbLine}}}
+                }
+%    \end{macrocode}
+% We also define our own Pygments style, to match the \thepackage%
+% color theme. This is a bunch of code generated by running
+% \texttt{pygmentize -S default -f latex}, with modifications. Note
+% the abundancy of \verb|#| characters; this is somewhat black magic,
+% but apparently \LaTeX\ expands them one more time than I'd expect
+% in this context. Probably a \LaTeX3 artifact. Also, the macro names
+% somehow correspond to Pygments entities (see \emph{e.g.}
+% \texttt{pygmentize -S default -f html}), but it's not entirely
+% apparent which macro corresponds to what entity.
+%    \begin{macrocode}
+                \renewcommand\minted@usedefaultstyle{}
+                \def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
+                    \let\PY@ul=\relax \let\PY@tc=\relax%
+                    \let\PY@bc=\relax \let\PY@ff=\relax}
+                \def\PY@tok##1{\csname PY@tok@##1\endcsname}
+                \def\PY@toks##1+{\ifx\relax##1\empty\else%
+                    \PY@tok{##1}\expandafter\PY@toks\fi}
+                \def\PY@do##1{\PY@bc{\PY@tc{\PY@ul{%
+                    \PY@it{\PY@bf{\PY@ff{##1}}}}}}}
+                \def\PY##1##2{\PY@reset\PY@toks##1+\relax+\PY@do{##2}}
+                \expandafter\def\csname PY@tok@gd\endcsname{%
+                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
+                \expandafter\def\csname PY@tok@gu\endcsname{%
+                    \let\PY@bf=\textbf%
+                    \def\PY@tc####1{\textcolor{optioncolor}{####1}}}
+                \expandafter\def\csname PY@tok@gt\endcsname{%
+                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
+                \expandafter\def\csname PY@tok@gs\endcsname{%
+                    \let\PY@bf=\textbf}
+                \expandafter\def\csname PY@tok@gr\endcsname{%
+                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
+                \expandafter\def\csname PY@tok@cm\endcsname{%
+                    \let\PY@it=\textit%
+                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
+                \expandafter\def\csname PY@tok@vg\endcsname{%
+                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
+                \expandafter\def\csname PY@tok@m\endcsname{%
+                    \def\PY@tc####1{\textcolor{meta}{####1}}}
+                \expandafter\def\csname PY@tok@mh\endcsname{%
+                    \def\PY@tc####1{\textcolor{meta}{####1}}}
+                \expandafter\def\csname PY@tok@cs\endcsname{%
+                    \let\PY@it=\textit%
+                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
+                \expandafter\def\csname PY@tok@ge\endcsname{%
+                    \let\PY@it=\textit}
+                \expandafter\def\csname PY@tok@vc\endcsname{%
+                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
+                \expandafter\def\csname PY@tok@il\endcsname{%
+                    \def\PY@tc####1{\textcolor{meta}{####1}}}
+                \expandafter\def\csname PY@tok@go\endcsname{%
+                    \def\PY@tc####1{\textcolor{gray}{####1}}}
+                \expandafter\def\csname PY@tok@cp\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp!75}{####1}}}
+                \expandafter\def\csname PY@tok@gi\endcsname{%
+                    \def\PY@tc####1{\textcolor{bright}{####1}}}
+                \expandafter\def\csname PY@tok@gh\endcsname{%
+                    \let\PY@bf=\textbf%
+                    \def\PY@tc####1{\textcolor{section}{####1}}}
+                \expandafter\def\csname PY@tok@ni\endcsname{%
+                    \let\PY@bf=\textbf%
+                    \def\PY@tc####1{\textcolor{keydesc}{####1}}}
+                \expandafter\def\csname PY@tok@nn\endcsname{%
+                    \let\PY@ul=\underline%
+                    \def\PY@tc####1{\textcolor{black}{####1}}}
+                \expandafter\def\csname PY@tok@no\endcsname{%
+                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
+                \expandafter\def\csname PY@tok@na\endcsname{%
+                    \def\PY@tc####1{\textcolor{meta!50}{####1}}}
+                \expandafter\def\csname PY@tok@nb\endcsname{%
+                    \def\PY@tc####1{\textcolor{black}{####1}}}
+                \expandafter\def\csname PY@tok@nc\endcsname{%
+                    \let\PY@ul=\underline%
+                    \def\PY@tc####1{\textcolor{bright}{####1}}}
+                \expandafter\def\csname PY@tok@nd\endcsname{%
+                    \def\PY@tc####1{\textcolor{gray}{####1}}}
+                \expandafter\def\csname PY@tok@si\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
+                \expandafter\def\csname PY@tok@nf\endcsname{%
+                    \def\PY@tc####1{\textcolor{bright}{####1}}}
+                \expandafter\def\csname PY@tok@s2\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
+                \expandafter\def\csname PY@tok@vi\endcsname{%
+                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
+                \expandafter\def\csname PY@tok@nt\endcsname{%
+                    \let\PY@bf=\textbf%
+                    \def\PY@tc####1{\textcolor{meta!50}{####1}}}
+                \expandafter\def\csname PY@tok@nv\endcsname{%
+                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
+                \expandafter\def\csname PY@tok@s1\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
+                \expandafter\def\csname PY@tok@gp\endcsname{%
+                    \def\PY@tc####1{\textcolor{gray}{####1}}}
+                \expandafter\def\csname PY@tok@sh\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
+                \expandafter\def\csname PY@tok@ow\endcsname{%
+                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
+                \expandafter\def\csname PY@tok@sx\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
+                \expandafter\def\csname PY@tok@bp\endcsname{%
+                    \def\PY@tc####1{\textcolor{black}{####1}}}
+                \expandafter\def\csname PY@tok@c1\endcsname{%
+                    \let\PY@it=\textit%
+                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
+                \expandafter\def\csname PY@tok@kc\endcsname{%
+                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
+                \expandafter\def\csname PY@tok@c\endcsname{%
+                    \let\PY@it=\textit%
+                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
+                \expandafter\def\csname PY@tok@mf\endcsname{%
+                    \def\PY@tc####1{\textcolor{meta}{####1}}}
+                \expandafter\def\csname PY@tok@err\endcsname{%
+                    \def\PY@tc####1{\textcolor{intlink}{####1}}%
+                    \def\PY@bc####1{\setlength{\fboxsep}{0pt}%
+                    \colorbox{bright}{\strut ####1}}}
+                \expandafter\def\csname PY@tok@kd\endcsname{%
+                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
+                \expandafter\def\csname PY@tok@ss\endcsname{%
+                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
+                \expandafter\def\csname PY@tok@sr\endcsname{%
+                    \def\PY@tc####1{\textcolor{meta}{####1}}}
+                \expandafter\def\csname PY@tok@mo\endcsname{%
+                    \def\PY@tc####1{\textcolor{meta}{####1}}}
+                \expandafter\def\csname PY@tok@mi\endcsname{%
+                    \def\PY@tc####1{\textcolor{meta}{####1}}}
+                \expandafter\def\csname PY@tok@kn\endcsname{%
+                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
+                \expandafter\def\csname PY@tok@kr\endcsname{%
+                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
+                \expandafter\def\csname PY@tok@s\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
+                \expandafter\def\csname PY@tok@kp\endcsname{%
+                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
+                \expandafter\def\csname PY@tok@w\endcsname{%
+                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
+                \expandafter\def\csname PY@tok@kt\endcsname{%
+                    \def\PY@tc####1{\textcolor{black}{####1}}}
+                \expandafter\def\csname PY@tok@sc\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
+                \expandafter\def\csname PY@tok@sb\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
+                \expandafter\def\csname PY@tok@k\endcsname{%
+                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
+                \expandafter\def\csname PY@tok@se\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
+                \expandafter\def\csname PY@tok@sd\endcsname{%
+                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
+                \def\PYZbs{\char`\\}
+                \def\PYZus{\char`\_}
+                \def\PYZob{\char`\{}
+                \def\PYZcb{\char`\}}
+                \def\PYZca{\char`\^}
+                \def\PYZam{\char`\&}
+                \def\PYZlt{\char`\<}
+                \def\PYZgt{\char`\>}
+                \def\PYZsh{\char`\#}
+                \def\PYZpc{\char`\%}
+                \def\PYZdl{\char`\$}
+                \def\PYZti{\char`\~}
+                \def\PYZat{@}
+                \def\PYZlb{[}
+                \def\PYZrb{]}
+%    \end{macrocode}
+% If there's no \texttt{pygmentize}, no \cs{write18} or no \pkg{minted},
+% we display a warning message and proceed without highlighting.
+%    \begin{macrocode}
+            }{
+                \msg_warning:nn{skdoc}{no-pygments}
+            }
+        }{
+            \msg_warning:nn{skdoc}{no-shell-escape}
+        }
+    }{
+        \msg_warning:nn{skdoc}{no-minted}
+    }
+\fi
 %    \end{macrocode}
 % \subsection{The \env{MacroCode} environment}
 % We need a token list and input/output.
@@ -793,14 +1123,28 @@
 % \end{macro}
 % \begin{environment}{skdoc@verbatim}[1]
 %   {The key of the file being described}
+% \changes{1.1}{Introducing syntax highlighting}
 % This environment does all the actual work for \env{MacroCode}.
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
-    \iftoggle{skdoc@impl}{\@bsphack}{}
     \def\skdoc@key{#1}
+    \expandafter\int_compare:nNnT%
+        \cs:w skdoc@output@\skdoc@key @line\cs_end:=\c_zero%
+        {\int_gincr:c{skdoc@output@\skdoc@key @line}}%
+    \iftoggle{skdoc@impl}{%
+        \iftoggle{skdoc@minted}{
+            \minted@resetoptions%
+            \exp_args:Nnx\setkeys{minted@opt}%
+            {linenos,firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}}%
+            \iow_open:Nn\minted@code{\jobname.pyg}%
+        }{
+            \@bsphack%
+        }
+    }{}
     \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
         \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
     }%
+    \iftoggle{skdoc@minted}{\par\nobreak}{}
     \marginnote{
         \leavevmode
         \llap{
@@ -811,42 +1155,66 @@
     }
     \def\verbatim@processline{%
         \tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
-        \int_gincr:c{skdoc@output@\skdoc@key @line}%
         \iftoggle{skdoc@impl}{
-            \noindent\leavevmode%
-            \hspace*{-5ex}
-            \begin{minipage}[c][1ex]{\textwidth}
-                \makebox[4ex]{%
-                    \leavevmode
-                    \tiny\color{lightgray}\hfill%
-                    \int_use:c{skdoc@output@\skdoc@key @line}%
-                }%
-                \hspace*{1ex}%
-                {
-                    \verbatim@font\footnotesize
-                    \the\verbatim@line
-                }
-            \end{minipage}
-            \vskip-.75ex\par
+            \iftoggle{skdoc@minted}{
+                \iow_now:Nx\minted@code{\the\verbatim@line}%
+            }{
+                \noindent\leavevmode%
+                \hspace*{-5ex}
+                \begin{minipage}[c][1ex]{\textwidth}
+                    \makebox[4ex]{%
+                        \leavevmode
+                        \sffamily\tiny\color{lightgray}\hfill%
+                        \oldstylenums{\int_use:c{skdoc@output@\skdoc@key @line}}%
+                    }%
+                    \hspace*{1ex}%
+                    {
+                        \verbatim@font
+                        \the\verbatim@line
+                    }
+                \end{minipage}
+                \par
+            }
         }{}
+        \int_gincr:c{skdoc@output@\skdoc@key @line}%
     }%
+    \group_begin:
     \let\do\@makeother\dospecials\catcode`\^^M\active%
     \iftoggle{skdoc@impl}{
-        \frenchspacing\@vobeyspaces
+        \iftoggle{skdoc@minted}{}{\frenchspacing\@vobeyspaces}
     }{}
     \verbatim@start%
 }{%
-    \iftoggle{skdoc@impl}{\@esphack}{}%
+    \group_end:
+    \iftoggle{skdoc@impl}{
+        \iftoggle{skdoc@minted}{
+            \iow_close:N\minted@code%
+%    \end{macrocode}
+% These negative \cs{vspace}s are derived from the \pkg{fancyvrb}
+% documentation \parencite[pp.~46--47]{Rahtz10}.
+%    \begin{macrocode}
+            \vspace*{-\topsep}
+            \vspace*{-\partopsep}
+            \vspace*{-\parskip}
+            \minted@pygmentize{latex}%
+            \DeleteFile{\jobname.pyg}%
+            \vspace*{-\topsep}
+            \vspace*{-\partopsep}
+        }{
+            \@esphack%
+        }
+    }{}%
 }
 %    \end{macrocode}
 % \end{environment}
 % \begin{environment}{MacroCode}[1]
 %   {The key of the file being described}
+% \changes{1.1}{Minor changes due to syntax highlighting}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{MacroCode}{m}{
     \iftoggle{skdoc@impl}{
         \vspace{.2\baselineskip}
-        \par\noindent
+        \iftoggle{skdoc@minted}{}{\par\noindent}
     }{}
     \skdoc@verbatim{#1}
 }{
