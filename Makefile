@@ -4,13 +4,13 @@ clean:
 	rm -f skdoc.cls
 distclean: clean
 
-%.cls:
-	tex $*.dtx
+%.cls: %.dtx
+	tex $<
 
-%.pdf:
-	pdflatex $*.dtx
+%.pdf: %.dtx
+	pdflatex $<
 	makeglossaries $*
 	biber $*
-	pdflatex $*.dtx
+	pdflatex $<
 	makeglossaries $*
-	pdflatex $*.dtx
+	pdflatex $<
