@@ -1124,6 +1124,7 @@
 % \begin{environment}{skdoc@verbatim}[1]
 %   {The key of the file being described}
 % \changes{1.1}{Introducing syntax highlighting}
+% \changes{1.2}{Hide line numbers when inside \env{example}}
 % This environment does all the actual work for \env{MacroCode}.
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
@@ -1138,19 +1139,21 @@
             {linenos,firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}}%
             \iow_open:Nn\minted@code{\jobname.pyg}%
         }{
-            \@bsphack%
+            \iftoggle{skdoc@example}{}{\@bsphack}%
         }
     }{}
     \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
         \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
     }%
     \iftoggle{skdoc@minted}{\par\nobreak}{}
-    \marginnote{
-        \leavevmode
-        \llap{
-            \scriptsize\color{gray}
-            $\langle$\skdoc@key$\rangle$
-            \makebox[2ex]{\strut}
+    \iftoggle{skdoc@example}{}{
+        \marginnote{
+            \leavevmode
+            \llap{
+                \scriptsize\color{gray}
+                $\langle$\skdoc@key$\rangle$
+                \makebox[2ex]{\strut}
+            }
         }
     }
     \def\verbatim@processline{%
@@ -1160,14 +1163,16 @@
                 \iow_now:Nx\minted@code{\the\verbatim@line}%
             }{
                 \noindent\leavevmode%
-                \hspace*{-5ex}
+                \iftoggle{skdoc@example}{}{\hspace*{-5ex}}
                 \begin{minipage}[c][1ex]{\textwidth}
-                    \makebox[4ex]{%
-                        \leavevmode
-                        \sffamily\tiny\color{lightgray}\hfill%
-                        \oldstylenums{\int_use:c{skdoc@output@\skdoc@key @line}}%
-                    }%
-                    \hspace*{1ex}%
+                    \iftoggle{skdoc@example}{}{
+                        \makebox[4ex]{%
+                            \leavevmode
+                            \sffamily\tiny\color{lightgray}\hfill%
+                            \oldstylenums{\int_use:c{skdoc@output@\skdoc@key @line}}%
+                        }%
+                        \hspace*{1ex}%
+                    }
                     {
                         \verbatim@font
                         \the\verbatim@line
@@ -1193,15 +1198,19 @@
 % These negative \cs{vspace}s are derived from the \pkg{fancyvrb}
 % documentation \parencite[pp.~46--47]{Rahtz10}.
 %    \begin{macrocode}
-            \vspace*{-\topsep}
-            \vspace*{-\partopsep}
-            \vspace*{-\parskip}
+            \iftoggle{skdoc@example}{
+                \vspace*{\topsep}
+            }{
+                \vspace*{-\topsep}
+                \vspace*{-\partopsep}
+                \vspace*{-\parskip}
+            }
             \minted@pygmentize{latex}%
             \DeleteFile{\jobname.pyg}%
             \vspace*{-\topsep}
             \vspace*{-\partopsep}
         }{
-            \@esphack%
+            \iftoggle{skdoc@example}{}{\@esphack}%
         }
     }{}%
 }
@@ -1646,7 +1655,9 @@
 % \begin{environment}{example}
 % \changes{1.2}{Print example code next to the result}
 %    \begin{macrocode}
+\newtoggle{skdoc@example}
 \DeclareDocumentEnvironment{example}{}{
+    \toggletrue{skdoc@example}%
     \minisec{Example:}%
     \int_zero_new:c{skdoc@output@skdoc@private@example@line}%
     \tl_if_exist:cTF{skdoc@output@skdoc@private@example}{
@@ -1673,17 +1684,21 @@
     \vcoffin_set_end:
     % Typeset everything with a rule between
     \begin{minipage}{0.5\textwidth}
-        \coffin_typeset:Nnnnn\l_tmpa_coffin{t}{l}{0pt}{0pt}
+        \coffin_typeset:Nnnnn\l_tmpb_coffin{t}{l}{0pt}{0pt}
     \end{minipage}
+    \group_begin:
+    \color{lightgray}
     \hspace*{3.5pt}
     \dim_set:Nn\l_tmpa_dim{
     \dim_max:nn{\coffin_dp:N\l_tmpa_coffin+\coffin_ht:N\l_tmpa_coffin}%
                {\coffin_dp:N\l_tmpb_coffin+\coffin_ht:N\l_tmpb_coffin}}
     \rule[-\dim_eval:n{\l_tmpa_dim/2}]{1pt}{\l_tmpa_dim}
     \hspace*{3.5pt}
+    \group_end:
     \begin{minipage}{0.5\textwidth}
-        \coffin_typeset:Nnnnn\l_tmpb_coffin{t}{l}{0pt}{0pt}
+        \coffin_typeset:Nnnnn\l_tmpa_coffin{t}{l}{0pt}{0pt}
     \end{minipage}
+    \togglefalse{skdoc@example}%
 }
 %    \end{macrocode}
 % \end{environment}
