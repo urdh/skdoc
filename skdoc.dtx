@@ -1644,10 +1644,28 @@
 % Lastly, we define an envionment for showing examples. It's
 % rediculously simple, really.
 % \begin{environment}{example}
+% \changes{1.2}{Print example code next to the result}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{example}{}{
-    \minisec{Example:}
-}{}
+    \minisec{Example:}%
+    \int_zero_new:c{skdoc@output@skdoc@private@example@line}%
+    \tl_if_exist:cTF{skdoc@output@skdoc@private@example}{
+        \tl_clear:c{skdoc@output@skdoc@private@example}
+    }{
+        \tl_new:c{skdoc@output@skdoc@private@example}
+    }
+    %\begin{minipage}{0.5\textwidth}
+    \skdoc@verbatim{skdoc@private@example}
+}{
+    \endskdoc@verbatim
+    %\end{minipage}
+    \begin{minipage}{0.5\textwidth}
+        \iow_open:Nn\skdoc@output{\jobname.skdoc.tmp}
+        \iow_now:Nx\skdoc@output{\tl_to_str:c{skdoc@output@skdoc@private@example}}
+        \iow_close:N\skdoc@output
+        \input{\jobname.skdoc.tmp}
+    \end{minipage}
+}
 %    \end{macrocode}
 % \end{environment}
 %
