@@ -1081,6 +1081,8 @@
 %   {Filename of the file being declared}
 % This declares a file as part of the bundle, which means we will be
 % writing things to it.
+%    \changes{1.1a}{Don't create a new token list until we know the
+%                   key isn't a duplicate}
 %    \begin{macrocode}
 \DeclareDocumentCommand\DeclareFile{om}{
     \group_begin:
@@ -1093,12 +1095,12 @@
     \def\skdoc@preamble{}%
     \def\skdoc@key{#2}%
     \IfNoValueTF{#1}{}{\keys_set:nn{skdoc@declarefile}{#1}}
-    \tl_new:c{skdoc@output@\skdoc@key}
     \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{
         \msg_critical:nnx{skdoc}{key-exists}{\skdoc@key}
     }{
         \int_zero_new:c{skdoc@output@\skdoc@key @line}
     }
+    \tl_new:c{skdoc@output@\skdoc@key}
     \IfStrEq{\skdoc@preamble}{}{}{
         \tl_set:Nx\l_tmpa_tl{\skdoc@preamble}
         \edef\skdoc@temp{\tl_head:N\l_tmpa_tl}
