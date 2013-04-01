@@ -1654,16 +1654,35 @@
     }{
         \tl_new:c{skdoc@output@skdoc@private@example}
     }
-    %\begin{minipage}{0.5\textwidth}
+    % Code coffin
+    % watch out for the magic 4pt spacing
+    % maybe shift them to center vertically?
+    \coffin_clear:N\l_tmpa_coffin
+    \vcoffin_set:Nnw\l_tmpa_coffin{0.5\textwidth-4pt}
     \skdoc@verbatim{skdoc@private@example}
 }{
     \endskdoc@verbatim
-    %\end{minipage}
+    \vcoffin_set_end:
+    % Example coffin
+    \coffin_clear:N\l_tmpb_coffin
+    \vcoffin_set:Nnw\l_tmpb_coffin{0.5\textwidth-4pt}
+    \iow_open:Nn\skdoc@output{\jobname.skdoc.tmp}
+    \iow_now:Nx\skdoc@output{\tl_to_str:c{skdoc@output@skdoc@private@example}}
+    \iow_close:N\skdoc@output
+    \input{\jobname.skdoc.tmp}
+    \vcoffin_set_end:
+    % Typeset everything with a rule between
     \begin{minipage}{0.5\textwidth}
-        \iow_open:Nn\skdoc@output{\jobname.skdoc.tmp}
-        \iow_now:Nx\skdoc@output{\tl_to_str:c{skdoc@output@skdoc@private@example}}
-        \iow_close:N\skdoc@output
-        \input{\jobname.skdoc.tmp}
+        \coffin_typeset:Nnnnn\l_tmpa_coffin{t}{l}{0pt}{0pt}
+    \end{minipage}
+    \hspace*{3.5pt}
+    \dim_set:Nn\l_tmpa_dim{
+    \dim_max:nn{\coffin_dp:N\l_tmpa_coffin+\coffin_ht:N\l_tmpa_coffin}%
+               {\coffin_dp:N\l_tmpb_coffin+\coffin_ht:N\l_tmpb_coffin}}
+    \rule[-\dim_eval:n{\l_tmpa_dim/2}]{1pt}{\l_tmpa_dim}
+    \hspace*{3.5pt}
+    \begin{minipage}{0.5\textwidth}
+        \coffin_typeset:Nnnnn\l_tmpb_coffin{t}{l}{0pt}{0pt}
     \end{minipage}
 }
 %    \end{macrocode}
