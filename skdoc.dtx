@@ -1124,10 +1124,14 @@
 % \begin{environment}{skdoc@verbatim}[1]
 %   {The key of the file being described}
 % \changes{1.1}{Introducing syntax highlighting}
+% \changes{1.1a}{Test for key existence before bumping counter}
 % This environment does all the actual work for \env{MacroCode}.
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
     \def\skdoc@key{#1}
+    \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
+        \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
+    }%
     \expandafter\int_compare:nNnT%
         \cs:w skdoc@output@\skdoc@key @line\cs_end:=\c_zero%
         {\int_gincr:c{skdoc@output@\skdoc@key @line}}%
@@ -1141,9 +1145,6 @@
             \@bsphack%
         }
     }{}
-    \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
-        \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
-    }%
     \iftoggle{skdoc@minted}{\par\nobreak}{}
     \marginnote{
         \leavevmode
