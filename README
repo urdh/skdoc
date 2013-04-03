@@ -27,3 +27,12 @@ The following files are enclosed.
   Makefile      - GNU Makefile for making the package and documentation
   skdoc.dtx     - LaTeX source code of the package
   skdoc.pdf     - PDF version of the documentation
+
+Installation notes:
+The easiest way to install this package, assuming you have obtained the
+source code from Github or CTAN, is to simply run `make install`. This
+will generate package code and documentation, install it into TEXMFHOME
+and run `mktexlsr`. If you wish to compile the package but not install
+it, run `make all` instead. If you insist on doing it manually, remember
+to run `tex` to generate the code, and `pdflatex` (or `latex`, if you
+don't fancy PDFs) to generate the documentation.
