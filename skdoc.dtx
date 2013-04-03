@@ -693,10 +693,6 @@
 %               which the implementation is hidden, but it should be
 %               possible to mitigate (in the same way that \cs{section}s
 %               are hidden).
-%   \item[\#3]  If there is a page break near the beginning of a code
-%               block, the key/label marker may stay on the page while
-%               the code follows after the break. This only happens with
-%               syntax highlighting.
 % \end{description}
 % If you discover any bugs in this package, please report them to the 
 % issue tracker in the \thepackage\ Github repository.
@@ -727,7 +723,7 @@
 %    \end{macrocode}
 % Now, higher-level packages we use in our definitions.
 %    \begin{macrocode}
-\RequirePackage{verbatim,marginnote,calc,hyperref,multicol,hologo}
+\RequirePackage{verbatim,needspace,marginnote,calc,hyperref,multicol,hologo}
 \RequirePackage[nomain,xindy,numberedsection,order=letter,
                 sanitize={description=false,sort=false}]{glossaries}
 %    \end{macrocode}
@@ -1126,7 +1122,9 @@
 % \begin{environment}{skdoc@verbatim}[1]
 %   {The key of the file being described}
 % \changes{1.1}{Introducing syntax highlighting}
-% \changes{1.1a}{Test for key existence before bumping counter}
+% \changes{1.1a}{Test for key existence before bumping counter,
+%                use \cs{Needspace*} to prevent code label from
+%                staying on the wrong page in some situations}
 % This environment does all the actual work for \env{MacroCode}.
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
@@ -1147,7 +1145,9 @@
             \@bsphack%
         }
     }{}
-    \iftoggle{skdoc@minted}{\par\nobreak}{}
+    \iftoggle{skdoc@minted}{
+        \Needspace*{2\baselineskip}%
+    }{}
     \marginnote{
         \leavevmode
         \llap{
