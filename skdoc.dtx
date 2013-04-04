@@ -73,7 +73,7 @@
 %</driver>
 %<class>\ProvidesExplClass{skdoc}
 %<*class>
-    {2013/03/27}{1.1a}{skdoc documentation class}
+    {2013/04/04}{1.1a}{skdoc documentation class}
 %</class>
 %
 %<*driver>
@@ -135,6 +135,7 @@
 % \version{1.1a}
 % \changes{1.0}{Initial version}
 % \changes{1.1}{Added support for syntax highlighting using \pkg{minted}}
+% \changes{1.1a}{Deprecate the use of \pkg{bibtex} in favour of \pkg{biblatex}}
 %
 % \package[ctan=skbundle,vcs=https://github.com/urdh/skdoc]{skdoc}
 % \repository{https://github.com/urdh/skdoc}
@@ -752,6 +753,7 @@
 \msg_new:nnn{skdoc}{no-minted}{Syntax~highlighting~disabled:~couldn't~find~minted.sty!}
 \msg_new:nnn{skdoc}{no-shell-escape}{Syntax~highlighting~disabled:~running~without~unrestricted~\string\write18.}
 \msg_new:nnn{skdoc}{no-pygments}{Syntax~highlighting~disabled:~couldn't~find~"pygmentize".}
+\msg_new:nnnn{skdoc}{bibtex-unsupported}{The `bibtex` package is unsupported: continue at own risk!}{Use a more modern bibliography system (i.e. `biblatex`) instead.}
 %    \end{macrocode}
 %
 % \subsection{Options}
@@ -2406,9 +2408,12 @@
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro}{\Implementation}
+% \changes{1.1a}{Hide references used in the hidden implementation}
 % The \cs{Implementation} macro defines all the sectioning commands
 % to be empty (saving the old ones), clears the page, saves the page
-% number and toggles the appropriate toggle.
+% number and toggles the appropriate toggle. If \pkg{biblatex} is
+% loaded, we start a new \env{refsection} so that we can hide
+% references used in the implementation from the final bibliography.
 %    \begin{macrocode}
 \DeclareDocumentCommand\Implementation{}{
     \iftoggle{skdoc@impl}{}{
@@ -2426,17 +2431,22 @@
         \DeclareDocumentCommand\paragraph{som}{}
         \let\skdoc@old@subparagraph\subparagraph
         \DeclareDocumentCommand\subparagraph{som}{}
+        \cs_if_exist:NTF\refsection{\refsection}{}
         \setcounter{skdoc@impl@page}{\value{page}}
     }
 }
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro}{\Finale}
+% \changes{1.1a}{Hide references used in the hidden implementation}
 % The \cs{Finale} macro basically just undoes what the 
-% \cs{Implementation} macro did.
+% \cs{Implementation} macro did. If \pkg{biblatex} is used, the
+% \env{refsection} environment is ended and the (local) bibliography
+% is printed.
 %    \begin{macrocode}
 \DeclareDocumentCommand\Finale{}{
     \iftoggle{skdoc@impl}{}{
+        \cs_if_exist:NTF\refsection{\printbibliography\endrefsection}{}
         \clearpage
         \togglefalse{skdoc@in@impl}
         \let\part\skdoc@old@part
@@ -2820,12 +2830,14 @@
 \DisableLigatures{family = tt*}
 %    \end{macrocode}
 % We also want numbers on the bibliography headings, if we are loading
-% \pkg{biblatex}.
+% \pkg{biblatex}. If we happen to be loading \pkg{bibtex}, we issue a
+% warning instead.
 %    \begin{macrocode}
 \AtBeginDocument{
     \ifdefined\defbibheading
         \defbibheading{bibliography}[\bibname]{\section{#1}}
     \fi
+    \@ifpackageloaded{bibtex}{\msg_warning:nn{skdoc}{bibtex-unsupported}}{}
 }
 %    \end{macrocode}
 % Oh, and we want \cs{marginpar}s on the left, not on the right.
