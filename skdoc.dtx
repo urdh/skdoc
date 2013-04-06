@@ -2186,13 +2186,14 @@
 \AtBeginDocument{\makeglossaries}
 %    \end{macrocode}
 % \begin{macro}{\PrintIndex}
+% \changes{1.2}{Fixed incorrect reference to boldfaced text}
 % Finally, we define a command \cs{PrintIndex} that prints the index.
 % Note the preamble that describes how the index page numbers work.
 %    \begin{macrocode}
 \providecommand*\PrintIndex{%
     \begingroup
     \renewcommand*{\glossarypreamble}{
-        Numbers~written~in~boldface~refer~to~the~page~where~the~
+        Numbers~written~in~italic~refer~to~the~page~where~the~
         corresponding~entry~is~described;~numbers~underlined~refer~
         to~the~page~were~the~implementation~of~the~corresponding~
         entry~is~discussed.~Numbers~in~roman~refer~to~other~
