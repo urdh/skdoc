@@ -1205,8 +1205,10 @@
     \__skdoc_if_print_code:T{
         \bool_if:NTF\g__skdoc_use_minted_bool{
             \minted@resetoptions%
-            \exp_args:Nnx\setkeys{minted@opt}%
-            {linenos,firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}}%
+            \exp_args:Nnx\setkeys{minted@opt}{
+                \bool_if:NF\g__skdoc_in_example_bool{linenos,}
+                firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}
+            }%
             \iow_open:Nn\minted@code{\jobname.pyg}%
             \par\nobreak%
         }{
@@ -1271,9 +1273,7 @@
 % These negative \cs{vspace}s are derived from the \pkg{fancyvrb}
 % documentation \parencite[pp.~46--47]{Rahtz10}.
 %    \begin{macrocode}
-            \bool_if:NTF\g__skdoc_in_example_bool{
-                \vspace*{\topsep}
-            }{
+            \bool_if:NF\g__skdoc_in_example_bool{
                 \vspace*{-\topsep}
                 \vspace*{-\partopsep}
                 \vspace*{-\parskip}
@@ -1716,12 +1716,56 @@
 % Descriptional commands for \hologo{BibTeX} entry types and themes
 % are not yet implemented.
 %
-% Lastly, we define an envionment for showing examples. It's
-% rediculously simple, really.
+% Lastly, we define an envionment for showing examples. It's quite
+% complex, utilizing (and kind of hacking) \cs{skdoc@verbatim} and
+% typesetting the content using \pkg{l3coffins}.
+%
+% First, three dimensions used in constructing the side-by-side boxes.
+% \begin{macro}{\c__skdoc_example_margin_dim}
+% This dimension, set to half of \cs{baselineskip}, dictates the margin
+% between the content of the coffins and the dividing ruler.
+%    \begin{macrocode}
+\dim_new:N\c__skdoc_example_margin_dim
+\dim_set:Nn\c__skdoc_example_margin_dim{0.5\baselineskip}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\c__skdoc_example_linewidth_dim}
+% This dimension sets the width of the dividing ruler.
+%    \begin{macrocode}
+\dim_new:N\c__skdoc_example_linewidth_dim
+\dim_set:Nn\c__skdoc_example_linewidth_dim{1pt}
+%    \end{macrocode}
+% \end{macro}
+%
+% Next, three coffins used by the \env{example} environment are defined.
+% One for code, one for the divider and one for the result.
+% \begin{macro}{\l__skdoc_example_code_coffin}
+%    \begin{macrocode}
+\coffin_new:N\l__skdoc_example_code_coffin
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\l__skdoc_example_divider_coffin}
+%    \begin{macrocode}
+\coffin_new:N\l__skdoc_example_divider_coffin
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\l__skdoc_example_result_coffin}
+%    \begin{macrocode}
+\coffin_new:N\l__skdoc_example_result_coffin
+%    \end{macrocode}
+% \end{macro}
+%
+% Finally, we can define the actual \env{example} environment!
 % \begin{environment}{example}
 % \changes{1.2}{Print example code next to the result}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{example}{}{
+%    \end{macrocode}
+% The environment starts by priting a small header indicating that
+% the content is in fact an example. It also sets a couple of counters
+% and IO variables to trick \cs{skdoc@verbatim} into thinking that it's
+% actually writing to a defined output file.
+%    \begin{macrocode}
     \bool_gset_true:N\g__skdoc_in_example_bool%
     \minisec{Example:}%
     \int_zero_new:c{skdoc@output@skdoc@private@example@line}%
@@ -1730,39 +1774,76 @@
     }{
         \tl_new:c{skdoc@output@skdoc@private@example}
     }
-    % Code coffin
-    % watch out for the magic 4pt spacing
-    % maybe shift them to center vertically?
-    \coffin_clear:N\l_tmpa_coffin
-    \vcoffin_set:Nnw\l_tmpa_coffin{0.5\textwidth-4pt}
+%    \end{macrocode}
+% Next, we calculate the coffin width. We do this locally, not in a
+% global constant, since we may be somewhere where \cs{textwidth}
+% might have changed.
+%    \begin{macrocode}
+    \dim_set:Nn\l_tmpa_dim{ \textwidth/2
+                           -\c__skdoc_example_margin_dim
+                           -\c__skdoc_example_linewidth_dim/2}
+%    \end{macrocode}
+% The code coffin is now filled, after clearing it. It'll get filled
+% with the contents of the verbatim environment, typeset like other
+% \env{MacroCode} environments in the document (\emph{i.e.} \pkg{minted}
+% if possible).
+%    \begin{macrocode}
+    \coffin_clear:N\l__skdoc_example_code_coffin
+    \vcoffin_set:Nnw\l__skdoc_example_code_coffin{\l_tmpa_dim}
     \skdoc@verbatim{skdoc@private@example}
 }{
     \endskdoc@verbatim
     \vcoffin_set_end:
-    % Example coffin
-    \coffin_clear:N\l_tmpb_coffin
-    \vcoffin_set:Nnw\l_tmpb_coffin{0.5\textwidth-4pt}
+%    \end{macrocode}
+% Next comes the example result coffin. After clearing it, it gets
+% filled by writing the contents of the token list defined previously
+% (the one \cs{skdoc@verbatim} is tricked into writing to) to a
+% temporary file, then reading that temporary file using \cs{input}.
+% We leave the temporary file behind; cleaning up requires \cs{write18}.
+% Also: Meh.
+%    \begin{macrocode}
+    \coffin_clear:N\l__skdoc_example_result_coffin
+    \vcoffin_set:Nnw\l__skdoc_example_result_coffin{\l_tmpa_dim}
     \iow_open:Nn\skdoc@output{\jobname.skdoc.tmp}
     \iow_now:Nx\skdoc@output{\tl_to_str:c{skdoc@output@skdoc@private@example}}
     \iow_close:N\skdoc@output
     \input{\jobname.skdoc.tmp}
     \vcoffin_set_end:
-    % Typeset everything with a rule between
-    \begin{minipage}{0.5\textwidth}
-        \coffin_typeset:Nnnnn\l_tmpb_coffin{t}{l}{0pt}{0pt}
-    \end{minipage}
-    \group_begin:
-    \color{lightgray}
-    \hspace*{3.5pt}
+%    \end{macrocode}
+% The divider coffin, being dependent on the height of the two previous
+% coffins, is also reset every time. After clearing, we calculate the
+% maximum height of the two coffins, and add two margins (top and
+% bottom). This value is used to typeset a (gray) rule of the width
+% specified earlier (by \cs{c__skdoc_example_linewidth_dim}). Margins
+% are also added to either side of this rule.
+%    \begin{macrocode}
+    \coffin_clear:N\l__skdoc_example_divider_coffin
     \dim_set:Nn\l_tmpa_dim{
-    \dim_max:nn{\coffin_dp:N\l_tmpa_coffin+\coffin_ht:N\l_tmpa_coffin}%
-               {\coffin_dp:N\l_tmpb_coffin+\coffin_ht:N\l_tmpb_coffin}}
-    \rule[-\dim_eval:n{\l_tmpa_dim/2}]{1pt}{\l_tmpa_dim}
-    \hspace*{3.5pt}
-    \group_end:
-    \begin{minipage}{0.5\textwidth}
-        \coffin_typeset:Nnnnn\l_tmpa_coffin{t}{l}{0pt}{0pt}
-    \end{minipage}
+        \dim_max:nn{\coffin_ht:N\l__skdoc_example_code_coffin}%
+                   {\coffin_ht:N\l__skdoc_example_result_coffin}
+        + 2\c__skdoc_example_margin_dim}
+    \hcoffin_set:Nn\l__skdoc_example_divider_coffin{
+        \color{lightgray}
+        \hspace*{\c__skdoc_example_margin_dim}
+        \rule{\c__skdoc_example_linewidth_dim}{\l_tmpa_dim}
+        \hspace*{\c__skdoc_example_margin_dim}
+    }
+%    \end{macrocode}
+% It's finally time to join and typeset the coffins. We clear a temporary
+% coffin, copy the divider into it, and proceed to attach the example
+% result coffin to the left and the code to the right (vertical centers
+% touching, so that they are \enquote{centered} vertically). The
+% temporary coffin is then typeset.
+%    \begin{macrocode}
+    \coffin_clear:N\l_tmpa_coffin
+    \coffin_set_eq:NN\l_tmpa_coffin\l__skdoc_example_divider_coffin
+    \coffin_join:NnnNnnnn\l_tmpa_coffin{l}{vc}%
+                         \l__skdoc_example_result_coffin{r}{vc}%
+                         {0pt}{0pt}
+    \coffin_join:NnnNnnnn\l_tmpa_coffin{r}{vc}%
+                         \l__skdoc_example_code_coffin{l}{vc}%
+                         {0pt}{0pt}
+    \coffin_typeset:Nnnnn\l_tmpa_coffin{t}{l}{0pt}{0pt}
     \bool_gset_false:N\g__skdoc_in_example_bool%
 }
 %    \end{macrocode}
