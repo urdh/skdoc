@@ -194,15 +194,15 @@
 %
 % \subsection{Options}
 % \Option{load}\WithValues{\meta{package}}\AndDefault{\cs{jobname}}
-% The \opt{load}
+% \label{ssec:options:load} The \opt{load}
 % option declares that if the package specified exists, it should
 % be loaded. This is intended to load any package provided in the
 % implementation, but requires that the documentation provides
 % stub variants of the macros used in the documentation so that
-% \LaTeX\ still completes its first run. \Warning{The \opt{load}
-% option will likely disappear in a future version.}
+% \LaTeX\ still completes its first run.
 %
 % \Option{highlight}\WithValues{true,false}\AndDefault{true}
+% \label{ssec:option:highlight}
 % The \opt{highlight} option enables or disabled syntax highlighting
 % of the implementation code. Highlighting is performed using
 % \pkg{minted}, and falls back to no highlighting if there is no
@@ -412,7 +412,7 @@
 %   \label{tab:args}
 %   \begin{tabular}{ll}
 %      \toprule
-%      Invokation            % Result          \\
+%      Invokation            & Result          \\
 %      \midrule
 %      \Macro\marg{argument} & \marg{argument} \\
 %      \Macro\oarg{argument} & \oarg{argument} \\
@@ -422,6 +422,39 @@
 %      \bottomrule
 %   \end{tabular}
 % \end{table}
+%
+% \subsubsection{Examples}
+% \DescribeEnv[<example code>]{example}
+% Perhaps the most powerful way to illustrate features of a package
+% is to show their function by examples. This is made possible by
+% the \env{example} environment. By enclosing example code in this
+% environment, the actual code is typeset next to the result it would
+% produce, as seen below\footnote{Note that the showcased \env{example}
+% environment doesn't contain another \env{example} environment --- the
+% environment is not intended to be nested inside itself.}\footnote{The
+% percent characters in the example are caused by the \pkg{docstrip}
+% requirement of prefixing the documentation with them.}:
+% \begin{example}
+% Simply typesetting a
+% \emph{paragraph} may
+% be simple enough, but
+% it should showcase
+% the utility of the
+% environment well enough.
+% \end{example}
+%
+% Note that for this to work the package obviously needs to be loaded.
+% As such, it is probably a good idea to combine the use of \env{example}
+% with the \opt{load} option, so be sure to read up on the caveats of
+% using that option (see page \pageref{ssec:options:load}).
+%
+% Since the \env{example} environment is based on the same mechanisms
+% as \env{MacroCode}, (mostly) the same typesetting properties apply.
+% In particular, the code will be highlighted if \pkg{minted} is
+% available. \Notice{Since the backend utilizes \cs{verbatim}, the
+% usual caveats apply. In particular, leaving whitespace before
+% \cs{end}\marg{example} will result in an extra newline at the end
+% of the displayed code.}
 %
 % \subsubsection{Options}
 % Package options are of course important to describe, and to this
@@ -563,16 +596,16 @@
 % improve readability of the implementation code.
 %
 % \DescribeEnv[<description>]{macro}{<\textbackslash macro>}
-%                     <\# of args>{<arg 1 description>}'...'
-%                                 {<arg n description>}
+%                     [<\# of args>]{<arg 1 description>}'...'
+%                                   {<arg n description>}
 % With this environment, the implementation of a macro is described.
 % Note that as with \cs{DescribeMacro}, \LaTeX3-style macros can not
 % be used in \meta{\textbackslash macro} without the catcode hack
 % mentioned earlier.
 %
 % \DescribeEnv[<description>]{environment}{<environment>}
-%                     <\# of args>{<arg 1 description>}'...'
-%                                 {<arg n description>}
+%                     [<\# of args>]{<arg 1 description>}'...'
+%                                   {<arg n description>}
 % This environment describes the implementation of an environment.
 %
 % \DescribeEnv[<description>]{option}{<option>}
@@ -622,7 +655,10 @@
 % \meta{implementation} verbatim to the file associated with \meta{key}.
 % As such, it is the analogue of the \env{macrocode} environment from
 % \pkg{ltxdoc}, but does not suffer from some of its drawbacks (the
-% sensitivity to whitespace, for instance).
+% sensitivity to whitespace, for instance). As detailed by the
+% description of the \opt{highlight} option (on page
+% \pageref{ssec:option:highlight}), the environment will highlight
+% the code using \pkg{minted} if possible.
 %
 % \subsubsection{Hiding the implementation}
 % For lagre packages it may be of interest to hide the implementation
@@ -1712,10 +1748,6 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \paragraph{Missing commands}
-% Descriptional commands for \hologo{BibTeX} entry types and themes
-% are not yet implemented.
-%
 % Lastly, we define an envionment for showing examples. It's quite
 % complex, utilizing (and kind of hacking) \cs{skdoc@verbatim} and
 % typesetting the content using \pkg{l3coffins}.
@@ -1843,8 +1875,9 @@
     \coffin_join:NnnNnnnn\l_tmpa_coffin{r}{vc}%
                          \l__skdoc_example_code_coffin{l}{vc}%
                          {0pt}{0pt}
-    \coffin_typeset:Nnnnn\l_tmpa_coffin{t}{l}{0pt}{0pt}
+    \coffin_typeset:Nnnnn\l_tmpa_coffin{T}{l}{0pt}{0pt}
     \bool_gset_false:N\g__skdoc_in_example_bool%
+    \vspace*{\c__skdoc_example_margin_dim}\par
 }
 %    \end{macrocode}
 % \end{environment}
