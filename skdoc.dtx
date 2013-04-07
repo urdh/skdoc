@@ -135,6 +135,7 @@
 % \version{1.2}
 % \changes{1.0}{Initial version}
 % \changes{1.1}{Added support for syntax highlighting using \pkg{minted}}
+% \changes{1.2}{Use \pkg{l3prg} booleans instead of toggles}
 %
 % \package[ctan=skbundle,vcs=https://github.com/urdh/skdoc]{skdoc}
 % \repository{https://github.com/urdh/skdoc}
@@ -758,6 +759,77 @@
 \msg_new:nnn{skdoc}{no-pygments}{Syntax~highlighting~disabled:~couldn't~find~"pygmentize".}
 %    \end{macrocode}
 %
+% \subsection{Booleans}
+% Set up some booleans used throughout the code.
+% \begin{macro}{\g__skdoc_use_minted_bool}
+% The \texttt{use_minted} boolean keeps track of wether we're using
+% \pkg{minted} or not. The default value is \emph{false}.
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_use_minted_bool
+\bool_gset_false:N\g__skdoc_use_minted_bool
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_no_index_bool}
+% The \texttt{no_index} boolean keeps track of wether the indexing
+% macros should write things to the index or not. The default value is
+% \emph{false} (don't not write things to the index).
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_no_index_bool
+\bool_gset_false:N\g__skdoc_no_index_bool
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_in_example_bool}
+% The \texttt{in_example} boolean keeps track of wether we are currently
+% inside an example or not (used mainly by \cs{skdoc@verbatim}). The
+% default value is of course \emph{false}.
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_in_example_bool
+\bool_gset_false:N\g__skdoc_in_example_bool
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_with_implementation_bool}
+% The \texttt{with_implementation} boolean keeps track of wether we are
+% going to typeset the implementation or not. The default value is
+% \emph{true}, and this is only changed by \cs{OnlyDescription}.
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_with_implementation_bool
+\bool_gset_true:N\g__skdoc_with_implementation_bool
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_in_implementation_bool}
+% The \texttt{in_implementation} boolean keeps track of wether we are
+% in the implementation part of the documentation or not. It defaults
+% to \emph{false}, and is changed by \cs{Implementation} and \cs{Finale}.
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_in_implementation_bool
+\bool_gset_false:N\g__skdoc_in_implementation_bool
+%    \end{macrocode}
+% \end{macro}
+%
+% Finally, we define a helpful conditional based on the last two
+% booleans. It decides wether code in \cs{skdoc@verbatim} is typeset
+% or just output to a file.
+% \begin{macro*}{\__skdoc_if_print_code_p:}
+% \begin{macro*}{\__skdoc_if_print_code:T}
+% \begin{macro*}{\__skdoc_if_print_code:F}
+% \begin{macro}{\__skdoc_if_print_code:TF}
+%    \begin{macrocode}
+\prg_new_conditional:Nnn\__skdoc_if_print_code:{p,T,F,TF}{
+    \bool_if:nTF{
+        \g__skdoc_in_implementation_bool &&
+        !\g__skdoc_with_implementation_bool
+    }{
+        \prg_return_false:
+    }{
+        \prg_return_true:
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro*}
+% \end{macro*}
+% \end{macro*}
+%
 % \subsection{Options}
 % Define the all options, and process them.
 %    \begin{macrocode}
@@ -875,13 +947,11 @@
 % if both exist. If the option \opt{highlight} was supplied and set
 % to \texttt{false}, we do nothing.
 %    \begin{macrocode}
-\newtoggle{skdoc@minted}
-\togglefalse{skdoc@minted}
 \ifskdoc@highlight
     \IfFileExists{\skdoc@load.sty}{
         \__skdoc_if_shellescape:TF{
             \__skdoc_if_pygmentize:TF{
-                \toggletrue{skdoc@minted}
+                \bool_gset_true:N\g__skdoc_use_minted_bool
                 \RequirePackage{minted}
 %    \end{macrocode}
 % Now that we have \pkg{minted}, we redefine the style of the line
@@ -1132,40 +1202,40 @@
     \expandafter\int_compare:nNnT%
         \cs:w skdoc@output@\skdoc@key @line\cs_end:=\c_zero%
         {\int_gincr:c{skdoc@output@\skdoc@key @line}}%
-    \iftoggle{skdoc@impl}{%
-        \iftoggle{skdoc@minted}{
+    \__skdoc_if_print_code:T{
+        \bool_if:NTF\g__skdoc_use_minted_bool{
             \minted@resetoptions%
             \exp_args:Nnx\setkeys{minted@opt}%
             {linenos,firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}}%
             \iow_open:Nn\minted@code{\jobname.pyg}%
+            \par\nobreak%
         }{
-            \iftoggle{skdoc@example}{}{\@bsphack}%
+            \bool_if:NF\g__skdoc_in_example_bool{\@bsphack}%
         }
-    }{}
-    \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
-        \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
-    }%
-    \iftoggle{skdoc@minted}{\par\nobreak}{}
-    \iftoggle{skdoc@example}{}{
-        \marginnote{
-            \leavevmode
-            \llap{
-                \scriptsize\color{gray}
-                $\langle$\skdoc@key$\rangle$
-                \makebox[2ex]{\strut}
+        \bool_if:NF\g__skdoc_in_example_bool{
+            \marginnote{
+                \leavevmode
+                \llap{
+                    \scriptsize\color{gray}
+                    $\langle$\skdoc@key$\rangle$
+                    \makebox[2ex]{\strut}
+                }
             }
         }
     }
+    \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
+        \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
+    }%
     \def\verbatim@processline{%
         \tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
-        \iftoggle{skdoc@impl}{
-            \iftoggle{skdoc@minted}{
+        \__skdoc_if_print_code:T{
+            \bool_if:NTF\g__skdoc_use_minted_bool{
                 \iow_now:Nx\minted@code{\the\verbatim@line}%
             }{
                 \noindent\leavevmode%
-                \iftoggle{skdoc@example}{}{\hspace*{-5ex}}
+                \bool_if:NF\g__skdoc_in_example_bool{\hspace*{-5ex}}
                 \begin{minipage}[c][1ex]{\textwidth}
-                    \iftoggle{skdoc@example}{}{
+                    \bool_if:NF\g__skdoc_in_example_bool{
                         \makebox[4ex]{%
                             \leavevmode
                             \sffamily\tiny\color{lightgray}\hfill%
@@ -1180,25 +1250,28 @@
                 \end{minipage}
                 \par
             }
-        }{}
+        }
         \int_gincr:c{skdoc@output@\skdoc@key @line}%
     }%
     \group_begin:
     \let\do\@makeother\dospecials\catcode`\^^M\active%
-    \iftoggle{skdoc@impl}{
-        \iftoggle{skdoc@minted}{}{\frenchspacing\@vobeyspaces}
-    }{}
+    \bool_if:nT{
+        \__skdoc_if_print_code_p: &&
+        !\g__skdoc_use_minted_bool
+    }{
+        \frenchspacing\@vobeyspaces
+    }
     \verbatim@start%
 }{%
     \group_end:
-    \iftoggle{skdoc@impl}{
-        \iftoggle{skdoc@minted}{
+    \__skdoc_if_print_code:T{
+        \bool_if:NTF\g__skdoc_use_minted_bool{
             \iow_close:N\minted@code%
 %    \end{macrocode}
 % These negative \cs{vspace}s are derived from the \pkg{fancyvrb}
 % documentation \parencite[pp.~46--47]{Rahtz10}.
 %    \begin{macrocode}
-            \iftoggle{skdoc@example}{
+            \bool_if:NTF\g__skdoc_in_example_bool{
                 \vspace*{\topsep}
             }{
                 \vspace*{-\topsep}
@@ -1210,9 +1283,9 @@
             \vspace*{-\topsep}
             \vspace*{-\partopsep}
         }{
-            \iftoggle{skdoc@example}{}{\@esphack}%
+            \bool_if:NF\g__skdoc_in_example_bool{\@esphack}%
         }
-    }{}%
+    }%
 }
 %    \end{macrocode}
 % \end{environment}
@@ -1221,16 +1294,16 @@
 % \changes{1.1}{Minor changes due to syntax highlighting}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{MacroCode}{m}{
-    \iftoggle{skdoc@impl}{
+    \__skdoc_if_print_code:T{
         \vspace{.2\baselineskip}
-        \iftoggle{skdoc@minted}{}{\par\noindent}
-    }{}
+        \bool_if:NF\g__skdoc_use_minted_bool{\par\noindent}
+    }
     \skdoc@verbatim{#1}
 }{
     \endskdoc@verbatim
-    \iftoggle{skdoc@impl}{
+    \__skdoc_if_print_code:T{
         \vspace{.5\baselineskip}
-    }{}
+    }
 }
 %    \end{macrocode}
 % \end{environment}
@@ -1328,13 +1401,6 @@
 % We introduce a couple of macros for referencing various constructs
 % in running text, \emph{i.e.} \cs{cs}-like macros. The starred
 % variants will not index the use, the non-starred variants will.
-%
-% First, though, we introduce a toggle letting us permanently disable
-% indexing inside \emph{e.g.} the table of contents and index.
-%    \begin{macrocode}
-\newtoggle{skdoc@noindex}
-\togglefalse{skdoc@noindex}
-%    \end{macrocode}
 % \begin{macro}{\cs}[2]
 %   {True if this is the starred variant}
 %   {The macro name to be typeset}
@@ -1342,7 +1408,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\cs{sm}{
     \texttt{\char`\\#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@macro{#2}}
     }
 }
@@ -1355,7 +1421,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\env{sm}{
     \texttt{#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@environment{#2}}
     }
 }
@@ -1368,7 +1434,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\pkg{sm}{
     \textsf{#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@package{#2}}
     }
 }
@@ -1381,7 +1447,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\opt{sm}{
     \texttt{#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@option{#2}}
     }
 }
@@ -1394,7 +1460,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\bib{sm}{
     \texttt{@#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@bibentry{#2}}
     }
 }
@@ -1407,7 +1473,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\thm{sm}{
     \textrm{#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@theme{#2}}
     }
 }
@@ -1420,7 +1486,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\file{sm}{
     \texttt{#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@file{#2}}
     }
 }
@@ -1655,9 +1721,8 @@
 % \begin{environment}{example}
 % \changes{1.2}{Print example code next to the result}
 %    \begin{macrocode}
-\newtoggle{skdoc@example}
 \DeclareDocumentEnvironment{example}{}{
-    \toggletrue{skdoc@example}%
+    \bool_gset_true:N\g__skdoc_in_example_bool%
     \minisec{Example:}%
     \int_zero_new:c{skdoc@output@skdoc@private@example@line}%
     \tl_if_exist:cTF{skdoc@output@skdoc@private@example}{
@@ -1698,7 +1763,7 @@
     \begin{minipage}{0.5\textwidth}
         \coffin_typeset:Nnnnn\l_tmpa_coffin{t}{l}{0pt}{0pt}
     \end{minipage}
-    \togglefalse{skdoc@example}%
+    \bool_gset_false:N\g__skdoc_in_example_bool%
 }
 %    \end{macrocode}
 % \end{environment}
@@ -1950,19 +2015,26 @@
 % \end{macro*}
 %
 % \subsection{The index}
+% \begin{macro*}{\__skdoc_if_do_index:T}
+% \begin{macro*}{\__skdoc_if_do_index:F}
+% \begin{macro*}{\__skdoc_if_do_index:TF}
+% \begin{macro}{\__skdoc_if_do_index_p:}
 %    \begin{macrocode}
-\prg_new_conditional:Nnn\__skdoc_do_index:{p}{
-    \iftoggle{skdoc@impl}{
+\prg_new_conditional:Nnn\__skdoc_if_do_index:{p,T,F,TF}{
+    \bool_if:nTF{
+        \__skdoc_if_print_code_p: &&
+        !\g__skdoc_no_index_bool
+    }{
         \prg_return_true:
     }{
-        \iftoggle{skdoc@in@impl}{
-            \prg_return_false:
-        }{
-            \prg_return_true:
-        }
+        \prg_return_false:
     }
 }
 %    \end{macrocode}
+% \end{macro}
+% \end{macro*}
+% \end{macro*}
+% \end{macro*}
 % The index is based on \pkg{glossaries}, and as such the whole
 % process of adding entries to the index is reduced to adding
 % glossary entries. This is done through two wrapper macros around
@@ -1977,9 +2049,9 @@
 % index entry.
 %    \begin{macrocode}
 \DeclareDocumentCommand\@index@{mm}{
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \@index@@{#1}{#2}
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2025,7 +2097,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{#3}{\cs*{#3}}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2035,7 +2107,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2049,7 +2121,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\env*{\string#3}~(environment)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2059,7 +2131,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2073,7 +2145,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\opt*{\string#3}~(option)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2083,7 +2155,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2098,7 +2170,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{#3}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2108,7 +2180,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2122,7 +2194,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\thm*{\string#3}~(theme)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2132,7 +2204,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2146,7 +2218,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\pkg*{\string#3}~(package)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2156,7 +2228,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2170,7 +2242,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\file*{\string#3}~(file)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2180,7 +2252,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2205,14 +2277,14 @@
     \glossarystyle{indexgroup}
     \renewcommand*{\glspostdescription}{\unskip\leaders\hbox to 2.9mm{\hss.}\hfill\strut}
     \renewenvironment{theglossary}{
-        \toggletrue{skdoc@noindex}
+        \bool_gset_true:N\g__skdoc_no_index_bool
         \begin{multicols}{2}
         \setlength{\parindent}{0pt}
         \setlength{\parskip}{0pt plus 0.3pt}
         \let\item\@idxitem
     }{
         \end{multicols}
-        \togglefalse{skdoc@noindex}
+        \bool_gset_false:N\g__skdoc_no_index_bool
     }
     \renewcommand*{\glossaryentryfield}[5]{
         \item\glsentryitem{##1}\glstarget{##1}{##2}
@@ -2381,11 +2453,11 @@
 \newglossarystyle{changelog}{
     \glossarystyle{altlist}
     \renewenvironment{theglossary}{
-        \toggletrue{skdoc@noindex}
+        \bool_gset_true:N\g__skdoc_no_index_bool
         \begin{multicols}{2}\begin{description}
     }{
         \end{description}\end{multicols}
-        \togglefalse{skdoc@noindex}
+        \bool_gset_false:N\g__skdoc_no_index_bool
     }
     \renewcommand*{\glossaryentryfield}[5]{
         \par\vspace{5\p@}\relax
@@ -2427,31 +2499,23 @@
 % must force a page break between what's before the implementation and
 % what's after, which might look horrible.
 %
-% Anyway, we define two toggles that keep track of things. One keeps
-% track of wether to (not) hide the implementation, and one keeps track 
-% of wether we are in the implementation or not. These are provided with
-% sensible defaults (\emph{i.e.} true and false, respectively).
-% We also define a counter in which we save the page number we had when
+% We define a counter in which we save the page number we had when
 % the implementation started.
 %    \begin{macrocode}
-\newtoggle{skdoc@impl}
-\newtoggle{skdoc@in@impl}
-\toggletrue{skdoc@impl}
-\togglefalse{skdoc@in@impl}
 \newcounter{skdoc@impl@page}
 %    \end{macrocode}
 % Then we define the shipout hook. Fairly straight-forward.
 %    \begin{macrocode}
 \AtBeginShipout{
-    \iftoggle{skdoc@impl}{}{
-        \iftoggle{skdoc@in@impl}{\AtBeginShipoutDiscard}{}
-    }
+    \__skdoc_if_print_code:F{\AtBeginShipoutDiscard}
 }
 %    \end{macrocode}
 % \begin{macro}{\OnlyDescription}
 % The \cs{OnlyDescription} macro simply toggles the appropriate toggle.
 %    \begin{macrocode}
-\DeclareDocumentCommand\OnlyDescription{}{\togglefalse{skdoc@impl}}
+\DeclareDocumentCommand\OnlyDescription{}{
+    \bool_gset_false:N\g__skdoc_with_implementation_bool
+}
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro}{\Implementation}
@@ -2460,9 +2524,9 @@
 % number and toggles the appropriate toggle.
 %    \begin{macrocode}
 \DeclareDocumentCommand\Implementation{}{
-    \iftoggle{skdoc@impl}{}{
+    \bool_if:NF\g__skdoc_with_implementation_bool{
         \clearpage
-        \toggletrue{skdoc@in@impl}
+        \bool_gset_true:N\g__skdoc_in_implementation_bool
         \let\skdoc@old@part\part
         \DeclareDocumentCommand\part{som}{}
         \let\skdoc@old@section\section
@@ -2485,9 +2549,9 @@
 % \cs{Implementation} macro did.
 %    \begin{macrocode}
 \DeclareDocumentCommand\Finale{}{
-    \iftoggle{skdoc@impl}{}{
+    \bool_if:NF\g__skdoc_with_implementation_bool{
         \clearpage
-        \togglefalse{skdoc@in@impl}
+        \bool_gset_false:N\g__skdoc_in_implementation_bool
         \let\part\skdoc@old@part
         \let\section\skdoc@old@section
         \let\subsection\skdoc@old@subsection
@@ -2774,11 +2838,11 @@
 %    \begin{macrocode}
 \let\old@tableofcontents\tableofcontents
 \DeclareDocumentCommand\tableofcontents{}{
-    \toggletrue{skdoc@noindex}
+    \bool_gset_true:N\g__skdoc_no_index_bool
     \microtypesetup{protrusion=false}
     \old@tableofcontents
     \microtypesetup{protrusion=true}
-    \togglefalse{skdoc@noindex}
+    \bool_gset_false:N\g__skdoc_no_index_bool
 }
 %    \end{macrocode}
 % \end{macro}
