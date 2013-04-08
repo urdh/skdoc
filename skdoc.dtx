@@ -1235,11 +1235,22 @@
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
     \def\skdoc@key{#1}
+%    \end{macrocode}
+% Before doing anything, set create or increment a counter keeping
+% track of the line number of the file we're writing to.
+%    \begin{macrocode}
     \expandafter\int_compare:nNnT%
         \cs:w skdoc@output@\skdoc@key @line\cs_end:=\c_zero%
         {\int_gincr:c{skdoc@output@\skdoc@key @line}}%
+%    \end{macrocode}
+% Now, if we're supposed to print code, we set a few things up.
+%    \begin{macrocode}
     \__skdoc_if_print_code:T{
         \bool_if:NTF\g__skdoc_use_minted_bool{
+%    \end{macrocode}
+% If we're using \pkg{minted}, we set a few options ans open the
+% output file.
+%    \begin{macrocode}
             \minted@resetoptions%
             \exp_args:Nnx\setkeys{minted@opt}{
                 \bool_if:NF\g__skdoc_in_example_bool{linenos,}
@@ -1248,9 +1259,17 @@
             \iow_open:Nn\minted@code{\jobname.pyg}%
             \par\nobreak%
         }{
+%    \end{macrocode}
+% Otherwise, we hack spaces with \cs{@bsphack} (unless we're in an
+% \env{example} environment).
+%    \begin{macrocode}
             \bool_if:NF\g__skdoc_in_example_bool{\@bsphack}%
         }
         \bool_if:NF\g__skdoc_in_example_bool{
+%    \end{macrocode}
+% In all non-example code, \pkg{minted} or not, we output a small
+% marker showing what file we are writing to.
+%    \begin{macrocode}
             \marginnote{
                 \leavevmode
                 \llap{
@@ -1261,15 +1280,37 @@
             }
         }
     }
+%    \end{macrocode}
+% If the file we're supposed to write to hasn't been initialized yet,
+% we error out with a critical error.
+%    \begin{macrocode}
     \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
         \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
     }%
+%    \end{macrocode}
+% Otherwise, we set up the \env{verbatim} line processor.
+%    \begin{macrocode}
     \def\verbatim@processline{%
+%    \end{macrocode}
+% We alsays append the line to the appropriate token list, so that it
+% is saved to the output file.
+%    \begin{macrocode}
         \tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
+%    \end{macrocode}
+% If we're supposed to print code, we do a lot more...
+%    \begin{macrocode}
         \__skdoc_if_print_code:T{
             \bool_if:NTF\g__skdoc_use_minted_bool{
+%    \end{macrocode}
+% ...but if we're using minted, \enquote{a lot more} consists of also
+% writing the line to the file used by \pkg{minted}.
+%    \begin{macrocode}
                 \iow_now:Nx\minted@code{\the\verbatim@line}%
             }{
+%    \end{macrocode}
+% Otherwise, we actually do a lot of stuff. We typeset the line number
+% (unless we're in an example):
+%    \begin{macrocode}
                 \noindent\leavevmode%
                 \bool_if:NF\g__skdoc_in_example_bool{\hspace*{-5ex}}
                 \begin{minipage}[c][1ex]{\textwidth}
@@ -1281,16 +1322,30 @@
                         }%
                         \hspace*{1ex}%
                     }
+%    \end{macrocode}
+% We also typeset the actual line:
+%    \begin{macrocode}
                     {
                         \verbatim@font
                         \the\verbatim@line
                     }
                 \end{minipage}
+%    \end{macrocode}
+% Both of them in the same one-line-high minipage covering the page
+% width. Note the use of \cs{llap} for line numbers in the margin.
+% We end with a \cs{par} for the next line.
+%    \begin{macrocode}
                 \par
             }
         }
+%    \end{macrocode}
+% Finally, the line number counter is incremented.
+%    \begin{macrocode}
         \int_gincr:c{skdoc@output@\skdoc@key @line}%
     }%
+%    \end{macrocode}
+% Now the \env{verbatim} catcode magic begins.
+%    \begin{macrocode}
     \group_begin:
     \let\do\@makeother\dospecials\catcode`\^^M\active%
     \bool_if:nT{
@@ -1302,23 +1357,45 @@
     \verbatim@start%
 }{%
     \group_end:
+%    \end{macrocode}
+% The catcode magic is over! Now, if we're printing code, there are
+% a few things left to do.
+%    \begin{macrocode}
     \__skdoc_if_print_code:T{
         \bool_if:NTF\g__skdoc_use_minted_bool{
+%    \end{macrocode}
+% If we're using \pkg{minted}, we still have to actually print the code.
+% We begin with closing the output file.
+%    \begin{macrocode}
             \iow_close:N\minted@code%
 %    \end{macrocode}
-% These negative \cs{vspace}s are derived from the \pkg{fancyvrb}
-% documentation \parencite[pp.~46--47]{Rahtz10}.
+% A few spacing fixes are applied. Since \pkg{minted} uses
+% \pkg{fancyvrb}, these negative \cs{vspace}s are derived from the
+% \pkg{fancyvrb} documentation \parencite[pp.~46--47]{Rahtz10}. What
+% we want to do is to offset the spacing produced by \pkg{minted}, so
+% that we are in control.
 %    \begin{macrocode}
             \bool_if:NF\g__skdoc_in_example_bool{
                 \vspace*{-\topsep}
                 \vspace*{-\partopsep}
                 \vspace*{-\parskip}
             }
+%    \end{macrocode}
+% Now, the internal \pkg{minted} macro \cs{minted@pygmentize} is called
+% to highlight and typeset the code, and the temporary file is removed.
+%    \begin{macrocode}
             \minted@pygmentize{latex}%
             \DeleteFile{\jobname.pyg}%
+%    \end{macrocode}
+% This is followed by more space-offsetting.
+%    \begin{macrocode}
             \vspace*{-\topsep}
             \vspace*{-\partopsep}
         }{
+%    \end{macrocode}
+% If we aren't using \pkg{minted}, we hack spaces with \cs{@esphack}
+% instead.
+%    \begin{macrocode}
             \bool_if:NF\g__skdoc_in_example_bool{\@esphack}%
         }
     }%
