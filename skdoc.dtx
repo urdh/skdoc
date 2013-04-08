@@ -73,7 +73,7 @@
 %</driver>
 %<class>\ProvidesExplClass{skdoc}
 %<*class>
-    {2013/04/04}{1.1a}{skdoc documentation class}
+    {2013/04/08}{1.2}{skdoc documentation class}
 %</class>
 %
 %<*driver>
@@ -132,10 +132,11 @@
 % {}{\small\pagemark}
 % \pagestyle{skdoc-class}
 %
-% \version{1.1a}
+% \version{1.2}
 % \changes{1.0}{Initial version}
 % \changes{1.1}{Added support for syntax highlighting using \pkg{minted}}
 % \changes{1.1a}{Deprecate the use of \pkg{bibtex} in favour of \pkg{biblatex}}
+% \changes{1.2}{Use \pkg{l3prg} booleans instead of toggles}
 %
 % \package[ctan=skdoc,vcs=https://github.com/urdh/skdoc]{skdoc}
 % \repository{https://github.com/urdh/skdoc}
@@ -194,15 +195,15 @@
 %
 % \subsection{Options}
 % \Option{load}\WithValues{\meta{package}}\AndDefault{\cs{jobname}}
-% The \opt{load}
+% \label{ssec:options:load} The \opt{load}
 % option declares that if the package specified exists, it should
 % be loaded. This is intended to load any package provided in the
 % implementation, but requires that the documentation provides
 % stub variants of the macros used in the documentation so that
-% \LaTeX\ still completes its first run. \Warning{The \opt{load}
-% option will likely disappear in a future version.}
+% \LaTeX\ still completes its first run.
 %
 % \Option{highlight}\WithValues{true,false}\AndDefault{true}
+% \label{ssec:option:highlight}
 % The \opt{highlight} option enables or disabled syntax highlighting
 % of the implementation code. Highlighting is performed using
 % \pkg{minted}, and falls back to no highlighting if there is no
@@ -412,7 +413,7 @@
 %   \label{tab:args}
 %   \begin{tabular}{ll}
 %      \toprule
-%      Invokation            % Result          \\
+%      Invokation            & Result          \\
 %      \midrule
 %      \Macro\marg{argument} & \marg{argument} \\
 %      \Macro\oarg{argument} & \oarg{argument} \\
@@ -422,6 +423,39 @@
 %      \bottomrule
 %   \end{tabular}
 % \end{table}
+%
+% \subsubsection{Examples}
+% \DescribeEnv[<example code>]{example}
+% Perhaps the most powerful way to illustrate features of a package
+% is to show their function by examples. This is made possible by
+% the \env{example} environment. By enclosing example code in this
+% environment, the actual code is typeset next to the result it would
+% produce, as seen below\footnote{Note that the showcased \env{example}
+% environment doesn't contain another \env{example} environment --- the
+% environment is not intended to be nested inside itself.}\footnote{The
+% percent characters in the example are caused by the \pkg{docstrip}
+% requirement of prefixing the documentation with them.}:
+% \begin{example}
+% Simply typesetting a
+% \emph{paragraph} may
+% be simple enough, but
+% it should showcase
+% the utility of the
+% environment well enough.
+% \end{example}
+%
+% Note that for this to work the package obviously needs to be loaded.
+% As such, it is probably a good idea to combine the use of \env{example}
+% with the \opt{load} option, so be sure to read up on the caveats of
+% using that option (see page \pageref{ssec:options:load}).
+%
+% Since the \env{example} environment is based on the same mechanisms
+% as \env{MacroCode}, (mostly) the same typesetting properties apply.
+% In particular, the code will be highlighted if \pkg{minted} is
+% available. \Notice{Since the backend utilizes \cs{verbatim}, the
+% usual caveats apply. In particular, leaving whitespace before
+% \cs{end}\marg{example} will result in an extra newline at the end
+% of the displayed code.}
 %
 % \subsubsection{Options}
 % Package options are of course important to describe, and to this
@@ -563,16 +597,16 @@
 % improve readability of the implementation code.
 %
 % \DescribeEnv[<description>]{macro}{<\textbackslash macro>}
-%                     <\# of args>{<arg 1 description>}'...'
-%                                 {<arg n description>}
+%                     [<\# of args>]{<arg 1 description>}'...'
+%                                   {<arg n description>}
 % With this environment, the implementation of a macro is described.
 % Note that as with \cs{DescribeMacro}, \LaTeX3-style macros can not
 % be used in \meta{\textbackslash macro} without the catcode hack
 % mentioned earlier.
 %
 % \DescribeEnv[<description>]{environment}{<environment>}
-%                     <\# of args>{<arg 1 description>}'...'
-%                                 {<arg n description>}
+%                     [<\# of args>]{<arg 1 description>}'...'
+%                                   {<arg n description>}
 % This environment describes the implementation of an environment.
 %
 % \DescribeEnv[<description>]{option}{<option>}
@@ -622,7 +656,10 @@
 % \meta{implementation} verbatim to the file associated with \meta{key}.
 % As such, it is the analogue of the \env{macrocode} environment from
 % \pkg{ltxdoc}, but does not suffer from some of its drawbacks (the
-% sensitivity to whitespace, for instance).
+% sensitivity to whitespace, for instance). As detailed by the
+% description of the \opt{highlight} option (on page
+% \pageref{ssec:option:highlight}), the environment will highlight
+% the code using \pkg{minted} if possible.
 %
 % \subsubsection{Hiding the implementation}
 % For lagre packages it may be of interest to hide the implementation
@@ -752,6 +789,77 @@
 \msg_new:nnnn{skdoc}{bibtex-unsupported}{The `bibtex` package is unsupported: continue at own risk!}{Use a more modern bibliography system (i.e. `biblatex`) instead.}
 %    \end{macrocode}
 %
+% \subsection{Booleans}
+% Set up some booleans used throughout the code.
+% \begin{macro}{\g__skdoc_use_minted_bool}
+% The \texttt{use_minted} boolean keeps track of wether we're using
+% \pkg{minted} or not. The default value is \emph{false}.
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_use_minted_bool
+\bool_gset_false:N\g__skdoc_use_minted_bool
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_no_index_bool}
+% The \texttt{no_index} boolean keeps track of wether the indexing
+% macros should write things to the index or not. The default value is
+% \emph{false} (don't not write things to the index).
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_no_index_bool
+\bool_gset_false:N\g__skdoc_no_index_bool
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_in_example_bool}
+% The \texttt{in_example} boolean keeps track of wether we are currently
+% inside an example or not (used mainly by \cs{skdoc@verbatim}). The
+% default value is of course \emph{false}.
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_in_example_bool
+\bool_gset_false:N\g__skdoc_in_example_bool
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_with_implementation_bool}
+% The \texttt{with_implementation} boolean keeps track of wether we are
+% going to typeset the implementation or not. The default value is
+% \emph{true}, and this is only changed by \cs{OnlyDescription}.
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_with_implementation_bool
+\bool_gset_true:N\g__skdoc_with_implementation_bool
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_in_implementation_bool}
+% The \texttt{in_implementation} boolean keeps track of wether we are
+% in the implementation part of the documentation or not. It defaults
+% to \emph{false}, and is changed by \cs{Implementation} and \cs{Finale}.
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_in_implementation_bool
+\bool_gset_false:N\g__skdoc_in_implementation_bool
+%    \end{macrocode}
+% \end{macro}
+%
+% Finally, we define a helpful conditional based on the last two
+% booleans. It decides wether code in \cs{skdoc@verbatim} is typeset
+% or just output to a file.
+% \begin{macro*}{\__skdoc_if_print_code_p:}
+% \begin{macro*}{\__skdoc_if_print_code:T}
+% \begin{macro*}{\__skdoc_if_print_code:F}
+% \begin{macro}{\__skdoc_if_print_code:TF}
+%    \begin{macrocode}
+\prg_new_conditional:Nnn\__skdoc_if_print_code:{p,T,F,TF}{
+    \bool_if:nTF{
+        \g__skdoc_in_implementation_bool &&
+        !\g__skdoc_with_implementation_bool
+    }{
+        \prg_return_false:
+    }{
+        \prg_return_true:
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro*}
+% \end{macro*}
+% \end{macro*}
+%
 % \subsection{Options}
 % Define the all options, and process them.
 %    \begin{macrocode}
@@ -869,13 +977,11 @@
 % if both exist. If the option \opt{highlight} was supplied and set
 % to \texttt{false}, we do nothing.
 %    \begin{macrocode}
-\newtoggle{skdoc@minted}
-\togglefalse{skdoc@minted}
 \ifskdoc@highlight
     \IfFileExists{\skdoc@load.sty}{
         \__skdoc_if_shellescape:TF{
             \__skdoc_if_pygmentize:TF{
-                \toggletrue{skdoc@minted}
+                \bool_gset_true:N\g__skdoc_use_minted_bool
                 \RequirePackage{minted}
 %    \end{macrocode}
 % Now that we have \pkg{minted}, we redefine the style of the line
@@ -1123,88 +1229,175 @@
 % \changes{1.1a}{Test for key existence before bumping counter,
 %                use \cs{Needspace*} to prevent code label from
 %                staying on the wrong page in some situations}
+% \changes{1.2}{Hide line numbers when inside \env{example}}
 % This environment does all the actual work for \env{MacroCode}.
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
     \def\skdoc@key{#1}
+%    \end{macrocode}
+% If the file we're supposed to write to hasn't been initialized yet,
+% we error out with a critical error.
+%    \begin{macrocode}
     \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
         \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
     }%
+%    \end{macrocode}
+% Before doing anything, set create or increment a counter keeping
+% track of the line number of the file we're writing to.
+%    \begin{macrocode}
     \expandafter\int_compare:nNnT%
         \cs:w skdoc@output@\skdoc@key @line\cs_end:=\c_zero%
         {\int_gincr:c{skdoc@output@\skdoc@key @line}}%
-    \iftoggle{skdoc@impl}{%
-        \iftoggle{skdoc@minted}{
+%    \end{macrocode}
+% Now, if we're supposed to print code, we set a few things up.
+%    \begin{macrocode}
+    \__skdoc_if_print_code:T{
+        \bool_if:NTF\g__skdoc_use_minted_bool{
+%    \end{macrocode}
+% If we're using \pkg{minted}, we set a few options ans open the
+% output file.
+%    \begin{macrocode}
             \minted@resetoptions%
-            \exp_args:Nnx\setkeys{minted@opt}%
-            {linenos,firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}}%
+            \exp_args:Nnx\setkeys{minted@opt}{
+                \bool_if:NF\g__skdoc_in_example_bool{linenos,}
+                firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}
+            }%
             \iow_open:Nn\minted@code{\jobname.pyg}%
+            \Needspace*{2\baselineskip}%
         }{
-            \@bsphack%
+%    \end{macrocode}
+% Otherwise, we hack spaces with \cs{@bsphack} (unless we're in an
+% \env{example} environment).
+%    \begin{macrocode}
+            \bool_if:NF\g__skdoc_in_example_bool{\@bsphack}%
         }
-    }{}
-    \iftoggle{skdoc@minted}{
-        \Needspace*{2\baselineskip}%
-    }{}
-    \marginnote{
-        \leavevmode
-        \llap{
-            \scriptsize\color{gray}
-            $\langle$\skdoc@key$\rangle$
-            \makebox[2ex]{\strut}
+        \bool_if:NF\g__skdoc_in_example_bool{
+%    \end{macrocode}
+% In all non-example code, \pkg{minted} or not, we output a small
+% marker showing what file we are writing to.
+%    \begin{macrocode}
+            \marginnote{
+                \leavevmode
+                \llap{
+                    \scriptsize\color{gray}
+                    $\langle$\skdoc@key$\rangle$
+                    \makebox[2ex]{\strut}
+                }
+            }
         }
     }
+%    \end{macrocode}
+% Otherwise, we set up the \env{verbatim} line processor.
+%    \begin{macrocode}
     \def\verbatim@processline{%
+%    \end{macrocode}
+% We alsays append the line to the appropriate token list, so that it
+% is saved to the output file.
+%    \begin{macrocode}
         \tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
-        \iftoggle{skdoc@impl}{
-            \iftoggle{skdoc@minted}{
+%    \end{macrocode}
+% If we're supposed to print code, we do a lot more...
+%    \begin{macrocode}
+        \__skdoc_if_print_code:T{
+            \bool_if:NTF\g__skdoc_use_minted_bool{
+%    \end{macrocode}
+% ...but if we're using minted, \enquote{a lot more} consists of also
+% writing the line to the file used by \pkg{minted}.
+%    \begin{macrocode}
                 \iow_now:Nx\minted@code{\the\verbatim@line}%
             }{
+%    \end{macrocode}
+% Otherwise, we actually do a lot of stuff. We typeset the line number
+% (unless we're in an example):
+%    \begin{macrocode}
                 \noindent\leavevmode%
-                \hspace*{-5ex}
+                \bool_if:NF\g__skdoc_in_example_bool{\hspace*{-5ex}}
                 \begin{minipage}[c][1ex]{\textwidth}
-                    \makebox[4ex]{%
-                        \leavevmode
-                        \sffamily\tiny\color{lightgray}\hfill%
-                        \oldstylenums{\int_use:c{skdoc@output@\skdoc@key @line}}%
-                    }%
-                    \hspace*{1ex}%
+                    \bool_if:NF\g__skdoc_in_example_bool{
+                        \makebox[4ex]{%
+                            \leavevmode
+                            \sffamily\tiny\color{lightgray}\hfill%
+                            \oldstylenums{\int_use:c{skdoc@output@\skdoc@key @line}}%
+                        }%
+                        \hspace*{1ex}%
+                    }
+%    \end{macrocode}
+% We also typeset the actual line:
+%    \begin{macrocode}
                     {
                         \verbatim@font
                         \the\verbatim@line
                     }
                 \end{minipage}
+%    \end{macrocode}
+% Both of them in the same one-line-high minipage covering the page
+% width. Note the use of \cs{llap} for line numbers in the margin.
+% We end with a \cs{par} for the next line.
+%    \begin{macrocode}
                 \par
             }
-        }{}
+        }
+%    \end{macrocode}
+% Finally, the line number counter is incremented.
+%    \begin{macrocode}
         \int_gincr:c{skdoc@output@\skdoc@key @line}%
     }%
+%    \end{macrocode}
+% Now the \env{verbatim} catcode magic begins.
+%    \begin{macrocode}
     \group_begin:
     \let\do\@makeother\dospecials\catcode`\^^M\active%
-    \iftoggle{skdoc@impl}{
-        \iftoggle{skdoc@minted}{}{\frenchspacing\@vobeyspaces}
-    }{}
+    \bool_if:nT{
+        \__skdoc_if_print_code_p: &&
+        !\g__skdoc_use_minted_bool
+    }{
+        \frenchspacing\@vobeyspaces
+    }
     \verbatim@start%
 }{%
     \group_end:
-    \iftoggle{skdoc@impl}{
-        \iftoggle{skdoc@minted}{
+%    \end{macrocode}
+% The catcode magic is over! Now, if we're printing code, there are
+% a few things left to do.
+%    \begin{macrocode}
+    \__skdoc_if_print_code:T{
+        \bool_if:NTF\g__skdoc_use_minted_bool{
+%    \end{macrocode}
+% If we're using \pkg{minted}, we still have to actually print the code.
+% We begin with closing the output file.
+%    \begin{macrocode}
             \iow_close:N\minted@code%
 %    \end{macrocode}
-% These negative \cs{vspace}s are derived from the \pkg{fancyvrb}
-% documentation \parencite[pp.~46--47]{Rahtz10}.
+% A few spacing fixes are applied. Since \pkg{minted} uses
+% \pkg{fancyvrb}, these negative \cs{vspace}s are derived from the
+% \pkg{fancyvrb} documentation \parencite[pp.~46--47]{Rahtz10}. What
+% we want to do is to offset the spacing produced by \pkg{minted}, so
+% that we are in control.
+%    \begin{macrocode}
+            \bool_if:NF\g__skdoc_in_example_bool{
+                \vspace*{-\topsep}
+                \vspace*{-\partopsep}
+                \vspace*{-\parskip}
+            }
+%    \end{macrocode}
+% Now, the internal \pkg{minted} macro \cs{minted@pygmentize} is called
+% to highlight and typeset the code, and the temporary file is removed.
+%    \begin{macrocode}
+            \minted@pygmentize{latex}%
+            \DeleteFile{\jobname.pyg}%
+%    \end{macrocode}
+% This is followed by more space-offsetting.
 %    \begin{macrocode}
             \vspace*{-\topsep}
             \vspace*{-\partopsep}
-            \vspace*{-\parskip}
-            \minted@pygmentize{latex}%
-            \DeleteFile{\jobname.pyg}%
-            \vspace*{-\topsep}
-            \vspace*{-\partopsep}
         }{
-            \@esphack%
+%    \end{macrocode}
+% If we aren't using \pkg{minted}, we hack spaces with \cs{@esphack}
+% instead.
+%    \begin{macrocode}
+            \bool_if:NF\g__skdoc_in_example_bool{\@esphack}%
         }
-    }{}%
+    }%
 }
 %    \end{macrocode}
 % \end{environment}
@@ -1213,16 +1406,16 @@
 % \changes{1.1}{Minor changes due to syntax highlighting}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{MacroCode}{m}{
-    \iftoggle{skdoc@impl}{
+    \__skdoc_if_print_code:T{
         \vspace{.2\baselineskip}
-        \iftoggle{skdoc@minted}{}{\par\noindent}
-    }{}
+        \bool_if:NF\g__skdoc_use_minted_bool{\par\noindent}
+    }
     \skdoc@verbatim{#1}
 }{
     \endskdoc@verbatim
-    \iftoggle{skdoc@impl}{
+    \__skdoc_if_print_code:T{
         \vspace{.5\baselineskip}
-    }{}
+    }
 }
 %    \end{macrocode}
 % \end{environment}
@@ -1320,13 +1513,6 @@
 % We introduce a couple of macros for referencing various constructs
 % in running text, \emph{i.e.} \cs{cs}-like macros. The starred
 % variants will not index the use, the non-starred variants will.
-%
-% First, though, we introduce a toggle letting us permanently disable
-% indexing inside \emph{e.g.} the table of contents and index.
-%    \begin{macrocode}
-\newtoggle{skdoc@noindex}
-\togglefalse{skdoc@noindex}
-%    \end{macrocode}
 % \begin{macro}{\cs}[2]
 %   {True if this is the starred variant}
 %   {The macro name to be typeset}
@@ -1334,7 +1520,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\cs{sm}{
     \texttt{\char`\\#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@macro{#2}}
     }
 }
@@ -1347,7 +1533,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\env{sm}{
     \texttt{#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@environment{#2}}
     }
 }
@@ -1360,7 +1546,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\pkg{sm}{
     \textsf{#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@package{#2}}
     }
 }
@@ -1373,7 +1559,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\opt{sm}{
     \texttt{#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@option{#2}}
     }
 }
@@ -1386,7 +1572,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\bib{sm}{
     \texttt{@#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@bibentry{#2}}
     }
 }
@@ -1399,7 +1585,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\thm{sm}{
     \textrm{#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@theme{#2}}
     }
 }
@@ -1412,7 +1598,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\file{sm}{
     \texttt{#2}
-    \iftoggle{skdoc@noindex}{}{
+    \bool_if:NF\g__skdoc_no_index_bool{
         \IfBooleanTF{#1}{}{\index@file{#2}}
     }
 }
@@ -1638,17 +1824,137 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \paragraph{Missing commands}
-% Descriptional commands for \hologo{BibTeX} entry types and themes
-% are not yet implemented.
+% Lastly, we define an envionment for showing examples. It's quite
+% complex, utilizing (and kind of hacking) \cs{skdoc@verbatim} and
+% typesetting the content using \pkg{l3coffins}.
 %
-% Lastly, we define an envionment for showing examples. It's
-% rediculously simple, really.
+% First, three dimensions used in constructing the side-by-side boxes.
+% \begin{macro}{\c__skdoc_example_margin_dim}
+% This dimension, set to half of \cs{baselineskip}, dictates the margin
+% between the content of the coffins and the dividing ruler.
+%    \begin{macrocode}
+\dim_new:N\c__skdoc_example_margin_dim
+\dim_set:Nn\c__skdoc_example_margin_dim{0.5\baselineskip}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\c__skdoc_example_linewidth_dim}
+% This dimension sets the width of the dividing ruler.
+%    \begin{macrocode}
+\dim_new:N\c__skdoc_example_linewidth_dim
+\dim_set:Nn\c__skdoc_example_linewidth_dim{1pt}
+%    \end{macrocode}
+% \end{macro}
+%
+% Next, three coffins used by the \env{example} environment are defined.
+% One for code, one for the divider and one for the result.
+% \begin{macro}{\l__skdoc_example_code_coffin}
+%    \begin{macrocode}
+\coffin_new:N\l__skdoc_example_code_coffin
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\l__skdoc_example_divider_coffin}
+%    \begin{macrocode}
+\coffin_new:N\l__skdoc_example_divider_coffin
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\l__skdoc_example_result_coffin}
+%    \begin{macrocode}
+\coffin_new:N\l__skdoc_example_result_coffin
+%    \end{macrocode}
+% \end{macro}
+%
+% Finally, we can define the actual \env{example} environment!
 % \begin{environment}{example}
+% \changes{1.2}{Print example code next to the result}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{example}{}{
-    \minisec{Example:}
-}{}
+%    \end{macrocode}
+% The environment starts by priting a small header indicating that
+% the content is in fact an example. It also sets a couple of counters
+% and IO variables to trick \cs{skdoc@verbatim} into thinking that it's
+% actually writing to a defined output file.
+%    \begin{macrocode}
+    \bool_gset_true:N\g__skdoc_in_example_bool%
+    \minisec{Example:}%
+    \int_zero_new:c{skdoc@output@skdoc@private@example@line}%
+    \tl_if_exist:cTF{skdoc@output@skdoc@private@example}{
+        \tl_clear:c{skdoc@output@skdoc@private@example}
+    }{
+        \tl_new:c{skdoc@output@skdoc@private@example}
+    }
+%    \end{macrocode}
+% Next, we calculate the coffin width. We do this locally, not in a
+% global constant, since we may be somewhere where \cs{textwidth}
+% might have changed.
+%    \begin{macrocode}
+    \dim_set:Nn\l_tmpa_dim{ \textwidth/2
+                           -\c__skdoc_example_margin_dim
+                           -\c__skdoc_example_linewidth_dim/2}
+%    \end{macrocode}
+% The code coffin is now filled, after clearing it. It'll get filled
+% with the contents of the verbatim environment, typeset like other
+% \env{MacroCode} environments in the document (\emph{i.e.} \pkg{minted}
+% if possible).
+%    \begin{macrocode}
+    \coffin_clear:N\l__skdoc_example_code_coffin
+    \vcoffin_set:Nnw\l__skdoc_example_code_coffin{\l_tmpa_dim}
+    \skdoc@verbatim{skdoc@private@example}
+}{
+    \endskdoc@verbatim
+    \vcoffin_set_end:
+%    \end{macrocode}
+% Next comes the example result coffin. After clearing it, it gets
+% filled by writing the contents of the token list defined previously
+% (the one \cs{skdoc@verbatim} is tricked into writing to) to a
+% temporary file, then reading that temporary file using \cs{input}.
+% We leave the temporary file behind; cleaning up requires \cs{write18}.
+% Also: Meh.
+%    \begin{macrocode}
+    \coffin_clear:N\l__skdoc_example_result_coffin
+    \vcoffin_set:Nnw\l__skdoc_example_result_coffin{\l_tmpa_dim}
+    \iow_open:Nn\skdoc@output{\jobname.skdoc.tmp}
+    \iow_now:Nx\skdoc@output{\tl_to_str:c{skdoc@output@skdoc@private@example}}
+    \iow_close:N\skdoc@output
+    \input{\jobname.skdoc.tmp}
+    \vcoffin_set_end:
+%    \end{macrocode}
+% The divider coffin, being dependent on the height of the two previous
+% coffins, is also reset every time. After clearing, we calculate the
+% maximum height of the two coffins, and add two margins (top and
+% bottom). This value is used to typeset a (gray) rule of the width
+% specified earlier (by \cs{c__skdoc_example_linewidth_dim}). Margins
+% are also added to either side of this rule.
+%    \begin{macrocode}
+    \coffin_clear:N\l__skdoc_example_divider_coffin
+    \dim_set:Nn\l_tmpa_dim{
+        \dim_max:nn{\coffin_ht:N\l__skdoc_example_code_coffin}%
+                   {\coffin_ht:N\l__skdoc_example_result_coffin}
+        + 2\c__skdoc_example_margin_dim}
+    \hcoffin_set:Nn\l__skdoc_example_divider_coffin{
+        \color{lightgray}
+        \hspace*{\c__skdoc_example_margin_dim}
+        \rule{\c__skdoc_example_linewidth_dim}{\l_tmpa_dim}
+        \hspace*{\c__skdoc_example_margin_dim}
+    }
+%    \end{macrocode}
+% It's finally time to join and typeset the coffins. We clear a temporary
+% coffin, copy the divider into it, and proceed to attach the example
+% result coffin to the left and the code to the right (vertical centers
+% touching, so that they are \enquote{centered} vertically). The
+% temporary coffin is then typeset.
+%    \begin{macrocode}
+    \coffin_clear:N\l_tmpa_coffin
+    \coffin_set_eq:NN\l_tmpa_coffin\l__skdoc_example_divider_coffin
+    \coffin_join:NnnNnnnn\l_tmpa_coffin{l}{vc}%
+                         \l__skdoc_example_result_coffin{r}{vc}%
+                         {0pt}{0pt}
+    \coffin_join:NnnNnnnn\l_tmpa_coffin{r}{vc}%
+                         \l__skdoc_example_code_coffin{l}{vc}%
+                         {0pt}{0pt}
+    \coffin_typeset:Nnnnn\l_tmpa_coffin{T}{l}{0pt}{0pt}
+    \bool_gset_false:N\g__skdoc_in_example_bool%
+    \vspace*{\c__skdoc_example_margin_dim}\par
+}
 %    \end{macrocode}
 % \end{environment}
 %
@@ -1899,19 +2205,26 @@
 % \end{macro*}
 %
 % \subsection{The index}
+% \begin{macro*}{\__skdoc_if_do_index:T}
+% \begin{macro*}{\__skdoc_if_do_index:F}
+% \begin{macro*}{\__skdoc_if_do_index:TF}
+% \begin{macro}{\__skdoc_if_do_index_p:}
 %    \begin{macrocode}
-\prg_new_conditional:Nnn\__skdoc_do_index:{p}{
-    \iftoggle{skdoc@impl}{
+\prg_new_conditional:Nnn\__skdoc_if_do_index:{p,T,F,TF}{
+    \bool_if:nTF{
+        \__skdoc_if_print_code_p: &&
+        !\g__skdoc_no_index_bool
+    }{
         \prg_return_true:
     }{
-        \iftoggle{skdoc@in@impl}{
-            \prg_return_false:
-        }{
-            \prg_return_true:
-        }
+        \prg_return_false:
     }
 }
 %    \end{macrocode}
+% \end{macro}
+% \end{macro*}
+% \end{macro*}
+% \end{macro*}
 % The index is based on \pkg{glossaries}, and as such the whole
 % process of adding entries to the index is reduced to adding
 % glossary entries. This is done through two wrapper macros around
@@ -1926,9 +2239,9 @@
 % index entry.
 %    \begin{macrocode}
 \DeclareDocumentCommand\@index@{mm}{
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \@index@@{#1}{#2}
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1974,7 +2287,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{#3}{\cs*{#3}}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -1984,7 +2297,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1998,7 +2311,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\env*{\string#3}~(environment)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2008,7 +2321,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2022,7 +2335,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\opt*{\string#3}~(option)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2032,7 +2345,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2047,7 +2360,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{#3}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2057,7 +2370,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2071,7 +2384,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\thm*{\string#3}~(theme)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2081,7 +2394,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2095,7 +2408,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\pkg*{\string#3}~(package)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2105,7 +2418,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2119,7 +2432,7 @@
     \ifglsentryexists{index-\skdoc@temp}{}{
         \@index@{\string#3}{\file*{\string#3}~(file)}
     }
-    \if_predicate:w\__skdoc_do_index_p:
+    \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
             \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
         }{
@@ -2129,7 +2442,7 @@
                 \glsadd[types=index]{index-\skdoc@temp}
             }
         }
-    \fi:
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2154,14 +2467,14 @@
     \glossarystyle{indexgroup}
     \renewcommand*{\glspostdescription}{\unskip\leaders\hbox to 2.9mm{\hss.}\hfill\strut}
     \renewenvironment{theglossary}{
-        \toggletrue{skdoc@noindex}
+        \bool_gset_true:N\g__skdoc_no_index_bool
         \begin{multicols}{2}
         \setlength{\parindent}{0pt}
         \setlength{\parskip}{0pt plus 0.3pt}
         \let\item\@idxitem
     }{
         \end{multicols}
-        \togglefalse{skdoc@noindex}
+        \bool_gset_false:N\g__skdoc_no_index_bool
     }
     \renewcommand*{\glossaryentryfield}[5]{
         \item\glsentryitem{##1}\glstarget{##1}{##2}
@@ -2331,11 +2644,11 @@
 \newglossarystyle{changelog}{
     \glossarystyle{altlist}
     \renewenvironment{theglossary}{
-        \toggletrue{skdoc@noindex}
+        \bool_gset_true:N\g__skdoc_no_index_bool
         \begin{multicols}{2}\begin{description}
     }{
         \end{description}\end{multicols}
-        \togglefalse{skdoc@noindex}
+        \bool_gset_false:N\g__skdoc_no_index_bool
     }
     \renewcommand*{\glossaryentryfield}[5]{
         \par\vspace{5\p@}\relax
@@ -2377,31 +2690,23 @@
 % must force a page break between what's before the implementation and
 % what's after, which might look horrible.
 %
-% Anyway, we define two toggles that keep track of things. One keeps
-% track of wether to (not) hide the implementation, and one keeps track 
-% of wether we are in the implementation or not. These are provided with
-% sensible defaults (\emph{i.e.} true and false, respectively).
-% We also define a counter in which we save the page number we had when
+% We define a counter in which we save the page number we had when
 % the implementation started.
 %    \begin{macrocode}
-\newtoggle{skdoc@impl}
-\newtoggle{skdoc@in@impl}
-\toggletrue{skdoc@impl}
-\togglefalse{skdoc@in@impl}
 \newcounter{skdoc@impl@page}
 %    \end{macrocode}
 % Then we define the shipout hook. Fairly straight-forward.
 %    \begin{macrocode}
 \AtBeginShipout{
-    \iftoggle{skdoc@impl}{}{
-        \iftoggle{skdoc@in@impl}{\AtBeginShipoutDiscard}{}
-    }
+    \__skdoc_if_print_code:F{\AtBeginShipoutDiscard}
 }
 %    \end{macrocode}
 % \begin{macro}{\OnlyDescription}
 % The \cs{OnlyDescription} macro simply toggles the appropriate toggle.
 %    \begin{macrocode}
-\DeclareDocumentCommand\OnlyDescription{}{\togglefalse{skdoc@impl}}
+\DeclareDocumentCommand\OnlyDescription{}{
+    \bool_gset_false:N\g__skdoc_with_implementation_bool
+}
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro}{\Implementation}
@@ -2413,9 +2718,9 @@
 % references used in the implementation from the final bibliography.
 %    \begin{macrocode}
 \DeclareDocumentCommand\Implementation{}{
-    \iftoggle{skdoc@impl}{}{
+    \bool_if:NF\g__skdoc_with_implementation_bool{
         \clearpage
-        \toggletrue{skdoc@in@impl}
+        \bool_gset_true:N\g__skdoc_in_implementation_bool
         \let\skdoc@old@part\part
         \DeclareDocumentCommand\part{som}{}
         \let\skdoc@old@section\section
@@ -2442,10 +2747,10 @@
 % is printed.
 %    \begin{macrocode}
 \DeclareDocumentCommand\Finale{}{
-    \iftoggle{skdoc@impl}{}{
+    \bool_if:NF\g__skdoc_with_implementation_bool{
         \cs_if_exist:NTF\refsection{\printbibliography\endrefsection}{}
         \clearpage
-        \togglefalse{skdoc@in@impl}
+        \bool_gset_false:N\g__skdoc_in_implementation_bool
         \let\part\skdoc@old@part
         \let\section\skdoc@old@section
         \let\subsection\skdoc@old@subsection
@@ -2732,11 +3037,11 @@
 %    \begin{macrocode}
 \let\old@tableofcontents\tableofcontents
 \DeclareDocumentCommand\tableofcontents{}{
-    \toggletrue{skdoc@noindex}
+    \bool_gset_true:N\g__skdoc_no_index_bool
     \microtypesetup{protrusion=false}
     \old@tableofcontents
     \microtypesetup{protrusion=true}
-    \togglefalse{skdoc@noindex}
+    \bool_gset_false:N\g__skdoc_no_index_bool
 }
 %    \end{macrocode}
 % \end{macro}
