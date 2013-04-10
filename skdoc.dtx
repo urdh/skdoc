@@ -73,7 +73,7 @@
 %</driver>
 %<class>\ProvidesExplClass{skdoc}
 %<*class>
-    {2013/04/08}{1.2}{skdoc documentation class}
+    {2013/04/08}{1.2a}{skdoc documentation class}
 %</class>
 %
 %<*driver>
@@ -132,7 +132,7 @@
 % {}{\small\pagemark}
 % \pagestyle{skdoc-class}
 %
-% \version{1.2}
+% \version{1.2a}
 % \changes{1.0}{Initial version}
 % \changes{1.1}{Added support for syntax highlighting using \pkg{minted}}
 % \changes{1.1a}{Deprecate the use of \pkg{bibtex} in favour of \pkg{biblatex}}
@@ -1738,9 +1738,10 @@
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro*}{\skdoc@WithValues@peek}
+% \changes{1.2a}{Add \cs{ignorespaces} to fix spacing bug}
 %    \begin{macrocode}
 \def\skdoc@WithValues@peek{
-    \ifx\@let@token\AndDefault\else\par\noindent\nobreak\fi
+    \ifx\@let@token\AndDefault\else\par\noindent\nobreak\ignorespaces\fi
 }
 %    \end{macrocode}
 % \end{macro*}
@@ -1760,9 +1761,10 @@
 %   {The value of a key-value option}
 % Typesets the default value of a key-value option. To the far
 % right of the line.
+% \changes{1.2a}{Add \cs{ignorespaces} to fix spacing bug}
 %    \begin{macrocode}
 \DeclareDocumentCommand\AndDefault{m}{
-    \llap{\textcolor{gray}{\texttt{(#1)}}}\par\noindent\nobreak
+    \llap{\textcolor{gray}{\texttt{(#1)}}}\par\noindent\nobreak\ignorespaces
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1783,6 +1785,7 @@
 % \begin{macro}{\WithFields}[2]
 %   {Optional fields}
 %   {Mandatory fields}
+% \changes{1.2a}{Add \cs{ignorespaces} to fix spacing bug}
 %    \begin{macrocode}
 \DeclareDocumentCommand\WithFields{om}{
     \noindent\makebox[\linewidth]{
@@ -1791,7 +1794,7 @@
             \textcolor{gray}{\texttt{,#2}}
         }
     }
-    \par\noindent\nobreak
+    \par\noindent\nobreak\ignorespaces
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1799,13 +1802,14 @@
 % A macro for describing themes is supplied.
 % \begin{macro}{\Theme}[1]
 %   {The theme name}
+% \changes{1.2a}{Add \cs{ignorespaces} to fix spacing bug}
 %    \begin{macrocode}
 \DeclareDocumentCommand\Theme{m}{
     \marginnote{
         \index@theme*{#1}
         \hfill\llap{\textcolor{macrodesc}{\thm{#1}}}
     }
-    \nobreak\par\noindent\nobreak
+    \nobreak\par\noindent\nobreak\ignorespaces
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1813,13 +1817,14 @@
 % And finally, a macro for describing files is provided.
 % \begin{macro}{\DescribeFile}[1]
 %   {The filename}
+% \changes{1.2a}{Add \cs{ignorespaces} to fix spacing bug}
 %    \begin{macrocode}
 \DeclareDocumentCommand\DescribeFile{m}{
     \marginnote{
         \index@file*{#1}
         \hfill\llap{\textcolor{macrodesc}{\file{#1}}}
     }
-    \nobreak\par\noindent\nobreak
+    \nobreak\par\noindent\nobreak\ignorespaces
 }
 %    \end{macrocode}
 % \end{macro}
