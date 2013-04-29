@@ -1248,7 +1248,7 @@
 % track of the line number of the file we're writing to.
 %    \begin{macrocode}
     \expandafter\int_compare:nNnT%
-        \cs:w skdoc@output@\skdoc@key @line\cs_end:=\c_zero%
+        \use:c{skdoc@output@\skdoc@key @line}=\c_zero%
         {\int_gincr:c{skdoc@output@\skdoc@key @line}}%
 %    \end{macrocode}
 % Now, if we're supposed to print code, we set a few things up.
@@ -1980,7 +1980,7 @@
     \IfBooleanTF{#1}{
         \IfNoValueTF{#3}{}{
             \int_compare:nNnTF{#3}>{0}{
-                \cs:w use_none:\prg_replicate:nn{#3}{n}\cs_end:
+                \use:c{use_none:\prg_replicate:nn{#3}{n}}
             }{}
         }
     }{
@@ -2008,7 +2008,7 @@
     \IfBooleanTF{#1}{
         \IfNoValueTF{#3}{}{
             \int_compare:nNnTF{#3}>{0}{
-                \cs:w use_none:\prg_replicate:nn{#3}{n}\cs_end:
+                \use:c{use_none:\prg_replicate:nn{#3}{n}}
             }{}
         }
     }{
