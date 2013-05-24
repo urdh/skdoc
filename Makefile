@@ -4,7 +4,7 @@ all: skdoc.cls skdoc.pdf
 clean:
 	rm -f *.gl? *.id? *.aux # problematic files
 	rm -f *.bbl *.bcf *.bib *.blg *.xdy # biblatex
-	rm -f *.fls *.log *.out *.run.xml *.tox # junk
+	rm -f *.fls *.log *.out *.run.xml *.toc # junk
 distclean: clean
 	rm -f *.cls *.sty *.clo *.tar.gz *.tds.zip
 	git reset --hard
