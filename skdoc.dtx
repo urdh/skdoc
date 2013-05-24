@@ -73,7 +73,7 @@
 %</driver>
 %<class>\ProvidesExplClass{skdoc}
 %<*class>
-    {2013/05/24}{1.3}{skdoc documentation class}
+    {2013/05/24}{1.3a}{skdoc documentation class}
 %</class>
 %
 %<*driver>
@@ -132,7 +132,7 @@
 % {}{\small\pagemark}
 % \pagestyle{skdoc-class}
 %
-% \version{1.3}
+% \version{1.3a}
 % \changes{1.0}{Initial version}
 % \changes{1.1}{Added support for syntax highlighting using \pkg{minted}}
 % \changes{1.1a}{Deprecate the use of \pkg{bibtex} in favour of \pkg{biblatex}}
@@ -1246,6 +1246,7 @@
 %                staying on the wrong page in some situations}
 % \changes{1.2}{Hide line numbers when inside \env{example}}
 % \changes{1.3}{Allow multiple (comma-separated) targets}
+% \changes{1.3a}{Fix critical bug}
 % This environment does all the actual work for \env{MacroCode}.
 %    \begin{macrocode}
 \clist_new:N\l__skdoc_keys
@@ -1279,9 +1280,7 @@
             \exp_args:Nnx\setkeys{minted@opt}{
                 \int_compare:nNnF{\clist_count:N\l__skdoc_keys}>\c_one{
                     \bool_if:NF\g__skdoc_in_example_bool{linenos,}
-                    \clist_map_inline:Nn\l__skdoc_keys{
-                        firstnumber=\int_use:c{skdoc@output@##1@line}
-                    }
+                    firstnumber=\int_use:c{skdoc@output@#1@line}
                 }
             }%
             \iow_open:Nn\minted@code{\jobname.pyg}%
