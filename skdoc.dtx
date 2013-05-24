@@ -2141,11 +2141,14 @@
 % \cs{marginnote} rather than in an \cs{fbox}.
 % \begin{macro}{\PrintEnvImplName}[1]
 %   {The environment name to be printed}
+% \changes{1.3}{Fixed incorrect spacing}
 %    \begin{macrocode}
 \def\PrintEnvImplName#1{%
-    \par\mbox{}
-    \marginnote{\llap{\implstyle{#1}}}
-    \par
+    \par\leavevmode\null
+    \hbox{%
+        \marginnote{\llap{\implstyle{#1\strut}}}%
+    }
+    \null
 }
 %    \end{macrocode}
 % \end{macro}
