@@ -652,7 +652,7 @@
 % the sequence
 % \Macro\PreambleTo{<\textbackslash token>}{\cs*{jobname}.tex}.
 %
-% \DescribeEnv[<implementation>]{MacroCode}{<key>}
+% \DescribeEnv[<implementation>]{MacroCode}{<key>',...'}
 % The \env{MacroCode} environment typesets and exports
 % \meta{implementation} verbatim to the file associated with \meta{key}.
 % As such, it is the analogue of the \env{macrocode} environment from
@@ -660,7 +660,8 @@
 % sensitivity to whitespace, for instance). As detailed by the
 % description of the \opt{highlight} option (on page
 % \pageref{ssec:option:highlight}), the environment will highlight
-% the code using \pkg{minted} if possible.
+% the code using \pkg{minted} if possible. Multiple \meta{key}s are
+% allowed, and the code will be written to all corresponding files.
 %
 % \subsubsection{Hiding the implementation}
 % For lagre packages it may be of interest to hide the implementation
@@ -1212,7 +1213,9 @@
         \int_zero_new:c{skdoc@output@\skdoc@key @line}
     }
     \tl_new:c{skdoc@output@\skdoc@key}
-    \IfStrEq{\skdoc@preamble}{}{}{
+    \IfStrEq{\skdoc@preamble}{}{
+        \def\skdoc@preamble@extra{}
+    }{
         \tl_set:Nx\l_tmpa_tl{\skdoc@preamble}
         \edef\skdoc@temp{\tl_head:N\l_tmpa_tl}
         \def\skdoc@preamble@extra{
@@ -1241,23 +1244,27 @@
 %                use \cs{Needspace*} to prevent code label from
 %                staying on the wrong page in some situations}
 % \changes{1.2}{Hide line numbers when inside \env{example}}
+% \changes{1.3}{Allow multiple (comma-separated) targets}
 % This environment does all the actual work for \env{MacroCode}.
 %    \begin{macrocode}
+\clist_new:N\l__skdoc_keys
 \DeclareDocumentEnvironment{skdoc@verbatim}{m}{%
-    \def\skdoc@key{#1}
+    \clist_set:Nn\l__skdoc_keys{#1}
 %    \end{macrocode}
 % If the file we're supposed to write to hasn't been initialized yet,
 % we error out with a critical error.
 %    \begin{macrocode}
-    \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{}{
-        \msg_critical:nnx{skdoc}{key-nexists}{\skdoc@key}
-    }%
+    \clist_map_inline:Nn\l__skdoc_keys{
+        \int_if_exist:cTF{skdoc@output@##1@line}{}{
+            \msg_critical:nnn{skdoc}{key-nexists}{##1}
+        }%
 %    \end{macrocode}
 % Before doing anything, set create or increment a counter keeping
 % track of the line number of the file we're writing to.
 %    \begin{macrocode}
-    \int_compare:nNnT{\int_use:c{skdoc@output@\skdoc@key @line}}=\c_zero%
-        {\int_gincr:c{skdoc@output@\skdoc@key @line}}%
+        \int_compare:nNnT{\int_use:c{skdoc@output@##1@line}}=\c_zero%
+            {\int_gincr:c{skdoc@output@##1@line}}%
+    }
 %    \end{macrocode}
 % Now, if we're supposed to print code, we set a few things up.
 %    \begin{macrocode}
@@ -1269,8 +1276,12 @@
 %    \begin{macrocode}
             \minted@resetoptions%
             \exp_args:Nnx\setkeys{minted@opt}{
-                \bool_if:NF\g__skdoc_in_example_bool{linenos,}
-                firstnumber=\int_use:c{skdoc@output@\skdoc@key @line}
+                \int_compare:nNnF{\clist_count:N\l__skdoc_keys}>\c_one{
+                    \bool_if:NF\g__skdoc_in_example_bool{linenos,}
+                    \clist_map_inline:Nn\l__skdoc_keys{
+                        firstnumber=\int_use:c{skdoc@output@##1@line}
+                    }
+                }
             }%
             \iow_open:Nn\minted@code{\jobname.pyg}%
             \Needspace*{2\baselineskip}%
@@ -1290,7 +1301,7 @@
                 \leavevmode
                 \llap{
                     \scriptsize\color{gray}
-                    $\langle$\skdoc@key$\rangle$
+                    $\langle$#1$\rangle$
                     \makebox[2ex]{\strut}
                 }
             }
@@ -1304,7 +1315,9 @@
 % We alsays append the line to the appropriate token list, so that it
 % is saved to the output file.
 %    \begin{macrocode}
-        \tl_gput_right:cx{skdoc@output@\skdoc@key}{\the\verbatim@line\iow_newline:}%
+        \clist_map_inline:Nn\l__skdoc_keys{
+            \tl_gput_right:cx{skdoc@output@####1}{\the\verbatim@line\iow_newline:}%
+        }
 %    \end{macrocode}
 % If we're supposed to print code, we do a lot more...
 %    \begin{macrocode}
@@ -1323,11 +1336,16 @@
                 \noindent\leavevmode%
                 \bool_if:NF\g__skdoc_in_example_bool{\hspace*{-5ex}}
                 \begin{minipage}[c][1ex]{\textwidth}
-                    \bool_if:NF\g__skdoc_in_example_bool{
+                    \bool_if:nF{
+                        \g__skdoc_in_example_bool &&
+                        !\int_compare_p:nNn{\clist_count:N\l__skdoc_keys}>\c_one
+                    }{
                         \makebox[4ex]{%
                             \leavevmode
                             \sffamily\tiny\color{lightgray}\hfill%
-                            \oldstylenums{\int_use:c{skdoc@output@\skdoc@key @line}}%
+                            \clist_map_inline:Nn\l__skdoc_keys{
+                                \oldstylenums{\int_use:c{skdoc@output@####1@line}}%
+                            }
                         }%
                         \hspace*{1ex}%
                     }
@@ -1350,7 +1368,9 @@
 %    \end{macrocode}
 % Finally, the line number counter is incremented.
 %    \begin{macrocode}
-        \int_gincr:c{skdoc@output@\skdoc@key @line}%
+        \clist_map_inline:Nn\l__skdoc_keys{
+            \int_gincr:c{skdoc@output@####1@line}%
+        }
     }%
 %    \end{macrocode}
 % Now the \env{verbatim} catcode magic begins.
