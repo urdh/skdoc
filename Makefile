@@ -1,7 +1,7 @@
 TEXMFHOME ?= $(shell kpsewhich -var-value TEXMFHOME)
-.PHONY: all clean distclean install dist
+.PHONY: all clean distclean install dist test clean-test
 all: skdoc.cls skdoc.pdf
-clean:
+clean: clean-test
 	rm -f *.gl? *.id? *.aux # problematic files
 	rm -f *.bbl *.bcf *.bib *.blg *.xdy # biblatex
 	rm -f *.fls *.log *.out *.run.xml *.toc # junk
@@ -46,3 +46,9 @@ skdoc.tar.gz: skdoc.tds.zip skdoc.dtx skdoc.pdf
 	rm -rf skdoc
 
 dist: skdoc.tar.gz
+
+test:
+#	$(MAKE) -C tests
+
+clean-test:
+#	$(MAKE) -C tests clean
