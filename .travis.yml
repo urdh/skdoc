@@ -1,0 +1,9 @@
+language: latex
+
+install:
+  - sudo apt-get update
+  - sudo apt-get install texlive texlive-latex-extra
+
+script:
+  - make dist
+  - make test
