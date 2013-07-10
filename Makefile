@@ -13,12 +13,12 @@ distclean: clean
 	tex $<
 
 %.pdf: %.dtx
-	pdflatex $<
+	pdflatex -interaction=nonstopmode -halt-on-error $<
 	makeglossaries $*
 	biber $*
-	pdflatex $<
+	pdflatex -interaction=nonstopmode -halt-on-error $<
 	makeglossaries $*
-	pdflatex $<
+	pdflatex -interaction=nonstopmode -halt-on-error $<
 
 install: all
 	install -m 0644 skdoc.cls $(TEXMFHOME)/tex/latex/skdoc/skdoc.cls
