@@ -28,9 +28,11 @@ install: all
 	-mktexlsr
 
 skdoc.tds.zip: skdoc.dtx skdoc.pdf skdoc.cls
-	mkdir -p skdoc/{tex,doc,source}/latex/skdoc
+	mkdir -p skdoc/tex/latex/skdoc
 	cp skdoc.cls skdoc/tex/latex/skdoc/skdoc.cls
+	mkdir -p skdoc/doc/latex/skdoc
 	cp skdoc.pdf skdoc/doc/latex/skdoc/skdoc.pdf
+	mkdir -p skdoc/source/latex/skdoc
 	cp skdoc.dtx skdoc/source/latex/skdoc/skdoc.dtx
 	cp README skdoc/doc/latex/skdoc/README
 	cd skdoc && zip -r ../skdoc.tds.zip *
@@ -38,6 +40,7 @@ skdoc.tds.zip: skdoc.dtx skdoc.pdf skdoc.cls
 
 skdoc.tar.gz: skdoc.tds.zip skdoc.dtx skdoc.pdf
 	mkdir -p skdoc
+	ls -R
 	cp skdoc.dtx skdoc/skdoc.dtx
 	cp skdoc.pdf skdoc/skdoc.pdf
 	cp README skdoc/README
