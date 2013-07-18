@@ -757,7 +757,7 @@
 % These packages are basic low-level things that we use to declare
 % commands, work with strings and so on.
 %    \begin{macrocode}
-\RequirePackage{etoolbox,xstring,xparse,atbegshi,kvoptions,pdftexcmds}
+\RequirePackage{etoolbox,xstring,xparse,atbegshi,kvoptions,pdftexcmds,everyhook}
 %    \end{macrocode}
 % Now, higher-level packages we use in our definitions.
 %    \begin{macrocode}
@@ -838,6 +838,15 @@
 %    \begin{macrocode}
 \bool_new:N\g__skdoc_in_implementation_bool
 \bool_gset_false:N\g__skdoc_in_implementation_bool
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_negative_space_bool}
+% This boolean keeps track of the negative spacing added by description
+% environments, allowing \env{MacroCode} to offset it if it follows the
+% start of these environments directly. Bit of a hack, really.
+%    \begin{macrocode}
+\bool_new:N\g__skdoc_negative_space_bool
+\bool_gset_false:N\g__skdoc_negative_space_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1435,9 +1444,11 @@
 % \begin{environment}{MacroCode}[1]
 %   {The key of the file being described}
 % \changes{1.1}{Minor changes due to syntax highlighting}
+% \changes{1.3b}{Offset negative spacing from the description environments}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{MacroCode}{m}{
     \__skdoc_if_print_code:T{
+        \bool_if:NT\g__skdoc_negative_space_bool{\vspace{\baselineskip}}
         \vspace{.2\baselineskip}
         \bool_if:NF\g__skdoc_use_minted_bool{\par\noindent}
     }
@@ -2221,14 +2232,26 @@
 %    \end{macrocode}
 % \end{macro*}
 % \begin{macro*}{\macro@impl@endargs}
+% \changes{1.3b}{Conditionally don't add space if another environment follows}
 %    \begin{macrocode}
 \def\macro@impl@endargs{
-    \endgroup\par
+    \endgroup
+    \peek_meaning_ignore_spaces:NTF\begin
+        {
+            \vspace{-\baselineskip}
+            \bool_gset_true:N\g__skdoc_negative_space_bool
+            \PushPreHook{par}{
+                \bool_gset_false:N\g__skdoc_negative_space_bool
+                \PopPreHook{par}
+            }
+        }
+        {\par}%
 }
 %    \end{macrocode}
 % \end{macro*}
 % \begin{macro*}{\macro@impl@argline@noarg}[1]
 %   {The line to print instead of an argument line}
+% \changes{1.3b}{Conditionally don't add space if another environment follows}
 % This last macro is a replacement used when there are no arguments
 % or if the implementation is an option or something like that. It
 % behaves pretty much like \cs{macro@impl@args}, but with only one
@@ -2236,7 +2259,17 @@
 %    \begin{macrocode}
 \def\macro@impl@argline@noarg#1{%
     \vspace*{-\baselineskip}
-    \par\noindent{#1\strut}\par\medskip%
+    \par\noindent{#1\strut}
+    \peek_meaning_ignore_spaces:NTF\begin
+        {
+            \vspace{-\baselineskip}
+            \bool_gset_true:N\g__skdoc_negative_space_bool
+            \PushPreHook{par}{
+                \bool_gset_false:N\g__skdoc_negative_space_bool
+                \PopPreHook{par}
+            }
+        }
+        {\par\medskip}%
 }
 %    \end{macrocode}
 % \end{macro*}
