@@ -139,7 +139,7 @@
 % \changes{1.2}{Use \pkg{l3prg} booleans instead of toggles}
 % \changes{1.2b}{Use \pkg{inconsolata}. Don't use \pkg{ascii}}
 % \changes{1.3}{Allow multiple targets per \env{MacroCode}}
-% \changes{1.3b}{Use \pkg{sourcecodepro} instead of \pkg{inconsolata}}
+% \changes{1.3b}{Use \pkg{sourcecodepro} instead of \pkg{inconsolata}. Fix issue with index entries of different types with same name.}
 %
 % \package[ctan=skdoc,vcs=https://github.com/urdh/skdoc]{skdoc}
 % \repository{https://github.com/urdh/skdoc}
@@ -2320,9 +2320,9 @@
 %   {The name of the macro being indexed, without backslash}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@macro{st!m}{
-    \def\skdoc@temp{#3}
+    \def\skdoc@temp{#3-macro}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{#3}{\cs*{#3}}
+        \@index@{#3-macro}{\cs*{#3}}
     }
     \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
@@ -2344,9 +2344,9 @@
 %   {The name of the environment being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@environment{st!m}{
-    \def\skdoc@temp{\string#3}
+    \def\skdoc@temp{\string#3-env}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3}{\env*{\string#3}~(environment)}
+        \@index@{\string#3-env}{\env*{\string#3}~(environment)}
     }
     \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
@@ -2368,9 +2368,9 @@
 %   {The name of the option being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@option{st!m}{
-    \def\skdoc@temp{\string#3}
+    \def\skdoc@temp{\string#3-opt}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3}{\opt*{\string#3}~(option)}
+        \@index@{\string#3-opt}{\opt*{\string#3}~(option)}
     }
     \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
@@ -2393,9 +2393,9 @@
 %       being indexed, without initial \texttt{@} sign}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@bibentry{st!m}{
-    \def\skdoc@temp{#3}
+    \def\skdoc@temp{#3-bib}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{#3}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
+        \@index@{#3-bib}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
     }
     \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
@@ -2417,9 +2417,9 @@
 %   {The name of the theme being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@theme{st!m}{
-    \def\skdoc@temp{\string#3}
+    \def\skdoc@temp{\string#3-theme}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3}{\thm*{\string#3}~(theme)}
+        \@index@{\string#3-theme}{\thm*{\string#3}~(theme)}
     }
     \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
@@ -2441,9 +2441,9 @@
 %   {The name of the package being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@package{st!m}{
-    \def\skdoc@temp{\string#3}
+    \def\skdoc@temp{\string#3-pkg}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3}{\pkg*{\string#3}~(package)}
+        \@index@{\string#3-pkg}{\pkg*{\string#3}~(package)}
     }
     \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
@@ -2465,9 +2465,9 @@
 %   {The name of the file being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@file{st!m}{
-    \def\skdoc@temp{\string#3}
+    \def\skdoc@temp{\string#3-file}
     \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3}{\file*{\string#3}~(file)}
+        \@index@{\string#3-file}{\file*{\string#3}~(file)}
     }
     \__skdoc_if_do_index:T{
         \IfBooleanTF{#2}{
