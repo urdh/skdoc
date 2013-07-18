@@ -2003,7 +2003,7 @@
 %            \cs{macro@impl@args} will read}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{macro}{smo}{%
-    \@bsphack
+    \IfBooleanTF{#1}{}{\@bsphack}
     \index@macro!{\expandafter\@gobble\string#2}
     \@macroname{#2}%
     \IfBooleanTF{#1}{
@@ -2031,7 +2031,7 @@
 %            \cs{macro@impl@args} will read}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{environment}{smo}{%
-    \@bsphack
+    \IfBooleanTF{#1}{}{\@bsphack}
     \index@environment!{#2}
     \@environmentname{#2}%
     \IfBooleanTF{#1}{
@@ -2058,7 +2058,7 @@
 %   {Values this key-value option can take}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{option}{smg}{%
-    \@bsphack
+    \IfBooleanTF{#1}{}{\@bsphack}
     \index@option!{#2}
     \@optionname{#2}%
     \IfBooleanTF{#1}{}{
@@ -2082,7 +2082,7 @@
 %   {Name of the \hologo{BibTeX} entry type being implemented}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{bibentry}{sm}{%
-    \@bsphack
+    \IfBooleanTF{#1}{}{\@bsphack}
     \index@bibentry!{\expandafter\@gobble\string#2}
     \@bibentryname{#2}%
     \IfBooleanTF{#1}{}{
@@ -2100,7 +2100,7 @@
 %   {Name of the theme being implemented}
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{theme}{sm}{%
-    \@bsphack
+    \IfBooleanTF{#1}{}{\@bsphack}
     \index@theme!{#2}
     \@themename{#2}%
     \IfBooleanTF{#1}{}{
