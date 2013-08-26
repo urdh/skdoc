@@ -220,6 +220,11 @@
 % unless the documentation describes a very large package, and the
 % repeated calls to \texttt{pygmentize} take too long.
 %
+% \Option{babel}
+% The \opt{babel} option allows you to specify what languages are loaded
+% by the \pkg{babel} package. It is a key-value option, and its content
+% is passed as options to the \pkg{babel} \cs*{usepackage} declaration.
+%
 % \subsection{General macros}
 % The document class defines a number of general macros intended for
 % use in parts of the document not strictly considered
@@ -771,13 +776,15 @@
 %    \end{macrocode}
 % The rest is basically just styling.
 %    \begin{macrocode}
-\RequirePackage[british]{babel}
-\RequirePackage[english=british]{csquotes}
-\RequirePackage[font=small,labelfont=bf,textfont=it]{caption}
-\RequirePackage{scrpage2,PTSerif}
-\usepackage{sourcecodepro}
-\RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
-\RequirePackage[babel]{microtype}
+\RequirePackage{scrpage2}
+\AtEndOfClass{%
+    \RequirePackage[\skdoc@babel]{babel}
+    \RequirePackage[english=british]{csquotes}
+    \RequirePackage[font=small,labelfont=bf,textfont=it]{caption}
+    \RequirePackage{PTSerif,sourcecodepro}
+    \RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
+    \RequirePackage[babel]{microtype}
+}
 %    \end{macrocode}
 %
 % \subsection{Error messages}
@@ -882,6 +889,7 @@
     prefix=skdoc@
 }
 \DeclareStringOption{load}[\jobname]
+\DeclareStringOption[british]{babel}
 \DeclareBoolOption[true]{highlight}
 \ProcessKeyvalOptions*
 %    \end{macrocode}
@@ -3198,8 +3206,10 @@
 % Set up microtype properly
 %    \begin{macrocode}
 \g@addto@macro\@verbatim{\microtypesetup{activate=false}}
-\microtypesetup{expansion,kerning,spacing,tracking}
-\DisableLigatures{family = tt*}
+\AtEndOfClass{%
+    \microtypesetup{expansion,kerning,spacing,tracking}%
+    \DisableLigatures{family = tt*}%
+}
 %    \end{macrocode}
 % We also want numbers on the bibliography headings, if we are loading
 % \pkg{biblatex}. If we happen to be loading \pkg{bibtex}, we issue a
