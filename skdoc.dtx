@@ -762,7 +762,7 @@
 % These packages are basic low-level things that we use to declare
 % commands, work with strings and so on.
 %    \begin{macrocode}
-\RequirePackage{etoolbox,xstring,xparse,atbegshi,kvoptions,pdftexcmds,everyhook}
+\RequirePackage{etoolbox,xstring,xparse,atbegshi,pdftexcmds,everyhook,l3keys2e}
 %    \end{macrocode}
 % Now, higher-level packages we use in our definitions.
 %    \begin{macrocode}
@@ -777,14 +777,9 @@
 % The rest is basically just styling.
 %    \begin{macrocode}
 \RequirePackage{scrpage2}
-\AtEndOfClass{%
-    \RequirePackage[\skdoc@babel]{babel}
-    \RequirePackage[english=british]{csquotes}
-    \RequirePackage[font=small,labelfont=bf,textfont=it]{caption}
-    \RequirePackage{PTSerif,sourcecodepro}
-    \RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
-    \RequirePackage[babel]{microtype}
-}
+\RequirePackage[font=small,labelfont=bf,textfont=it]{caption}
+\RequirePackage{PTSerif,sourcecodepro}
+\RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
 %    \end{macrocode}
 %
 % \subsection{Error messages}
@@ -883,23 +878,58 @@
 %
 % \subsection{Options}
 % Define the all options, and process them.
+% \begin{macro}{\g__skdoc_load_tl}
+% This token list keeps track of what package, if any, we're going
+% to automatically load.
 %    \begin{macrocode}
-\SetupKeyvalOptions{
-    family=skdoc,
-    prefix=skdoc@
-}
-\DeclareStringOption{load}[\jobname]
-\DeclareStringOption[british]{babel}
-\DeclareBoolOption[true]{highlight}
-\ProcessKeyvalOptions*
+\tl_new:N\g__skdoc_load_tl
 %    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_babel_opts_tl}
+% This token list holds options passed to \pkg{babel}.
+%    \begin{macrocode}
+\tl_new:N\g__skdoc_babel_opts_tl
+%    \end{macrocode}
+% \end{macro}
+%    \begin{macrocode}
+\keys_define:nn{skdoc}{
+%    \end{macrocode}
+% \begin{option}{load}
+%    \begin{macrocode}
+    load .tl_gset_x:N = \g__skdoc_load_tl,
+    load .default:n = \jobname,
+%    \end{macrocode}
+% \end{option}
+% \begin{option}{highlight}
+%    \begin{macrocode}
+    highlight .bool_set:N = \g__skdoc_use_minted_bool,
+    highlight .default:n = true,
+    highlight .initial:n = true,
+%    \end{macrocode}
+% \end{option}
+% \begin{option}{babel}
+%    \begin{macrocode}
+    babel .tl_gset:N = \g__skdoc_babel_opts_tl,
+    babel .initial:n = {british},
+%    \end{macrocode}
+% \end{option}
+%    \begin{macrocode}
+}
+\ProcessKeysOptions{skdoc}
+%    \end{macrocode}
+%
 % If the \opt{load} option was used, load the given package if it exists.
 %    \begin{macrocode}
-\IfStrEq{\skdoc@load}{}{}{%
-    \IfFileExists{\skdoc@load.sty}{%
-        \RequirePackage{\skdoc@load}
-    }{}
+\tl_if_empty:NF\g__skdoc_load_tl{
+    \file_if_exist:nT{\skdoc@load.sty}{\RequirePackage{\skdoc@load}}
 }
+%    \end{macrocode}
+%
+% Next, load \pkg{babel} and associated packages so using given options.
+%    \begin{macrocode}
+\RequirePackage[\g__skdoc_babel_opts_tl]{babel}
+\RequirePackage{csquotes}
+\RequirePackage[babel]{microtype}
 %    \end{macrocode}
 %
 % \subsection{Special case: syntax highlighting}
@@ -999,8 +1029,9 @@
 % if both exist. If the option \opt{highlight} was supplied and set
 % to \texttt{false}, we do nothing.
 %    \begin{macrocode}
-\ifskdoc@highlight
-    \IfFileExists{\skdoc@load.sty}{
+\bool_if:NT\g__skdoc_use_minted_bool{
+    \bool_gset_false:N\g__skdoc_use_minted_bool
+    \file_if_exist:nTF{minted.sty}{
         \__skdoc_if_shellescape:TF{
             \__skdoc_if_pygmentize:TF{
                 \bool_gset_true:N\g__skdoc_use_minted_bool
@@ -1198,7 +1229,7 @@
     }{
         \msg_warning:nn{skdoc}{no-minted}
     }
-\fi
+}
 %    \end{macrocode}
 % \subsection{The \env{MacroCode} environment}
 % We need a token list and input/output.
@@ -3206,10 +3237,8 @@
 % Set up microtype properly
 %    \begin{macrocode}
 \g@addto@macro\@verbatim{\microtypesetup{activate=false}}
-\AtEndOfClass{%
-    \microtypesetup{expansion,kerning,spacing,tracking}%
-    \DisableLigatures{family = tt*}%
-}
+\microtypesetup{expansion,kerning,spacing,tracking}%
+\DisableLigatures{family = tt*}%
 %    \end{macrocode}
 % We also want numbers on the bibliography headings, if we are loading
 % \pkg{biblatex}. If we happen to be loading \pkg{bibtex}, we issue a
