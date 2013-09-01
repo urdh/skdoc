@@ -1424,9 +1424,9 @@
 % \subsection{The \env{MacroCode} environment}
 % We need a token list and input/output.
 %    \begin{macrocode}
-\tl_new:N\skdoc@temptl
-\ior_new:N\skdoc@input
-\iow_new:N\skdoc@output
+\tl_new:N\__skdoc_temp_tl
+\ior_new:N\__skdoc_input_file
+\iow_new:N\__skdoc_output_file
 %    \end{macrocode}
 % \begin{macro}{\DeclareFile}[2]
 %   {A list of key-value parameters}
@@ -1438,41 +1438,44 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\DeclareFile{om}{
     \group_begin:
-    \keys_define:nn{skdoc@declarefile}{%
+    \keys_define:nn{skdoc/declarefile}{%
         preamble .value_required:,
-        preamble .code:n = \edef\skdoc@preamble{##1},
+        preamble .code:n = \cs_set:Npx\__skdoc_preamble:{##1},
         key .value_required:,
-        key .code:n = \def\skdoc@key{##1}
+        key .code:n = \cs_set:Npn\__skdoc_key:{##1}
     }%
-    \def\skdoc@preamble{}%
-    \def\skdoc@key{#2}%
-    \IfNoValueTF{#1}{}{\keys_set:nn{skdoc@declarefile}{#1}}
-    \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{
-        \msg_critical:nnx{skdoc}{key-exists}{\skdoc@key}
+    \cs_set:Npn\__skdoc_preamble:{}%
+    \cs_set:Npn\__skdoc_key:{#2}%
+    \IfNoValueF{#1}{\keys_set:nn{skdoc/declarefile}{#1}}
+    \int_if_exist:cTF{__skdoc_output_\__skdoc_key: _line}{
+        \msg_critical:nnx{skdoc}{key-exists}{\__skdoc_key:}
     }{
-        \int_zero_new:c{skdoc@output@\skdoc@key @line}
+        \int_zero_new:c{__skdoc_output_\__skdoc_key: _line}
     }
-    \tl_new:c{skdoc@output@\skdoc@key}
-    \IfStrEq{\skdoc@preamble}{}{
-        \def\skdoc@preamble@extra{}
+    \tl_new:c{__skdoc_output_\__skdoc_key:}
+    \IfStrEq{\__skdoc__preamble:}{}{
+        \cs_set:Npn\__skdoc_preamble_extra:{}
     }{
-        \tl_set:Nx\l_tmpa_tl{\skdoc@preamble}
-        \edef\skdoc@temp{\tl_head:N\l_tmpa_tl}
-        \def\skdoc@preamble@extra{
-            \skdoc@temp\skdoc@temp\space~This~is~file~`#2',~generated~from~`\c_job_name_tl.tex'~(key~`\skdoc@key').
+        \tl_set:Nx\l_tmpa_tl{\__skdoc_preamble:}
+        \cs_set:Npx\__skdoc_temp:{\tl_head:N\l_tmpa_tl}
+        \cs_set:Npn\__skdoc_preamble_extra:{
+            \__skdoc_temp:\__skdoc_temp:\space~This~is~file~`#2',~generated~from~`\c_job_name_tl.tex'~(key~`\__skdoc_key:').
         }
     }
-    \expandafter\xdef\csname skdoc@write@#2\endcsname{%
-        \noexpand\msg_log:nnn{skdoc}{wrote-file}{#2}
-        \noexpand\iow_open:Nn\noexpand\skdoc@output{#2}
-        \noexpand\IfStrEq{\skdoc@preamble}{}{}{
-            \noexpand\iow_now:Nx\noexpand\skdoc@output{\skdoc@preamble@extra}
-            \noexpand\iow_now:Nx\noexpand\skdoc@output{\skdoc@preamble}
+    \cs_gset:cpx{__skdoc_write_#2:}{%
+        \exp_not:N\msg_log:nnn{skdoc}{wrote-file}{#2}
+        \exp_not:N\iow_open:Nn\exp_not:N\__skdoc_output_file{#2}
+        \exp_not:N\IfStrEq{\__skdoc_preamble:}{}{}{
+            \exp_not:N\iow_now:Nx\exp_not:N\__skdoc_output_file
+                {\__skdoc_preamble_extra:}
+            \exp_not:N\iow_now:Nx\exp_not:N\__skdoc_output_file
+                {\__skdoc_preamble:}
         }
-        \noexpand\iow_now:Nx\noexpand\skdoc@output{\noexpand\tl_to_str:c{skdoc@output@\skdoc@key}}
-        \noexpand\iow_close:N\noexpand\skdoc@output
+        \exp_not:N\iow_now:Nx\exp_not:N\__skdoc_output_file
+            {\exp_not:N\tl_to_str:c{__skdoc_output_\__skdoc_key:}}
+        \exp_not:N\iow_close:N\exp_not:N\__skdoc_output_file
     }
-    \AfterEndDocument{\csname skdoc@write@#2\endcsname}
+    \AfterEndDocument{\use:c{__skdoc_write_#2}}
     \group_end:
 }
 %    \end{macrocode}
