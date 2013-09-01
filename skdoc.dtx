@@ -1045,7 +1045,7 @@
 % numbers to match what we have further down for the non-highlighted
 % mode.
 %    \begin{macrocode}
-                \renewcommand{\theFancyVerbLine}{
+                \cs_set:Npn\theFancyVerbLine{
                     \sffamily\tiny\textcolor{lightgray}{
                     \oldstylenums{\arabic{FancyVerbLine}}}
                 }
@@ -1060,166 +1060,353 @@
 % \texttt{pygmentize -S default -f html}), but it's not entirely
 % apparent which macro corresponds to what entity.
 %    \begin{macrocode}
-                \renewcommand\minted@usedefaultstyle{}
-                \def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
-                    \let\PY@ul=\relax \let\PY@tc=\relax%
-                    \let\PY@bc=\relax \let\PY@ff=\relax}
-                \def\PY@tok##1{\csname PY@tok@##1\endcsname}
-                \def\PY@toks##1+{\ifx\relax##1\empty\else%
-                    \PY@tok{##1}\expandafter\PY@toks\fi}
-                \def\PY@do##1{\PY@bc{\PY@tc{\PY@ul{%
-                    \PY@it{\PY@bf{\PY@ff{##1}}}}}}}
-                \def\PY##1##2{\PY@reset\PY@toks##1+\relax+\PY@do{##2}}
-                \expandafter\def\csname PY@tok@gd\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@gu\endcsname{%
-                    \let\PY@bf=\textbf%
-                    \def\PY@tc####1{\textcolor{optioncolor}{####1}}}
-                \expandafter\def\csname PY@tok@gt\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@gs\endcsname{%
-                    \let\PY@bf=\textbf}
-                \expandafter\def\csname PY@tok@gr\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@cm\endcsname{%
-                    \let\PY@it=\textit%
-                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
-                \expandafter\def\csname PY@tok@vg\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@m\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@mh\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@cs\endcsname{%
-                    \let\PY@it=\textit%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@ge\endcsname{%
-                    \let\PY@it=\textit}
-                \expandafter\def\csname PY@tok@vc\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@il\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@go\endcsname{%
-                    \def\PY@tc####1{\textcolor{gray}{####1}}}
-                \expandafter\def\csname PY@tok@cp\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp!75}{####1}}}
-                \expandafter\def\csname PY@tok@gi\endcsname{%
-                    \def\PY@tc####1{\textcolor{bright}{####1}}}
-                \expandafter\def\csname PY@tok@gh\endcsname{%
-                    \let\PY@bf=\textbf%
-                    \def\PY@tc####1{\textcolor{section}{####1}}}
-                \expandafter\def\csname PY@tok@ni\endcsname{%
-                    \let\PY@bf=\textbf%
-                    \def\PY@tc####1{\textcolor{keydesc}{####1}}}
-                \expandafter\def\csname PY@tok@nn\endcsname{%
-                    \let\PY@ul=\underline%
-                    \def\PY@tc####1{\textcolor{black}{####1}}}
-                \expandafter\def\csname PY@tok@no\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@na\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta!50}{####1}}}
-                \expandafter\def\csname PY@tok@nb\endcsname{%
-                    \def\PY@tc####1{\textcolor{black}{####1}}}
-                \expandafter\def\csname PY@tok@nc\endcsname{%
-                    \let\PY@ul=\underline%
-                    \def\PY@tc####1{\textcolor{bright}{####1}}}
-                \expandafter\def\csname PY@tok@nd\endcsname{%
-                    \def\PY@tc####1{\textcolor{gray}{####1}}}
-                \expandafter\def\csname PY@tok@si\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@nf\endcsname{%
-                    \def\PY@tc####1{\textcolor{bright}{####1}}}
-                \expandafter\def\csname PY@tok@s2\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@vi\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@nt\endcsname{%
-                    \let\PY@bf=\textbf%
-                    \def\PY@tc####1{\textcolor{meta!50}{####1}}}
-                \expandafter\def\csname PY@tok@nv\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@s1\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@gp\endcsname{%
-                    \def\PY@tc####1{\textcolor{gray}{####1}}}
-                \expandafter\def\csname PY@tok@sh\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@ow\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@sx\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@bp\endcsname{%
-                    \def\PY@tc####1{\textcolor{black}{####1}}}
-                \expandafter\def\csname PY@tok@c1\endcsname{%
-                    \let\PY@it=\textit%
-                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
-                \expandafter\def\csname PY@tok@kc\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@c\endcsname{%
-                    \let\PY@it=\textit%
-                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
-                \expandafter\def\csname PY@tok@mf\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@err\endcsname{%
-                    \def\PY@tc####1{\textcolor{intlink}{####1}}%
-                    \def\PY@bc####1{\setlength{\fboxsep}{0pt}%
-                    \colorbox{bright}{\strut ####1}}}
-                \expandafter\def\csname PY@tok@kd\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@ss\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@sr\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@mo\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@mi\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@kn\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@kr\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@s\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@kp\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@w\endcsname{%
-                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
-                \expandafter\def\csname PY@tok@kt\endcsname{%
-                    \def\PY@tc####1{\textcolor{black}{####1}}}
-                \expandafter\def\csname PY@tok@sc\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@sb\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@k\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@se\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@sd\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@nl\endcsname{%
-                    \def\PY@tc####1{\textcolor{bright}{####1}}}
-                \expandafter\def\csname PY@tok@ne\endcsname{%
-                    \def\PY@tc####1{\textcolor{bright}{####1}}}
-                \expandafter\def\csname PY@tok@o\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \def\PYZbs{\char`\\}
-                \def\PYZus{\char`\_}
-                \def\PYZob{\char`\{}
-                \def\PYZcb{\char`\}}
-                \def\PYZca{\char`\^}
-                \def\PYZam{\char`\&}
-                \def\PYZlt{\char`\<}
-                \def\PYZgt{\char`\>}
-                \def\PYZsh{\char`\#}
-                \def\PYZpc{\char`\%}
-                \def\PYZdl{\char`\$}
-                \def\PYZhy{\char`\-}
-                \def\PYZsq{\char`\'}
-                \def\PYZdq{\char`\"}
-                \def\PYZti{\char`\~}
-                \def\PYZat{@}
-                \def\PYZlb{[}
-                \def\PYZrb{]}
+                \cs_set:Npn\minted@usedefaultstyle{}
+                \cs_set:Npn\__PY_reset:{
+                    \cs_set:Npn\__PY_it:n##1{##1}
+                    \cs_set:Npn\__PY_bf:n##1{##1}
+                    \cs_set:Npn\__PY_ul:n##1{##1}
+                    \cs_set:Npn\__PY_tc:n##1{##1}
+                    \cs_set:Npn\__PY_bc:n##1{##1}
+                    \cs_set:Npn\__PY_ff:n##1{##1}
+                }
+                \cs_set:Npn\__PY_do:n##1{
+                    \__PY_bc:n{\__PY_tc:n{\__PY_ul:n{%
+                    \__PY_it:n{\__PY_bf:n{\__PY_ff:n{##1}}}}}}
+                }
+                \DeclareDocumentCommand\PY{mm}{
+                    \__PY_reset:
+                    \seq_set_split:Nnn\l_tmpa_seq{+}{##1}
+                    \seq_map_inline:Nn\l_tmpa_seq{\use:c{__PY_tok_####1}}
+                    \__PY_do:n{##2}
+                }
+                \cs_set:cpn{PY@tok@gd}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{scriptcolor}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@gu}{%
+                    \cs_set_eq:NN\__PY_bf:n\textbf%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{optioncolor}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@gt}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{scriptcolor}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@gs}{%
+                    \cs_set_eq:NN\__PY_bf:n\textbf
+                }
+                \cs_set:cpn{PY@tok@gr}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{scriptcolor}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@cm}{%
+                    \cs_set_eq:NN\__PY_it:n\textit%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{lightgray}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@vg}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{scriptcolor}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@m}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{meta}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@mh}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{meta}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@cs}{%
+                    \cs_set_eq:NN\__PY_it:n\textit%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{macroimpl}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@ge}{%
+                    \cs_set_eq:NN\__PY_it:n\textit
+                }
+                \cs_set:cpn{PY@tok@vc}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{scriptcolor}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@il}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{meta}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@go}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{gray}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@cp}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp!75}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@gi}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{bright}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@gh}{%
+                    \cs_set_eq:NN\__PY_bf:n\textbf%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{section}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@ni}{%
+                    \cs_set_eq:NN\__PY_bf:n\textbf%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{keydesc}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@nn}{%
+                    \cs_set_eq:NN\__PY_ul:n\underline%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{black}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@no}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{scriptcolor}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@na}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{meta!50}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@nb}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{black}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@nc}{%
+                    \cs_set_eq:NN\__PY_ul:n\underline%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{bright}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@nd}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{gray}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@si}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@nf}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{bright}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@s2}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@vi}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{scriptcolor}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@nt}{%
+                    \cs_set_eq:NN\__PY_bf:n\textbf%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{meta!50}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@nv}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{scriptcolor}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@s1}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@gp}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{gray}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@sh}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@ow}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{macroimpl}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@sx}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@bp}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{black}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@c1}{%
+                    \cs_set_eq:NN\__PY_it:n\textit%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{lightgray}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@kc}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{macroimpl}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@c}{%
+                    \cs_set_eq:NN\__PY_it:n\textit%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{lightgray}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@mf}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{meta}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@err}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{intlink}{####1}
+                    }%
+                    \cs_set:Npn\__PY_bc:n####1{
+                        \setlength{\fboxsep}{0pt}%
+                        \colorbox{bright}{\strut ####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@kd}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{macroimpl}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@ss}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{macroimpl}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@sr}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{meta}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@mo}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{meta}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@mi}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{meta}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@kn}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{macroimpl}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@kr}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{macroimpl}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@s}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@kp}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{macroimpl}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@w}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{lightgray}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@kt}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{black}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@sc}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@sb}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@k}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{macroimpl}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@se}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@sd}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{sharp}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@nl}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{bright}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@ne}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{bright}{####1}
+                    }
+                }
+                \cs_set:cpn{PY@tok@o}{%
+                    \cs_set:Npn\__PY_tc:n####1{
+                        \textcolor{macroimpl}{####1}
+                    }
+                }
+                \cs_set:Npn\PYZbs{\char`\\}
+                \cs_set:Npn\PYZus{\char`\_}
+                \cs_set:Npn\PYZob{\char`\{}
+                \cs_set:Npn\PYZcb{\char`\}}
+                \cs_set:Npn\PYZca{\char`\^}
+                \cs_set:Npn\PYZam{\char`\&}
+                \cs_set:Npn\PYZlt{\char`\<}
+                \cs_set:Npn\PYZgt{\char`\>}
+                \cs_set:Npn\PYZsh{\char`\#}
+                \cs_set:Npn\PYZpc{\char`\%}
+                \cs_set:Npn\PYZdl{\char`\$}
+                \cs_set:Npn\PYZhy{\char`\-}
+                \cs_set:Npn\PYZsq{\char`\'}
+                \cs_set:Npn\PYZdq{\char`\"}
+                \cs_set:Npn\PYZti{\char`\~}
+                \cs_set:Npn\PYZat{@}
+                \cs_set:Npn\PYZlb{[}
+                \cs_set:Npn\PYZrb{]}
 %    \end{macrocode}
 % If there's no \texttt{pygmentize}, no \cs{write18} or no \pkg{minted},
 % we display a warning message and proceed without highlighting.
