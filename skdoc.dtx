@@ -86,9 +86,13 @@
     \char_set_catcode_letter:n{ 58 }
     \char_set_catcode_letter:n{ 95 }
 }
+\cs_set_protected_nopar:Npn\MakePercentIgnore{
+    \char_set_catcode_ignore:N\%
+}
+\cs_set_protected_nopar:Npn\MakePercentComment{
+    \char_set_catcode_comment:N\%
+}
 \ExplSyntaxOff
-\DeclareDocumentCommand\MakePercentIgnore{}{\catcode`\%9\relax}
-\DeclareDocumentCommand\MakePercentComment{}{\catcode`\%14\relax}
 \DeclareDocumentCommand\DocInput{m}{
     \MakePercentIgnore\input{#1}\MakePercentComment
 }
