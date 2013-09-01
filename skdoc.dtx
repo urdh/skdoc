@@ -925,7 +925,8 @@
 % If the \opt{load} option was used, load the given package if it exists.
 %    \begin{macrocode}
 \tl_if_empty:NF\g__skdoc_load_tl{
-    \file_if_exist:nT{\skdoc@load.sty}{\RequirePackage{\skdoc@load}}
+    \file_if_exist:nT{\g__skdoc_load_tl.sty}
+        {\RequirePackage{\g__skdoc_load_tl}}
 }
 %    \end{macrocode}
 %
