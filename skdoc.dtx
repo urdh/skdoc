@@ -2085,6 +2085,7 @@
     \index@option!{#2}
     \@optionname{#2}%
     \IfBooleanTF{#1}{}{
+        \vspace{\baselineskip}
         \PrintEnvImplName{#2}
         \IfNoValueTF{#3}{
             \macro@impl@argline@noarg{(option)}
@@ -2109,6 +2110,7 @@
     \index@bibentry!{\expandafter\@gobble\string#2}
     \@bibentryname{#2}%
     \IfBooleanTF{#1}{}{
+        \vspace{\baselineskip}
         \PrintEnvImplName{#2}
         \macro@impl@argline@noarg{(\hologoRobust{BibTeX}~entry~type)}
     }%
@@ -2127,6 +2129,7 @@
     \index@theme!{#2}
     \@themename{#2}%
     \IfBooleanTF{#1}{}{
+        \vspace{\baselineskip}
         \PrintEnvImplName{#2}
         \macro@impl@argline@noarg{(theme)}
     }%
