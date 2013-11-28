@@ -40,7 +40,6 @@ skdoc.tds.zip: skdoc.dtx skdoc.pdf skdoc.cls
 
 skdoc.tar.gz: skdoc.tds.zip skdoc.dtx skdoc.pdf
 	mkdir -p skdoc
-	ls -R
 	cp skdoc.dtx skdoc/skdoc.dtx
 	cp skdoc.pdf skdoc/skdoc.pdf
 	cp README skdoc/README
