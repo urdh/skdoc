@@ -73,7 +73,7 @@
 %</driver>
 %<class>\ProvidesExplClass{skdoc}
 %<*class>
-    {2013/09/23}{1.4}{skdoc documentation class}
+    {2013/11/28}{1.4a}{skdoc documentation class}
 %</class>
 %
 %<*driver>
@@ -132,7 +132,7 @@
 % {}{\small\pagemark}
 % \pagestyle{skdoc-class}
 %
-% \version{1.4}
+% \version{1.4a}
 % \changes{1.0}{Initial version}
 % \changes{1.1}{Added support for syntax highlighting using \pkg{minted}}
 % \changes{1.1a}{Deprecate the use of \pkg{bibtex} in favour of \pkg{biblatex}}
@@ -141,6 +141,7 @@
 % \changes{1.3}{Allow multiple targets per \env{MacroCode}}
 % \changes{1.3b}{Use \pkg{sourcecodepro} instead of \pkg{inconsolata}. Fix issue with index entries of different types with same name}
 % \changes{1.4}{Added option to control \pkg{babel}. Allow optional default value arguments in \env{macro} and friends. Fix spacing issue in \env{option} and friends}
+% \changes{1.4a}{Fix various compatibility issues with latest \pkg{glossaries}}
 % \iffalse
 %%% Don't forget to update the version number and release date of
 %%% the package declaration on line 76!
@@ -773,7 +774,7 @@
 %    \begin{macrocode}
 \RequirePackage{verbatim,needspace,marginnote,calc,hyperref,multicol,hologo}
 \RequirePackage[nomain,xindy,numberedsection,order=letter,
-                sanitize={description=false,sort=false}]{glossaries}
+                sanitizesort=false]{glossaries}
 %    \end{macrocode}
 % We also include the \pkg{ydoc} packages we'll be extending.
 %    \begin{macrocode}
@@ -2646,11 +2647,13 @@
 % nubmer format. In the event that a macro is described and implemented
 % on the same page, the description format (italic) is used.
 % \begin{macro}{\@gls@addpredefinedattributes}
+% \changes{1.4a}{Add Xdy attribute \texttt{@gobble}}
 %    \begin{macrocode}
 \RenewDocumentCommand\@gls@addpredefinedattributes{}{
     \GlsAddXdyAttribute{hyperit}
     \GlsAddXdyAttribute{hyperul}
     \GlsAddXdyAttribute{glsnumberformat}
+    \GlsAddXdyAttribute{@gobble}
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2723,16 +2726,17 @@
 % \begin{macro}{\changes}[2]
 %   {The version in which the changes were made}
 %   {A short description of the changes}
+% \changes{1.4a}{Unconditionally add version \enquote{parent} to
+%   circumvent strange behaviour by \pkg{glossaries}. Also, gobble
+%   page numbers for similar reasons}
 %    \begin{macrocode}
 \DeclareDocumentCommand\changes{mm}{%
     \@bsphack
-    \ifglsentryexists{#1}{}{
-        \newglossaryentry{#1}{
-            type=changes,
-            name={v#1},
-            description={\nopostdesc},
-            nonumberlist=true
-        }
+    \newglossaryentry{#1}{
+        type=changes,
+        name={v#1},
+        description={\nopostdesc},
+        nonumberlist=true
     }
     \ifx\skdoc@macroname@key\@empty
         \newglossaryentry{#1-general}{
@@ -2742,7 +2746,7 @@
             sort={0},
             nonumberlist=true
         }
-        \glsadd[types=changes]{#1-general}
+        \glsadd[types=changes,format=@gobble]{#1-general}
     \else
         \newglossaryentry{#1-\skdoc@macroname@key}{
             type=changes,
@@ -2751,7 +2755,7 @@
             sort={\skdoc@macroname@key},
             nonumberlist=true
         }
-        \glsadd[types=changes]{#1-\skdoc@macroname@key}
+        \glsadd[types=changes,format=@gobble]{#1-\skdoc@macroname@key}
     \fi
     \@esphack
 }
@@ -2783,7 +2787,7 @@
     }
 }
 %    \end{macrocode}
-% We follow that up by defining the actual glossay, and making sure
+% We follow that up by defining the actual glossary, and making sure
 % to run \cs{makeglossaries} when the preamble is complete.
 %    \begin{macrocode}
 \newglossary{changes}{gls}{glo}{Changes}

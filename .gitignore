@@ -46,5 +46,6 @@
 *.bcf
 *.bib
 *.xml
+*.glsdefs
 skdoc.tar.gz
 skdoc.tds.zip
