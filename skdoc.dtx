@@ -86,9 +86,13 @@
     \char_set_catcode_letter:n{ 58 }
     \char_set_catcode_letter:n{ 95 }
 }
+\cs_set_protected_nopar:Npn\MakePercentIgnore{
+    \char_set_catcode_ignore:N\%
+}
+\cs_set_protected_nopar:Npn\MakePercentComment{
+    \char_set_catcode_comment:N\%
+}
 \ExplSyntaxOff
-\DeclareDocumentCommand\MakePercentIgnore{}{\catcode`\%9\relax}
-\DeclareDocumentCommand\MakePercentComment{}{\catcode`\%14\relax}
 \DeclareDocumentCommand\DocInput{m}{
     \MakePercentIgnore\input{#1}\MakePercentComment
 }
@@ -768,7 +772,7 @@
 % These packages are basic low-level things that we use to declare
 % commands, work with strings and so on.
 %    \begin{macrocode}
-\RequirePackage{etoolbox,xstring,xparse,atbegshi,kvoptions,pdftexcmds,everyhook}
+\RequirePackage{etoolbox,xstring,xparse,atbegshi,pdftexcmds,everyhook,l3keys2e}
 %    \end{macrocode}
 % Now, higher-level packages we use in our definitions.
 %    \begin{macrocode}
@@ -783,14 +787,9 @@
 % The rest is basically just styling.
 %    \begin{macrocode}
 \RequirePackage{scrpage2}
-\AtEndOfClass{%
-    \RequirePackage[\skdoc@babel]{babel}
-    \RequirePackage[english=british]{csquotes}
-    \RequirePackage[font=small,labelfont=bf,textfont=it]{caption}
-    \RequirePackage{PTSerif,sourcecodepro}
-    \RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
-    \RequirePackage[babel]{microtype}
-}
+\RequirePackage[font=small,labelfont=bf,textfont=it]{caption}
+\RequirePackage{PTSerif,sourcecodepro}
+\RequirePackage[defaultsans,osfigures,scale=0.95]{opensans}
 %    \end{macrocode}
 %
 % \subsection{Error messages}
@@ -804,7 +803,8 @@
 \msg_new:nnn{skdoc}{no-minted}{Syntax~highlighting~disabled:~couldn't~find~minted.sty!}
 \msg_new:nnn{skdoc}{no-shell-escape}{Syntax~highlighting~disabled:~running~without~unrestricted~\string\write18.}
 \msg_new:nnn{skdoc}{no-pygments}{Syntax~highlighting~disabled:~couldn't~find~"pygmentize".}
-\msg_new:nnnn{skdoc}{bibtex-unsupported}{The `bibtex` package is unsupported: continue at own risk!}{Use a more modern bibliography system (i.e. `biblatex`) instead.}
+\msg_new:nnnn{skdoc}{bibtex-unsupported}{The~`bibtex~package~is~unsupported:~continue~at~own~risk!}{Use~a~more~modern~bibliography~system~(i.e.~`biblatex`)~instead.}
+\msg_new:nnn{skdoc}{invalid-index-type}{Unknown~index~type~"#1"!}
 %    \end{macrocode}
 %
 % \subsection{Booleans}
@@ -889,23 +889,59 @@
 %
 % \subsection{Options}
 % Define the all options, and process them.
+% \begin{macro}{\g__skdoc_load_tl}
+% This token list keeps track of what package, if any, we're going
+% to automatically load.
 %    \begin{macrocode}
-\SetupKeyvalOptions{
-    family=skdoc,
-    prefix=skdoc@
-}
-\DeclareStringOption{load}[\jobname]
-\DeclareStringOption[british]{babel}
-\DeclareBoolOption[true]{highlight}
-\ProcessKeyvalOptions*
+\tl_new:N\g__skdoc_load_tl
 %    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\g__skdoc_babel_opts_tl}
+% This token list holds options passed to \pkg{babel}.
+%    \begin{macrocode}
+\tl_new:N\g__skdoc_babel_opts_tl
+%    \end{macrocode}
+% \end{macro}
+%    \begin{macrocode}
+\keys_define:nn{skdoc}{
+%    \end{macrocode}
+% \begin{option}{load}
+%    \begin{macrocode}
+    load .tl_gset_x:N = \g__skdoc_load_tl,
+    load .default:n = \jobname,
+%    \end{macrocode}
+% \end{option}
+% \begin{option}{highlight}
+%    \begin{macrocode}
+    highlight .bool_set:N = \g__skdoc_use_minted_bool,
+    highlight .default:n = true,
+    highlight .initial:n = true,
+%    \end{macrocode}
+% \end{option}
+% \begin{option}{babel}
+%    \begin{macrocode}
+    babel .tl_gset:N = \g__skdoc_babel_opts_tl,
+    babel .initial:n = {british},
+%    \end{macrocode}
+% \end{option}
+%    \begin{macrocode}
+}
+\ProcessKeysOptions{skdoc}
+%    \end{macrocode}
+%
 % If the \opt{load} option was used, load the given package if it exists.
 %    \begin{macrocode}
-\IfStrEq{\skdoc@load}{}{}{%
-    \IfFileExists{\skdoc@load.sty}{%
-        \RequirePackage{\skdoc@load}
-    }{}
+\tl_if_empty:NF\g__skdoc_load_tl{
+    \file_if_exist:nT{\g__skdoc_load_tl.sty}
+        {\RequirePackage{\g__skdoc_load_tl}}
 }
+%    \end{macrocode}
+%
+% Next, load \pkg{babel} and associated packages so using given options.
+%    \begin{macrocode}
+\RequirePackage[\g__skdoc_babel_opts_tl]{babel}
+\RequirePackage{csquotes}
+\RequirePackage[babel]{microtype}
 %    \end{macrocode}
 %
 % \subsection{Special case: syntax highlighting}
@@ -1005,8 +1041,9 @@
 % if both exist. If the option \opt{highlight} was supplied and set
 % to \texttt{false}, we do nothing.
 %    \begin{macrocode}
-\ifskdoc@highlight
-    \IfFileExists{\skdoc@load.sty}{
+\bool_if:NT\g__skdoc_use_minted_bool{
+    \bool_gset_false:N\g__skdoc_use_minted_bool
+    \file_if_exist:nTF{minted.sty}{
         \__skdoc_if_shellescape:TF{
             \__skdoc_if_pygmentize:TF{
                 \bool_gset_true:N\g__skdoc_use_minted_bool
@@ -1016,181 +1053,366 @@
 % numbers to match what we have further down for the non-highlighted
 % mode.
 %    \begin{macrocode}
-                \renewcommand{\theFancyVerbLine}{
+                \cs_set:Npn\theFancyVerbLine{
                     \sffamily\tiny\textcolor{lightgray}{
                     \oldstylenums{\arabic{FancyVerbLine}}}
                 }
 %    \end{macrocode}
 % We also define our own Pygments style, to match the \thepackage%
 % color theme. This is a bunch of code generated by running
-% \texttt{pygmentize -S default -f latex}, with modifications. Note
-% the abundancy of \verb|#| characters; this is somewhat black magic,
-% but apparently \LaTeX\ expands them one more time than I'd expect
-% in this context. Probably a \LaTeX3 artifact. Also, the macro names
+% \texttt{pygmentize -S default -f latex}, with modifications.
+% The macro names
 % somehow correspond to Pygments entities (see \emph{e.g.}
 % \texttt{pygmentize -S default -f html}), but it's not entirely
 % apparent which macro corresponds to what entity.
 %    \begin{macrocode}
-                \renewcommand\minted@usedefaultstyle{}
-                \def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
-                    \let\PY@ul=\relax \let\PY@tc=\relax%
-                    \let\PY@bc=\relax \let\PY@ff=\relax}
-                \def\PY@tok##1{\csname PY@tok@##1\endcsname}
-                \def\PY@toks##1+{\ifx\relax##1\empty\else%
-                    \PY@tok{##1}\expandafter\PY@toks\fi}
-                \def\PY@do##1{\PY@bc{\PY@tc{\PY@ul{%
-                    \PY@it{\PY@bf{\PY@ff{##1}}}}}}}
-                \def\PY##1##2{\PY@reset\PY@toks##1+\relax+\PY@do{##2}}
-                \expandafter\def\csname PY@tok@gd\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@gu\endcsname{%
-                    \let\PY@bf=\textbf%
-                    \def\PY@tc####1{\textcolor{optioncolor}{####1}}}
-                \expandafter\def\csname PY@tok@gt\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@gs\endcsname{%
-                    \let\PY@bf=\textbf}
-                \expandafter\def\csname PY@tok@gr\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@cm\endcsname{%
-                    \let\PY@it=\textit%
-                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
-                \expandafter\def\csname PY@tok@vg\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@m\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@mh\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@cs\endcsname{%
-                    \let\PY@it=\textit%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@ge\endcsname{%
-                    \let\PY@it=\textit}
-                \expandafter\def\csname PY@tok@vc\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@il\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@go\endcsname{%
-                    \def\PY@tc####1{\textcolor{gray}{####1}}}
-                \expandafter\def\csname PY@tok@cp\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp!75}{####1}}}
-                \expandafter\def\csname PY@tok@gi\endcsname{%
-                    \def\PY@tc####1{\textcolor{bright}{####1}}}
-                \expandafter\def\csname PY@tok@gh\endcsname{%
-                    \let\PY@bf=\textbf%
-                    \def\PY@tc####1{\textcolor{section}{####1}}}
-                \expandafter\def\csname PY@tok@ni\endcsname{%
-                    \let\PY@bf=\textbf%
-                    \def\PY@tc####1{\textcolor{keydesc}{####1}}}
-                \expandafter\def\csname PY@tok@nn\endcsname{%
-                    \let\PY@ul=\underline%
-                    \def\PY@tc####1{\textcolor{black}{####1}}}
-                \expandafter\def\csname PY@tok@no\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@na\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta!50}{####1}}}
-                \expandafter\def\csname PY@tok@nb\endcsname{%
-                    \def\PY@tc####1{\textcolor{black}{####1}}}
-                \expandafter\def\csname PY@tok@nc\endcsname{%
-                    \let\PY@ul=\underline%
-                    \def\PY@tc####1{\textcolor{bright}{####1}}}
-                \expandafter\def\csname PY@tok@nd\endcsname{%
-                    \def\PY@tc####1{\textcolor{gray}{####1}}}
-                \expandafter\def\csname PY@tok@si\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@nf\endcsname{%
-                    \def\PY@tc####1{\textcolor{bright}{####1}}}
-                \expandafter\def\csname PY@tok@s2\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@vi\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@nt\endcsname{%
-                    \let\PY@bf=\textbf%
-                    \def\PY@tc####1{\textcolor{meta!50}{####1}}}
-                \expandafter\def\csname PY@tok@nv\endcsname{%
-                    \def\PY@tc####1{\textcolor{scriptcolor}{####1}}}
-                \expandafter\def\csname PY@tok@s1\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@gp\endcsname{%
-                    \def\PY@tc####1{\textcolor{gray}{####1}}}
-                \expandafter\def\csname PY@tok@sh\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@ow\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@sx\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@bp\endcsname{%
-                    \def\PY@tc####1{\textcolor{black}{####1}}}
-                \expandafter\def\csname PY@tok@c1\endcsname{%
-                    \let\PY@it=\textit%
-                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
-                \expandafter\def\csname PY@tok@kc\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@c\endcsname{%
-                    \let\PY@it=\textit%
-                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
-                \expandafter\def\csname PY@tok@mf\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@err\endcsname{%
-                    \def\PY@tc####1{\textcolor{intlink}{####1}}%
-                    \def\PY@bc####1{\setlength{\fboxsep}{0pt}%
-                    \colorbox{bright}{\strut ####1}}}
-                \expandafter\def\csname PY@tok@kd\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@ss\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@sr\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@mo\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@mi\endcsname{%
-                    \def\PY@tc####1{\textcolor{meta}{####1}}}
-                \expandafter\def\csname PY@tok@kn\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@kr\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@s\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@kp\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@w\endcsname{%
-                    \def\PY@tc####1{\textcolor{lightgray}{####1}}}
-                \expandafter\def\csname PY@tok@kt\endcsname{%
-                    \def\PY@tc####1{\textcolor{black}{####1}}}
-                \expandafter\def\csname PY@tok@sc\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@sb\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@k\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \expandafter\def\csname PY@tok@se\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@sd\endcsname{%
-                    \def\PY@tc####1{\textcolor{sharp}{####1}}}
-                \expandafter\def\csname PY@tok@nl\endcsname{%
-                    \def\PY@tc####1{\textcolor{bright}{####1}}}
-                \expandafter\def\csname PY@tok@ne\endcsname{%
-                    \def\PY@tc####1{\textcolor{bright}{####1}}}
-                \expandafter\def\csname PY@tok@o\endcsname{%
-                    \def\PY@tc####1{\textcolor{macroimpl}{####1}}}
-                \def\PYZbs{\char`\\}
-                \def\PYZus{\char`\_}
-                \def\PYZob{\char`\{}
-                \def\PYZcb{\char`\}}
-                \def\PYZca{\char`\^}
-                \def\PYZam{\char`\&}
-                \def\PYZlt{\char`\<}
-                \def\PYZgt{\char`\>}
-                \def\PYZsh{\char`\#}
-                \def\PYZpc{\char`\%}
-                \def\PYZdl{\char`\$}
-                \def\PYZhy{\char`\-}
-                \def\PYZsq{\char`\'}
-                \def\PYZdq{\char`\"}
-                \def\PYZti{\char`\~}
-                \def\PYZat{@}
-                \def\PYZlb{[}
-                \def\PYZrb{]}
+                \cs_set:Npn\minted@usedefaultstyle{}
+                \cs_set:Npn\__PY_reset:{
+                    \cs_set:Npn\__PY_it:n##1{##1}
+                    \cs_set:Npn\__PY_bf:n##1{##1}
+                    \cs_set:Npn\__PY_ul:n##1{##1}
+                    \cs_set:Npn\__PY_tc:n##1{##1}
+                    \cs_set:Npn\__PY_bc:n##1{##1}
+                    \cs_set:Npn\__PY_ff:n##1{##1}
+                }
+                \cs_set:Npn\__PY_do:n##1{
+                    \__PY_bc:n{\__PY_tc:n{\__PY_ul:n{%
+                    \__PY_it:n{\__PY_bf:n{\__PY_ff:n{##1}}}}}}
+                }
+                \DeclareDocumentCommand\PY{mm}{
+                    \__PY_reset:
+                    \seq_set_split:Nnn\l_tmpa_seq{+}{##1}
+                    \seq_map_inline:Nn\l_tmpa_seq{\use:c{__PY_tok_####1}}
+                    \__PY_do:n{##2}
+                }
+                \cs_set:cpn{__PY_tok_gd}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{scriptcolor}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_gu}{%
+                    \cs_set_eq:NN\__PY_bf:n\textbf%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{optioncolor}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_gt}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{scriptcolor}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_gs}{%
+                    \cs_set_eq:NN\__PY_bf:n\textbf
+                }
+                \cs_set:cpn{__PY_tok_gr}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{scriptcolor}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_cm}{%
+                    \cs_set_eq:NN\__PY_it:n\textit%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{lightgray}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_vg}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{scriptcolor}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_m}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{meta}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_mh}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{meta}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_cs}{%
+                    \cs_set_eq:NN\__PY_it:n\textit%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{macroimpl}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_ge}{%
+                    \cs_set_eq:NN\__PY_it:n\textit
+                }
+                \cs_set:cpn{__PY_tok_vc}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{scriptcolor}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_il}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{meta}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_go}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{gray}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_cp}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp!75}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_gi}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{bright}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_gh}{%
+                    \cs_set_eq:NN\__PY_bf:n\textbf%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{section}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_ni}{%
+                    \cs_set_eq:NN\__PY_bf:n\textbf%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{keydesc}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_nn}{%
+                    \cs_set_eq:NN\__PY_ul:n\underline%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{black}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_no}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{scriptcolor}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_na}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{meta!50}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_nb}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{black}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_nc}{%
+                    \cs_set_eq:NN\__PY_ul:n\underline%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{bright}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_nd}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{gray}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_si}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_nf}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{bright}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_s2}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_vi}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{scriptcolor}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_nt}{%
+                    \cs_set_eq:NN\__PY_bf:n\textbf%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{meta!50}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_nv}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{scriptcolor}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_s1}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_gp}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{gray}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_sh}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_ow}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{macroimpl}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_sx}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_bp}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{black}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_c1}{%
+                    \cs_set_eq:NN\__PY_it:n\textit%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{lightgray}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_kc}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{macroimpl}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_c}{%
+                    \cs_set_eq:NN\__PY_it:n\textit%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{lightgray}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_mf}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{meta}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_err}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{intlink}{##1}
+                    }%
+                    \cs_set:Npn\__PY_bc:n##1{
+                        \setlength{\fboxsep}{0pt}%
+                        \colorbox{bright}{\strut ##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_kd}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{macroimpl}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_ss}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{macroimpl}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_sr}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{meta}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_mo}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{meta}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_mi}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{meta}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_kn}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{macroimpl}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_kr}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{macroimpl}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_s}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_kp}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{macroimpl}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_w}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{lightgray}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_kt}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{black}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_sc}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_sb}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_k}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{macroimpl}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_se}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_sd}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{sharp}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_nl}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{bright}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_ne}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{bright}{##1}
+                    }
+                }
+                \cs_set:cpn{__PY_tok_o}{%
+                    \cs_set:Npn\__PY_tc:n##1{
+                        \textcolor{macroimpl}{##1}
+                    }
+                }
+                \cs_set:Npn\PYZbs{\char`\\}
+                \cs_set:Npn\PYZus{\char`\_}
+                \cs_set:Npn\PYZob{\char`\{}
+                \cs_set:Npn\PYZcb{\char`\}}
+                \cs_set:Npn\PYZca{\char`\^}
+                \cs_set:Npn\PYZam{\char`\&}
+                \cs_set:Npn\PYZlt{\char`\<}
+                \cs_set:Npn\PYZgt{\char`\>}
+                \cs_set:Npn\PYZsh{\char`\#}
+                \cs_set:Npn\PYZpc{\char`\%}
+                \cs_set:Npn\PYZdl{\char`\$}
+                \cs_set:Npn\PYZhy{\char`\-}
+                \cs_set:Npn\PYZsq{\char`\'}
+                \cs_set:Npn\PYZdq{\char`\"}
+                \cs_set:Npn\PYZti{\char`\~}
+                \cs_set:Npn\PYZat{@}
+                \cs_set:Npn\PYZlb{[}
+                \cs_set:Npn\PYZrb{]}
 %    \end{macrocode}
 % If there's no \texttt{pygmentize}, no \cs{write18} or no \pkg{minted},
 % we display a warning message and proceed without highlighting.
@@ -1204,14 +1426,14 @@
     }{
         \msg_warning:nn{skdoc}{no-minted}
     }
-\fi
+}
 %    \end{macrocode}
 % \subsection{The \env{MacroCode} environment}
 % We need a token list and input/output.
 %    \begin{macrocode}
-\tl_new:N\skdoc@temptl
-\ior_new:N\skdoc@input
-\iow_new:N\skdoc@output
+\tl_new:N\__skdoc_temp_tl
+\ior_new:N\__skdoc_input_file
+\iow_new:N\__skdoc_output_file
 %    \end{macrocode}
 % \begin{macro}{\DeclareFile}[2]
 %   {A list of key-value parameters}
@@ -1223,41 +1445,44 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\DeclareFile{om}{
     \group_begin:
-    \keys_define:nn{skdoc@declarefile}{%
+    \keys_define:nn{skdoc/declarefile}{%
         preamble .value_required:,
-        preamble .code:n = \edef\skdoc@preamble{##1},
+        preamble .code:n = \cs_set:Npx\__skdoc_preamble:{##1},
         key .value_required:,
-        key .code:n = \def\skdoc@key{##1}
+        key .code:n = \cs_set:Npn\__skdoc_key:{##1}
     }%
-    \def\skdoc@preamble{}%
-    \def\skdoc@key{#2}%
-    \IfNoValueTF{#1}{}{\keys_set:nn{skdoc@declarefile}{#1}}
-    \int_if_exist:cTF{skdoc@output@\skdoc@key @line}{
-        \msg_critical:nnx{skdoc}{key-exists}{\skdoc@key}
+    \cs_set:Npn\__skdoc_preamble:{}%
+    \cs_set:Npn\__skdoc_key:{#2}%
+    \IfNoValueF{#1}{\keys_set:nn{skdoc/declarefile}{#1}}
+    \int_if_exist:cTF{__skdoc_output_\__skdoc_key: _line}{
+        \msg_critical:nnx{skdoc}{key-exists}{\__skdoc_key:}
     }{
-        \int_zero_new:c{skdoc@output@\skdoc@key @line}
+        \int_zero_new:c{__skdoc_output_\__skdoc_key: _line}
     }
-    \tl_new:c{skdoc@output@\skdoc@key}
-    \IfStrEq{\skdoc@preamble}{}{
-        \def\skdoc@preamble@extra{}
+    \tl_new:c{__skdoc_output_\__skdoc_key:}
+    \IfStrEq{\__skdoc__preamble:}{}{
+        \cs_set:Npn\__skdoc_preamble_extra:{}
     }{
-        \tl_set:Nx\l_tmpa_tl{\skdoc@preamble}
-        \edef\skdoc@temp{\tl_head:N\l_tmpa_tl}
-        \def\skdoc@preamble@extra{
-            \skdoc@temp\skdoc@temp\space~This~is~file~`#2',~generated~from~`\c_job_name_tl.tex'~(key~`\skdoc@key').
+        \tl_set:Nx\l_tmpa_tl{\__skdoc_preamble:}
+        \cs_set:Npx\__skdoc_temp:{\tl_head:N\l_tmpa_tl}
+        \cs_set:Npn\__skdoc_preamble_extra:{
+            \__skdoc_temp:\__skdoc_temp:\space~This~is~file~`#2',~generated~from~`\c_job_name_tl.tex'~(key~`\__skdoc_key:').
         }
     }
-    \expandafter\xdef\csname skdoc@write@#2\endcsname{%
-        \noexpand\msg_log:nnn{skdoc}{wrote-file}{#2}
-        \noexpand\iow_open:Nn\noexpand\skdoc@output{#2}
-        \noexpand\IfStrEq{\skdoc@preamble}{}{}{
-            \noexpand\iow_now:Nx\noexpand\skdoc@output{\skdoc@preamble@extra}
-            \noexpand\iow_now:Nx\noexpand\skdoc@output{\skdoc@preamble}
+    \cs_gset:cpx{__skdoc_write_#2:}{%
+        \exp_not:N\msg_log:nnn{skdoc}{wrote-file}{#2}
+        \exp_not:N\iow_open:Nn\exp_not:N\__skdoc_output_file{#2}
+        \exp_not:N\IfStrEq{\__skdoc_preamble:}{}{}{
+            \exp_not:N\iow_now:Nx\exp_not:N\__skdoc_output_file
+                {\__skdoc_preamble_extra:}
+            \exp_not:N\iow_now:Nx\exp_not:N\__skdoc_output_file
+                {\__skdoc_preamble:}
         }
-        \noexpand\iow_now:Nx\noexpand\skdoc@output{\noexpand\tl_to_str:c{skdoc@output@\skdoc@key}}
-        \noexpand\iow_close:N\noexpand\skdoc@output
+        \exp_not:N\iow_now:Nx\exp_not:N\__skdoc_output_file
+            {\exp_not:N\tl_to_str:c{__skdoc_output_\__skdoc_key:}}
+        \exp_not:N\iow_close:N\exp_not:N\__skdoc_output_file
     }
-    \AfterEndDocument{\csname skdoc@write@#2\endcsname}
+    \AfterEndDocument{\use:c{__skdoc_write_#2}}
     \group_end:
 }
 %    \end{macrocode}
@@ -1793,14 +2018,6 @@
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro*}{\skdoc@WithValues@peek}
-% \changes{1.2a}{Add \cs{ignorespaces} to fix spacing bug}
-%    \begin{macrocode}
-\def\skdoc@WithValues@peek{
-    \ifx\@let@token\AndDefault\else\par\noindent\nobreak\ignorespaces\fi
-}
-%    \end{macrocode}
-% \end{macro*}
 % \begin{macro}{\WithValues}[1]
 %   {Values of a key-value option}
 % The \cs{WithValues} macro peeks ahead to see if there's an
@@ -1809,7 +2026,9 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\WithValues{m}{
     \noindent\makebox[\linewidth][l]{\texttt{#1}}
-    \futurelet\@let@token\skdoc@WithValues@peek
+    \peek_meaning_ignore_spaces:NF\AndDefault{
+        \par\noindent\nobreak\ignorespaces
+    }
 }
 %    \end{macrocode}
 % \end{macro}
@@ -1820,7 +2039,8 @@
 % \changes{1.2a}{Add \cs{ignorespaces} to fix spacing bug}
 %    \begin{macrocode}
 \DeclareDocumentCommand\AndDefault{m}{
-    \llap{\textcolor{gray}{\texttt{(#1)}}}\par\noindent\nobreak\ignorespaces
+    \llap{\textcolor{gray}{\texttt{(#1)}}}
+    \par\noindent\nobreak\ignorespaces
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2351,35 +2571,30 @@
 % process of adding entries to the index is reduced to adding
 % glossary entries. This is done through two wrapper macros around
 % the \cs{newglossaryentry} macro.
-% \begin{macro}{\@index@}[1]
+% \begin{macro}{\__skdoc_add_index_entry:nn}[1]
 %   {The key of the index entry}
 %   {The text of the index entry}
-% What \cs{@index@} does is to decide wether we are hiding the
+% What \cs{__skdoc_add_index_entry:nn} does is to decide wether we are hiding the
 % implementation part of the documentation (discussed later), and
 % wether we are in the actual implementation or not. If we are in
 % the implementation and aren't printing it, we shouldn't add an
 % index entry.
 %    \begin{macrocode}
-\DeclareDocumentCommand\@index@{mm}{
+\cs_set_protected:Nn\__skdoc_add_index_entry:nn{
     \__skdoc_if_do_index:T{
-        \@index@@{#1}{#2}
+        \newglossaryentry{index-#1}{
+            type=index,
+            name={#2},
+            description={\nopostdesc},
+            sort={#1}
+        }
     }
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\@index@@}[2]
-%   {The key of the index entry}
-%   {The text of the index entry}
-% This macro does the actual adding to the glossary.
+% \begin{macro}{\__skdoc_add_index_entry:xo}[1]
 %    \begin{macrocode}
-\DeclareDocumentCommand\@index@@{mm}{
-    \newglossaryentry{index-#1}{
-        type=index,
-        name={#2},
-        description={\nopostdesc},
-        sort={#1}
-    }
-}
+\cs_generate_variant:Nn\__skdoc_add_index_entry:nn{xo}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -2396,28 +2611,66 @@
 % environments, that typesets a normal use of the entity.
 %
 % Note the duplicate use of \cs{ifglsentryexists} --- this is needed
-% since \cs{@index@} doesn't always add the entity to the index
+% since \cs{__skdoc_add_index_entry:nn} doesn't always add the entity to the index
 % \emph{i.e.} nothing in the implementation is added when we're hiding
 % the implementation.
+% \begin{macro}{\__skdoc_index:nNNn}[4]
+%   {Type of index entry}
+%   {Boolean indicating wether this entry is a description}
+%   {Boolean indicating wether this entry is an implementation}
+%   {Index entry text}
+%    \begin{macrocode}
+\cs_set_protected:Nn\__skdoc_index:nNNn{
+    \clist_if_in:nnF{macro,env,opt,bib,theme,pkg,file}{#1}{
+        \msg_error:nnn{skdoc}{invalid-index-type}{#1}
+    }
+    \tl_set:Nx\l_tmpa_tl{\token_to_str:N #4-#1}
+    \ifglsentryexists{index-\tl_use:N\l_tmpa_tl}{}{
+        \__skdoc_add_index_entry:xo{\tl_use:N\l_tmpa_tl}{
+            \str_case:nn{#1}{
+                {macro}{\cs*{#3}}
+                {env}{\env*{\string#3}~(environment)}
+                {opt}{\opt*{\string#3}~(option)}
+                {bib}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
+                {theme}{\thm*{\string#3}~(theme)}
+                {pkg}{\pkg*{\string#3}~(package)}
+                {file}{\file*{\string#3}~(file)}
+            }
+        }
+    }
+    \__skdoc_if_do_index:T{
+        \bool_if:NTF #3{
+            \glsadd[types=index,format=hyperul]{index-\tl_use:N\l_tmpa_tl}
+        }{
+            \bool_if:NTF #2{
+                \glsadd[types=index,format=hyperit]{index-\tl_use:N\l_tmpa_tl}
+            }{
+                \glsadd[types=index]{index-\tl_use:N\l_tmpa_tl}
+            }
+        }
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\__skdoc_index:xNNn}
+%    \begin{macrocode}
+\cs_generate_variant:Nn\__skdoc_index:nNNn{xNNn}
+%    \end{macrocode}
+% \end{macro}
 % \begin{macro}{\index@macro}[3]
 %   {True if this is the starred variant}
 %   {True if this is the exclamation variant}
 %   {The name of the macro being indexed, without backslash}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@macro{st!m}{
-    \def\skdoc@temp{#3-macro}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{#3-macro}{\cs*{#3}}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{macro}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2429,19 +2682,14 @@
 %   {The name of the environment being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@environment{st!m}{
-    \def\skdoc@temp{\string#3-env}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3-env}{\env*{\string#3}~(environment)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{env}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2453,19 +2701,14 @@
 %   {The name of the option being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@option{st!m}{
-    \def\skdoc@temp{\string#3-opt}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3-opt}{\opt*{\string#3}~(option)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{opt}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2478,19 +2721,14 @@
 %       being indexed, without initial \texttt{@} sign}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@bibentry{st!m}{
-    \def\skdoc@temp{#3-bib}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{#3-bib}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{bib}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2502,19 +2740,14 @@
 %   {The name of the theme being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@theme{st!m}{
-    \def\skdoc@temp{\string#3-theme}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3-theme}{\thm*{\string#3}~(theme)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{theme}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2526,19 +2759,14 @@
 %   {The name of the package being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@package{st!m}{
-    \def\skdoc@temp{\string#3-pkg}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3-pkg}{\pkg*{\string#3}~(package)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{pkg}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2550,19 +2778,14 @@
 %   {The name of the file being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@file{st!m}{
-    \def\skdoc@temp{\string#3-file}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3-file}{\file*{\string#3}~(file)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{file}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -3253,10 +3476,8 @@
 % Set up microtype properly
 %    \begin{macrocode}
 \g@addto@macro\@verbatim{\microtypesetup{activate=false}}
-\AtEndOfClass{%
-    \microtypesetup{expansion,kerning,spacing,tracking}%
-    \DisableLigatures{family = tt*}%
-}
+\microtypesetup{expansion,kerning,spacing,tracking}%
+\DisableLigatures{family = tt*}%
 %    \end{macrocode}
 % We also want numbers on the bibliography headings, if we are loading
 % \pkg{biblatex}. If we happen to be loading \pkg{bibtex}, we issue a
