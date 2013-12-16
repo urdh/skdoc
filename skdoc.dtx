@@ -797,7 +797,8 @@
 \msg_new:nnn{skdoc}{no-minted}{Syntax~highlighting~disabled:~couldn't~find~minted.sty!}
 \msg_new:nnn{skdoc}{no-shell-escape}{Syntax~highlighting~disabled:~running~without~unrestricted~\string\write18.}
 \msg_new:nnn{skdoc}{no-pygments}{Syntax~highlighting~disabled:~couldn't~find~"pygmentize".}
-\msg_new:nnnn{skdoc}{bibtex-unsupported}{The `bibtex` package is unsupported: continue at own risk!}{Use a more modern bibliography system (i.e. `biblatex`) instead.}
+\msg_new:nnnn{skdoc}{bibtex-unsupported}{The~`bibtex~package~is~unsupported:~continue~at~own~risk!}{Use~a~more~modern~bibliography~system~(i.e.~`biblatex`)~instead.}
+\msg_new:nnn{skdoc}{invalid-index-type}{Unknown~index~type~"#1"!}
 %    \end{macrocode}
 %
 % \subsection{Booleans}
@@ -2526,35 +2527,30 @@
 % process of adding entries to the index is reduced to adding
 % glossary entries. This is done through two wrapper macros around
 % the \cs{newglossaryentry} macro.
-% \begin{macro}{\@index@}[1]
+% \begin{macro}{\__skdoc_add_index_entry:nn}[1]
 %   {The key of the index entry}
 %   {The text of the index entry}
-% What \cs{@index@} does is to decide wether we are hiding the
+% What \cs{__skdoc_add_index_entry:nn} does is to decide wether we are hiding the
 % implementation part of the documentation (discussed later), and
 % wether we are in the actual implementation or not. If we are in
 % the implementation and aren't printing it, we shouldn't add an
 % index entry.
 %    \begin{macrocode}
-\DeclareDocumentCommand\@index@{mm}{
+\cs_set_protected:Nn\__skdoc_add_index_entry:nn{
     \__skdoc_if_do_index:T{
-        \@index@@{#1}{#2}
+        \newglossaryentry{index-#1}{
+            type=index,
+            name={#2},
+            description={\nopostdesc},
+            sort={#1}
+        }
     }
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\@index@@}[2]
-%   {The key of the index entry}
-%   {The text of the index entry}
-% This macro does the actual adding to the glossary.
+% \begin{macro}{\__skdoc_add_index_entry:xo}[1]
 %    \begin{macrocode}
-\DeclareDocumentCommand\@index@@{mm}{
-    \newglossaryentry{index-#1}{
-        type=index,
-        name={#2},
-        description={\nopostdesc},
-        sort={#1}
-    }
-}
+\cs_generate_variant:Nn\__skdoc_add_index_entry:nn{xo}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -2571,28 +2567,66 @@
 % environments, that typesets a normal use of the entity.
 %
 % Note the duplicate use of \cs{ifglsentryexists} --- this is needed
-% since \cs{@index@} doesn't always add the entity to the index
+% since \cs{__skdoc_add_index_entry:nn} doesn't always add the entity to the index
 % \emph{i.e.} nothing in the implementation is added when we're hiding
 % the implementation.
+% \begin{macro}{\__skdoc_index:nNNn}[4]
+%   {Type of index entry}
+%   {Boolean indicating wether this entry is a description}
+%   {Boolean indicating wether this entry is an implementation}
+%   {Index entry text}
+%    \begin{macrocode}
+\cs_set_protected:Nn\__skdoc_index:nNNn{
+    \clist_if_in:nnF{macro,env,opt,bib,theme,pkg,file}{#1}{
+        \msg_error:nnn{skdoc}{invalid-index-type}{#1}
+    }
+    \tl_set:Nx\l_tmpa_tl{\token_to_str:N #4-#1}
+    \ifglsentryexists{index-\tl_use:N\l_tmpa_tl}{}{
+        \__skdoc_add_index_entry:xo{\tl_use:N\l_tmpa_tl}{
+            \str_case:nn{#1}{
+                {macro}{\cs*{#3}}
+                {env}{\env*{\string#3}~(environment)}
+                {opt}{\opt*{\string#3}~(option)}
+                {bib}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
+                {theme}{\thm*{\string#3}~(theme)}
+                {pkg}{\pkg*{\string#3}~(package)}
+                {file}{\file*{\string#3}~(file)}
+            }
+        }
+    }
+    \__skdoc_if_do_index:T{
+        \bool_if:NTF #3{
+            \glsadd[types=index,format=hyperul]{index-\tl_use:N\l_tmpa_tl}
+        }{
+            \bool_if:NTF #2{
+                \glsadd[types=index,format=hyperit]{index-\tl_use:N\l_tmpa_tl}
+            }{
+                \glsadd[types=index]{index-\tl_use:N\l_tmpa_tl}
+            }
+        }
+    }
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\__skdoc_index:xNNn}
+%    \begin{macrocode}
+\cs_generate_variant:Nn\__skdoc_index:nNNn{xNNn}
+%    \end{macrocode}
+% \end{macro}
 % \begin{macro}{\index@macro}[3]
 %   {True if this is the starred variant}
 %   {True if this is the exclamation variant}
 %   {The name of the macro being indexed, without backslash}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@macro{st!m}{
-    \def\skdoc@temp{#3-macro}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{#3-macro}{\cs*{#3}}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{macro}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2604,19 +2638,14 @@
 %   {The name of the environment being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@environment{st!m}{
-    \def\skdoc@temp{\string#3-env}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3-env}{\env*{\string#3}~(environment)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{env}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2628,19 +2657,14 @@
 %   {The name of the option being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@option{st!m}{
-    \def\skdoc@temp{\string#3-opt}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3-opt}{\opt*{\string#3}~(option)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{opt}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2653,19 +2677,14 @@
 %       being indexed, without initial \texttt{@} sign}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@bibentry{st!m}{
-    \def\skdoc@temp{#3-bib}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{#3-bib}{\bib*{#3}~(\hologoRobust{BibTeX}~entry~type)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{bib}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2677,19 +2696,14 @@
 %   {The name of the theme being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@theme{st!m}{
-    \def\skdoc@temp{\string#3-theme}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3-theme}{\thm*{\string#3}~(theme)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{theme}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2701,19 +2715,14 @@
 %   {The name of the package being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@package{st!m}{
-    \def\skdoc@temp{\string#3-pkg}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3-pkg}{\pkg*{\string#3}~(package)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{pkg}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
@@ -2725,19 +2734,14 @@
 %   {The name of the file being indexed}
 %    \begin{macrocode}
 \DeclareDocumentCommand\index@file{st!m}{
-    \def\skdoc@temp{\string#3-file}
-    \ifglsentryexists{index-\skdoc@temp}{}{
-        \@index@{\string#3-file}{\file*{\string#3}~(file)}
-    }
-    \__skdoc_if_do_index:T{
-        \IfBooleanTF{#2}{
-            \glsadd[types=index,format=hyperul]{index-\skdoc@temp}
+    \tl_set:Nn\l_tmpa_tl{file}
+    \IfBooleanTF{#2}{
+        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
+    }{
+        \IfBooleanTF{#1}{
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
         }{
-            \IfBooleanTF{#1}{
-                \glsadd[types=index,format=hyperit]{index-\skdoc@temp}
-            }{
-                \glsadd[types=index]{index-\skdoc@temp}
-            }
+            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
         }
     }
 }
