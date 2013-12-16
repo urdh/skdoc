@@ -2527,7 +2527,7 @@
 % process of adding entries to the index is reduced to adding
 % glossary entries. This is done through two wrapper macros around
 % the \cs{newglossaryentry} macro.
-% \begin{macro}{\__skdoc_add_index_entry:nn}[1]
+% \begin{macro}{\__skdoc_add_index_entry:nn}[2]
 %   {The key of the index entry}
 %   {The text of the index entry}
 % What \cs{__skdoc_add_index_entry:nn} does is to decide wether we are hiding the
@@ -2548,7 +2548,7 @@
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\__skdoc_add_index_entry:xo}[1]
+% \begin{macro}{\__skdoc_add_index_entry:xo}
 %    \begin{macrocode}
 \cs_generate_variant:Nn\__skdoc_add_index_entry:nn{xo}
 %    \end{macrocode}
