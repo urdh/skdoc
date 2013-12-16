@@ -2,7 +2,7 @@ TEXMFHOME ?= $(shell kpsewhich -var-value TEXMFHOME)
 .PHONY: all clean distclean install dist test clean-test
 all: skdoc.cls skdoc.pdf
 clean: clean-test
-	rm -f *.gl? *.id? *.aux # problematic files
+	rm -f *.gl? *.id? *.aux *.glsdefs # problematic files
 	rm -f *.bbl *.bcf *.bib *.blg *.xdy # biblatex
 	rm -f *.fls *.log *.out *.run.xml *.toc # junk
 distclean: clean
