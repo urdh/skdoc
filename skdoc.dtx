@@ -1933,7 +1933,7 @@
 %    \begin{macrocode}
 \let\old@PrintMacroName\PrintMacroName
 \DeclareDocumentCommand\PrintMacroName{m}{%
-    \__skdoc_index_desc:nn{\expandafter\@gobble\string#1}
+    \__skdoc_index_desc:no{\exp_args:No\use_none:n\token_to_str:N#1}
     \old@PrintMacroName{#1}
 }
 %    \end{macrocode}
@@ -2243,8 +2243,9 @@
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{macro}{smo}{%
     \IfBooleanTF{#1}{}{\@bsphack}
-    \__skdoc_index_impl:nn{macro}{\expandafter\@gobble\string#2}
-    \@macroname{#2}%
+    \__skdoc_index_impl:no{macro}
+        {\exp_args:No\use_none:n\token_to_str:N#2}
+    \__skdoc_macroname:n{#2}%
     \IfBooleanTF{#1}{
         \IfNoValueTF{#3}{}{
             \int_compare:nNnTF{#3}>{0}{
@@ -2258,7 +2259,7 @@
         }{\macro@impl@args[#3]}
     }%
 }{
-    \let\skdoc@macroname@key\@empty
+    \__skdoc_unset_name:
     \IfBooleanTF{#1}{}{\@esphack}
 }
 %    \end{macrocode}
@@ -2272,7 +2273,7 @@
 \DeclareDocumentEnvironment{environment}{smo}{%
     \IfBooleanTF{#1}{}{\@bsphack}
     \__skdoc_index_impl:nn{env}{#2}
-    \@environmentname{#2}%
+    \__skdoc_environmentname:n{#2}%
     \IfBooleanTF{#1}{
         \IfNoValueTF{#3}{}{
             \int_compare:nNnTF{#3}>{0}{
@@ -2286,7 +2287,7 @@
         }{\macro@impl@args[#3]}
     }%
 }{
-    \let\skdoc@macroname@key\@empty
+    \__skdoc_unset_name:
     \IfBooleanTF{#1}{}{\@esphack}
 }
 %    \end{macrocode}
@@ -2299,7 +2300,7 @@
 \DeclareDocumentEnvironment{option}{smg}{%
     \IfBooleanTF{#1}{}{\@bsphack}
     \__skdoc_index_impl:nn{opt}{#2}
-    \@optionname{#2}%
+    \__skdoc_optionname:n{#2}%
     \IfBooleanTF{#1}{}{
         \PrintEnvImplName{#2}
         \IfNoValueTF{#3}{
@@ -2311,7 +2312,7 @@
         }
     }%
 }{
-    \let\skdoc@macroname@key\@empty
+    \__skdoc_unset_name:
     \IfBooleanTF{#1}{}{\@esphack}
 }
 %    \end{macrocode}
@@ -2322,14 +2323,15 @@
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{bibentry}{sm}{%
     \IfBooleanTF{#1}{}{\@bsphack}
-    \__skdoc_index_impl:nn{bib}{\expandafter\@gobble\string#2}
-    \@bibentryname{#2}%
+    \__skdoc_index_impl:no{bib}
+        {\exp_args:No\use_none:n\token_to_str:N#2}
+    \__skdoc_bibentryname:n{#2}%
     \IfBooleanTF{#1}{}{
         \PrintEnvImplName{#2}
         \macro@impl@argline@noarg{(\hologoRobust{BibTeX}~entry~type)}
     }%
 }{
-    \let\skdoc@macroname@key\@empty
+    \__skdoc_unset_name:
     \IfBooleanTF{#1}{}{\@esphack}
 }
 %    \end{macrocode}
@@ -2341,13 +2343,13 @@
 \DeclareDocumentEnvironment{theme}{sm}{%
     \IfBooleanTF{#1}{}{\@bsphack}
     \__skdoc_index_impl:nn{theme}{#2}
-    \@themename{#2}%
+    \__skdoc_themename:n{#2}%
     \IfBooleanTF{#1}{}{
         \PrintEnvImplName{#2}
         \macro@impl@argline@noarg{(theme)}
     }%
 }{
-    \let\skdoc@macroname@key\@empty
+    \__skdoc_unset_name:
     \IfBooleanTF{#1}{}{\@esphack}
 }
 %    \end{macrocode}
@@ -2626,6 +2628,11 @@
 }
 %    \end{macrocode}
 % \end{macro}
+% \begin{macro}{\__skdoc_index_desc:no}
+%    \begin{macrocode}
+\cs_generate_variant:Nn\__skdoc_index_desc:nn{no}
+%    \end{macrocode}
+% \end{macro}
 % \begin{macro}{\__skdoc_index_impl:nn}[2]
 %   {Type of index entry}
 %   {Index entry text}
@@ -2633,6 +2640,11 @@
 \cs_set_protected:Nn\__skdoc_index_impl:nn{
     \__skdoc_index:nNNn{#1}\c_false_bool\c_true_bool{#2}
 }
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\__skdoc_index_impl:no}
+%    \begin{macrocode}
+\cs_generate_variant:Nn\__skdoc_index_impl:nn{no}
 %    \end{macrocode}
 % \end{macro}
 %
@@ -2734,55 +2746,70 @@
 \DeclareDocumentCommand\generalname{}{General}
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro*}{\@macroname}[1]
+% \begin{macro*}{\__skdoc_macroname:n}[1]
 %   {Name of the macro being described}
 %    \begin{macrocode}
-\DeclareDocumentCommand\@macroname{m}{
-    \def\skdoc@macroname@stylized{\cs*{\expandafter\@gobble\string#1}}
-    \def\skdoc@macroname@key{macro-\expandafter\@gobble\string#1}
+\cs_set_protected:Nn\__skdoc_macroname:n{
+    \tl_set:No\l__skdoc_macroname_stylized_tl{
+        \exp_args:No\cs*{\exp_args:No\use_none:n\token_to_str:N#1}
+    }
+    \tl_set:No\l__skdoc_macroname_key_tl
+        {macro-\exp_args:No\use_none:n\token_to_str:N#1}
 }
 %    \end{macrocode}
 % \end{macro*}
-% \begin{macro*}{\@environmentname}[1]
+% \begin{macro*}{\__skdoc_environmentname:n}[1]
 %   {Name of the environment being described}
 %    \begin{macrocode}
-\DeclareDocumentCommand\@environmentname{m}{
-    \def\skdoc@macroname@stylized{\env*{\string#1}}
-    \def\skdoc@macroname@key{env-#1}
+\cs_set_protected:Nn\__skdoc_environmentname:n{
+    \tl_set:No\l__skdoc_macroname_stylized_tl
+        {\exp_args:No\env*{\token_to_str:N#1}}
+    \tl_set:Nn\l__skdoc_macroname_key_tl{env-#1}
 }
 %    \end{macrocode}
 % \end{macro*}
-% \begin{macro*}{\@optionname}[1]
+% \begin{macro*}{\__skdoc_optionname:n}[1]
 %   {Name of the option being described}
 %    \begin{macrocode}
-\DeclareDocumentCommand\@optionname{m}{
-    \def\skdoc@macroname@stylized{\opt*{\string#1}}
-    \def\skdoc@macroname@key{opt-#1}
+\cs_set_protected:Nn\__skdoc_optionname:n{
+    \tl_set:Nn\l__skdoc_macroname_stylized_tl
+        {\exp_args:No\opt*{\token_to_str:N#1}}
+    \tl_set:Nn\l__skdoc_macroname_key_tl{opt-#1}
 }
 %    \end{macrocode}
 % \end{macro*}
-% \begin{macro*}{\@ebibentryname}[1]
+% \begin{macro*}{\__skdoc_bibentryname:n}[1]
 %   {Name of the \hologo{BibTeX} entry being described}
 %    \begin{macrocode}
-\DeclareDocumentCommand\@bibentryname{m}{
-    \def\skdoc@macroname@stylized{\bib*{\expandafter\@gobble\string#1}}
-    \def\skdoc@macroname@key{bibentry-\expandafter\@gobble\string#1}
+\cs_set_protected:Nn\__skdoc_bibentryname:n{
+    \tl_set:No\l__skdoc_macroname_stylized_tl{
+        \exp_args:No\bib*{\exp_args:No\use_none:n\token_to_str:N#1}
+    }
+    \tl_set:No\l__skdoc_macroname_key_tl
+        {bibentry-\exp_args:No\use_none:n\token_to_str:N#1}
 }
 %    \end{macrocode}
 % \end{macro*}
-% \begin{macro*}{\@themename}[1]
+% \begin{macro*}{\__skdoc_themename:n}[1]
 %   {Name of the theme being described}
 %    \begin{macrocode}
-\DeclareDocumentCommand\@themename{m}{
-    \def\skdoc@macroname@stylized{\thm*{\string#1}}
-    \def\skdoc@macroname@key{thm-#1}
+\cs_set_protected:Nn\__skdoc_themename:n{
+    \tl_set:Nn\l__skdoc_macroname_stylized_tl
+        {\exp_args:No\thm*{\token_to_str:N#1}}
+    \tl_set:Nn\l__skdoc_macroname_key_tl{thm-#1}
 }
 %    \end{macrocode}
+% \end{macro*}
+% \begin{macro*}{\__skdoc_unset_name:}
+\cs_set_protected:Nn\__skdoc_unset_name:{
+    \tl_clear:N\l__skdoc_macroname_stylized_tl
+    \tl_clear:N\l__skdoc_macroname_key_tl
+}
 % \end{macro*}
 % Along with these we also define the variables they affect as empty.
 %    \begin{macrocode}
-\def\skdoc@macroname@stylized{}
-\let\skdoc@macroname@key\@empty
+\tl_new:N\l__skdoc_macroname_stylized_tl
+\tl_new:N\l__skdoc_macroname_key_tl
 %    \end{macrocode}
 %
 % \subsubsection{Adding changes}
@@ -2802,7 +2829,7 @@
             nonumberlist=true
         }
     }
-    \ifx\skdoc@macroname@key\@empty
+    \tl_if_empty:NTF\l__skdoc_macroname_key_tl{
         \newglossaryentry{#1-general}{
             type=changes,
             description={\generalname{}:~#2},
@@ -2811,16 +2838,16 @@
             nonumberlist=true
         }
         \glsadd[types=changes]{#1-general}
-    \else
-        \newglossaryentry{#1-\skdoc@macroname@key}{
+    }{
+        \newglossaryentry{#1-\tl_use:N\l__skdoc_macroname_key_tl}{
             type=changes,
-            description={\skdoc@macroname@stylized{}:~#2},
+            description={\tl_use:N\l__skdoc_macroname_stylized_tl{}:~#2},
             parent={#1},
-            sort={\skdoc@macroname@key},
+            sort={\tl_use:N\l__skdoc_macroname_key_tl},
             nonumberlist=true
         }
-        \glsadd[types=changes]{#1-\skdoc@macroname@key}
-    \fi
+        \glsadd[types=changes]{#1-\tl_use:N\l__skdoc_macroname_key_tl}
+    }
     \@esphack
 }
 %    \end{macrocode}
