@@ -1796,7 +1796,7 @@
 \DeclareDocumentCommand\cs{sm}{
     \texttt{\char`\\#2}
     \bool_if:NF\g__skdoc_no_index_bool{
-        \IfBooleanTF{#1}{}{\index@macro{#2}}
+        \IfBooleanTF{#1}{}{\__skdoc_index:nn{macro}{#2}}
     }
 }
 %    \end{macrocode}
@@ -1809,7 +1809,7 @@
 \DeclareDocumentCommand\env{sm}{
     \texttt{#2}
     \bool_if:NF\g__skdoc_no_index_bool{
-        \IfBooleanTF{#1}{}{\index@environment{#2}}
+        \IfBooleanTF{#1}{}{\__skdoc_index:nn{env}{#2}}
     }
 }
 %    \end{macrocode}
@@ -1822,7 +1822,7 @@
 \DeclareDocumentCommand\pkg{sm}{
     \textsf{#2}
     \bool_if:NF\g__skdoc_no_index_bool{
-        \IfBooleanTF{#1}{}{\index@package{#2}}
+        \IfBooleanTF{#1}{}{\__skdoc_index:nn{pkg}{#2}}
     }
 }
 %    \end{macrocode}
@@ -1835,7 +1835,7 @@
 \DeclareDocumentCommand\opt{sm}{
     \texttt{#2}
     \bool_if:NF\g__skdoc_no_index_bool{
-        \IfBooleanTF{#1}{}{\index@option{#2}}
+        \IfBooleanTF{#1}{}{\__skdoc_index:nn{opt}{#2}}
     }
 }
 %    \end{macrocode}
@@ -1848,7 +1848,7 @@
 \DeclareDocumentCommand\bib{sm}{
     \texttt{@#2}
     \bool_if:NF\g__skdoc_no_index_bool{
-        \IfBooleanTF{#1}{}{\index@bibentry{#2}}
+        \IfBooleanTF{#1}{}{\__skdoc_index:nn{bib}{#2}}
     }
 }
 %    \end{macrocode}
@@ -1861,7 +1861,7 @@
 \DeclareDocumentCommand\thm{sm}{
     \textrm{#2}
     \bool_if:NF\g__skdoc_no_index_bool{
-        \IfBooleanTF{#1}{}{\index@theme{#2}}
+        \IfBooleanTF{#1}{}{\__skdoc_index:nn{theme}{#2}}
     }
 }
 %    \end{macrocode}
@@ -1874,7 +1874,7 @@
 \DeclareDocumentCommand\file{sm}{
     \texttt{#2}
     \bool_if:NF\g__skdoc_no_index_bool{
-        \IfBooleanTF{#1}{}{\index@file{#2}}
+        \IfBooleanTF{#1}{}{\__skdoc_index:nn{file}{#2}}
     }
 }
 %    \end{macrocode}
@@ -1933,7 +1933,7 @@
 %    \begin{macrocode}
 \let\old@PrintMacroName\PrintMacroName
 \DeclareDocumentCommand\PrintMacroName{m}{%
-    \index@macro*{\expandafter\@gobble\string#1}
+    \__skdoc_index_desc:nn{\expandafter\@gobble\string#1}
     \old@PrintMacroName{#1}
 }
 %    \end{macrocode}
@@ -1948,7 +1948,7 @@
 \let\old@PrintEnvName\PrintEnvName
 \def\PrintEnvName#1#2{
     \ifx#1\begin
-        \edef\skdoc@temp{\noexpand\index@environment*{#2}}
+        \edef\skdoc@temp{\noexpand\__skdoc_index_desc:nn{env}{#2}}
         \skdoc@temp
     \fi
     \old@PrintEnvName{#1}{#2}
@@ -1994,7 +1994,7 @@
     \clist_set:Nn\l_tmpa_clist{#1}
     \marginnote{
         \clist_map_inline:Nn\l_tmpa_clist{
-            \index@option*{####1}
+            \__skdoc_index_desc:nn{opt}{####1}
             \hfill
             \llap{\textcolor{opt}{\opt{####1}}}
             \mbox{}\\
@@ -2045,7 +2045,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\BibEntry{m}{
     \marginnote{
-        \index@bibentry*{#1}
+        \__skdoc_index_desc:nn{bib}{#1}
         \hfill\llap{\textcolor{macrodesc}{\bib{#1}}}
     }
     \nobreak
@@ -2076,7 +2076,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\Theme{m}{
     \marginnote{
-        \index@theme*{#1}
+        \__skdoc_index_desc:nn{theme}{#1}
         \hfill\llap{\textcolor{macrodesc}{\thm{#1}}}
     }
     \nobreak\par\noindent\nobreak\ignorespaces
@@ -2091,7 +2091,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\DescribeFile{m}{
     \marginnote{
-        \index@file*{#1}
+        \__skdoc_index_desc:nn{file}{#1}
         \hfill\llap{\textcolor{macrodesc}{\file{#1}}}
     }
     \nobreak\par\noindent\nobreak\ignorespaces
@@ -2243,7 +2243,7 @@
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{macro}{smo}{%
     \IfBooleanTF{#1}{}{\@bsphack}
-    \index@macro!{\expandafter\@gobble\string#2}
+    \__skdoc_index_impl:nn{macro}{\expandafter\@gobble\string#2}
     \@macroname{#2}%
     \IfBooleanTF{#1}{
         \IfNoValueTF{#3}{}{
@@ -2271,7 +2271,7 @@
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{environment}{smo}{%
     \IfBooleanTF{#1}{}{\@bsphack}
-    \index@environment!{#2}
+    \__skdoc_index_impl:nn{env}{#2}
     \@environmentname{#2}%
     \IfBooleanTF{#1}{
         \IfNoValueTF{#3}{}{
@@ -2298,7 +2298,7 @@
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{option}{smg}{%
     \IfBooleanTF{#1}{}{\@bsphack}
-    \index@option!{#2}
+    \__skdoc_index_impl:nn{opt}{#2}
     \@optionname{#2}%
     \IfBooleanTF{#1}{}{
         \PrintEnvImplName{#2}
@@ -2322,7 +2322,7 @@
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{bibentry}{sm}{%
     \IfBooleanTF{#1}{}{\@bsphack}
-    \index@bibentry!{\expandafter\@gobble\string#2}
+    \__skdoc_index_impl:nn{bib}{\expandafter\@gobble\string#2}
     \@bibentryname{#2}%
     \IfBooleanTF{#1}{}{
         \PrintEnvImplName{#2}
@@ -2340,7 +2340,7 @@
 %    \begin{macrocode}
 \DeclareDocumentEnvironment{theme}{sm}{%
     \IfBooleanTF{#1}{}{\@bsphack}
-    \index@theme!{#2}
+    \__skdoc_index_impl:nn{theme}{#2}
     \@themename{#2}%
     \IfBooleanTF{#1}{}{
         \PrintEnvImplName{#2}
@@ -2608,142 +2608,30 @@
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\__skdoc_index:xNNn}
+% \begin{macro}{\__skdoc_index:nn}[2]
+%   {Type of index entry}
+%   {Index entry text}
 %    \begin{macrocode}
-\cs_generate_variant:Nn\__skdoc_index:nNNn{xNNn}
-%    \end{macrocode}
-% \end{macro}
-% \begin{macro}{\index@macro}[3]
-%   {True if this is the starred variant}
-%   {True if this is the exclamation variant}
-%   {The name of the macro being indexed, without backslash}
-%    \begin{macrocode}
-\DeclareDocumentCommand\index@macro{st!m}{
-    \tl_set:Nn\l_tmpa_tl{macro}
-    \IfBooleanTF{#2}{
-        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
-    }{
-        \IfBooleanTF{#1}{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
-        }{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
-        }
-    }
+\cs_set_protected:Nn\__skdoc_index:nn{
+    \__skdoc_index:nNNn{#1}\c_false_bool\c_false_bool{#2}
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\index@environment}[3]
-%   {True if this is the starred variant}
-%   {True if this is the exclamation variant}
-%   {The name of the environment being indexed}
+% \begin{macro}{\__skdoc_index_desc:nn}[2]
+%   {Type of index entry}
+%   {Index entry text}
 %    \begin{macrocode}
-\DeclareDocumentCommand\index@environment{st!m}{
-    \tl_set:Nn\l_tmpa_tl{env}
-    \IfBooleanTF{#2}{
-        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
-    }{
-        \IfBooleanTF{#1}{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
-        }{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
-        }
-    }
+\cs_set_protected:Nn\__skdoc_index_desc:nn{
+    \__skdoc_index:nNNn{#1}\c_true_bool\c_false_bool{#2}
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\index@option}[3]
-%   {True if this is the starred variant}
-%   {True if this is the exclamation variant}
-%   {The name of the option being indexed}
+% \begin{macro}{\__skdoc_index_impl:nn}[2]
+%   {Type of index entry}
+%   {Index entry text}
 %    \begin{macrocode}
-\DeclareDocumentCommand\index@option{st!m}{
-    \tl_set:Nn\l_tmpa_tl{opt}
-    \IfBooleanTF{#2}{
-        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
-    }{
-        \IfBooleanTF{#1}{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
-        }{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
-        }
-    }
-}
-%    \end{macrocode}
-% \end{macro}
-% \begin{macro}{\index@bibentry}[3]
-%   {True if this is the starred variant}
-%   {True if this is the exclamation variant}
-%   {The name of the \hologo{BibTeX} entry type
-%       being indexed, without initial \texttt{@} sign}
-%    \begin{macrocode}
-\DeclareDocumentCommand\index@bibentry{st!m}{
-    \tl_set:Nn\l_tmpa_tl{bib}
-    \IfBooleanTF{#2}{
-        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
-    }{
-        \IfBooleanTF{#1}{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
-        }{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
-        }
-    }
-}
-%    \end{macrocode}
-% \end{macro}
-% \begin{macro}{\index@theme}[3]
-%   {True if this is the starred variant}
-%   {True if this is the exclamation variant}
-%   {The name of the theme being indexed}
-%    \begin{macrocode}
-\DeclareDocumentCommand\index@theme{st!m}{
-    \tl_set:Nn\l_tmpa_tl{theme}
-    \IfBooleanTF{#2}{
-        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
-    }{
-        \IfBooleanTF{#1}{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
-        }{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
-        }
-    }
-}
-%    \end{macrocode}
-% \end{macro}
-% \begin{macro}{\index@package}[3]
-%   {True if this is the starred variant}
-%   {True if this is the exclamation variant}
-%   {The name of the package being indexed}
-%    \begin{macrocode}
-\DeclareDocumentCommand\index@package{st!m}{
-    \tl_set:Nn\l_tmpa_tl{pkg}
-    \IfBooleanTF{#2}{
-        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
-    }{
-        \IfBooleanTF{#1}{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
-        }{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
-        }
-    }
-}
-%    \end{macrocode}
-% \end{macro}
-% \begin{macro}{\index@file}[3]
-%   {True if this is the starred variant}
-%   {True if this is the exclamation variant}
-%   {The name of the file being indexed}
-%    \begin{macrocode}
-\DeclareDocumentCommand\index@file{st!m}{
-    \tl_set:Nn\l_tmpa_tl{file}
-    \IfBooleanTF{#2}{
-        \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_true_bool\c_false_bool{#3}
-    }{
-        \IfBooleanTF{#1}{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_true_bool{#3}
-        }{
-            \__skdoc_index:xNNn{\tl_use:N\l_tmpa_tl}\c_false_bool\c_false_bool{#3}
-        }
-    }
+\cs_set_protected:Nn\__skdoc_index_impl:nn{
+    \__skdoc_index:nNNn{#1}\c_false_bool\c_true_bool{#2}
 }
 %    \end{macrocode}
 % \end{macro}
