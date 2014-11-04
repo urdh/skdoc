@@ -22,6 +22,15 @@ h2 {
 	font-weight: normal;
 }
 
+h1, h2 {
+	font-kerning: normal;
+}
+
+p {
+	font-kerning: normal;
+	font-variant-ligatures: common-ligatures;
+}
+
 header h2 {
 	font-size: 1em;
 	font-style: italic;
