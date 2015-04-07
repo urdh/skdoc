@@ -1,7 +1,11 @@
+[![Travis CI](https://img.shields.io/travis/urdh/skdoc.svg)](http://travis-ci.org/urdh/skdoc)
+[![CTAN: Version](https://img.shields.io/ctan/v/skdoc.svg)](http://www.ctan.org/pkg/skdoc)
+[![CTAN: License](https://img.shields.io/ctan/l/skdoc.svg)](http://www.ctan.org/pkg/skdoc)
+```
 %% skdoc documentation class
 %%
 %% Copyright (C) 2012-2015 by Simon Sigurdhsson <sigurdhsson@gmail.com>
-%% 
+%%
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3
 %% of this license or (at your option) any later version.
@@ -9,11 +13,11 @@
 %%   http://www.latex-project.org/lppl.txt
 %% and version 1.3 or later is part of all distributions of LaTeX
 %% version 2005/12/01 or later.
-%% 
+%%
 %% This work has the LPPL maintenance status `maintained'.
-%% 
+%%
 %% The Current Maintainer of this work is Simon Sigurdhsson.
-%% 
+%%
 %% This work consists of the files skdoc.dtx
 %% and the derived filebase skdoc.cls.
 
@@ -36,3 +40,4 @@ and run `mktexlsr`. If you wish to compile the package but not install
 it, run `make all` instead. If you insist on doing it manually, remember
 to run `tex` to generate the code, and `pdflatex` (or `latex`, if you
 don't fancy PDFs) to generate the documentation.
+```
