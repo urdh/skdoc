@@ -1,6 +1,16 @@
 language: c
 sudo: false
 
+env:
+  global:
+    # ctanupload uses these
+    - CONTRIBUTION=skdoc
+    - NAME="Simon Sigurdhsson"
+    - EMAIL="Sigurdhsson@gmail.com"
+    - DIRECTORY=/macros/latex/contrib/skdoc
+    - LICENSE=free
+    - FREEVERSION=lppl
+
 before_install:
   - mkdir -p $HOME/texlive && curl -L https://github.com/urdh/texlive-blob/releases/download/20150408/texlive.tar.xz | tar -JxC $HOME/texlive
 
@@ -14,3 +24,6 @@ install:
 script:
   - make dist
   - make test
+
+after_success:
+  - ./deploy-ctan.sh skdoc.tar.gz
