@@ -27,3 +27,13 @@ script:
 
 after_success:
   - ./deploy-ctan.sh skdoc.tar.gz
+
+deploy:
+  provider: releases
+  api_key:
+    secure: JKcz2j3ff7nVvCO09Y0qvWr9twR43endSgGrK5iLRU/mTNt9SHOPhbGp/q/B/eWEwrSssc9By1K9oSCZk0Kd0WyctdIT6k7gRFCdzuEh27AAPkusWo+NE252bd/vu8WDPE2s8kis255qgwHtf8H7v0mDuWNG46BAyaeFrjIcogI=
+  file: skdoc.tar.gz
+  skip_cleanup: true
+  on:
+    repo: urdh/skdoc
+    tags: true
