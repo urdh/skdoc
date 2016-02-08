@@ -1,10 +1,10 @@
-[![Travis CI](https://img.shields.io/travis/urdh/skdoc.svg)](http://travis-ci.org/urdh/skdoc)
+[![Travis CI](https://img.shields.io/travis/urdh/skdoc/master.svg)](http://travis-ci.org/urdh/skdoc)
 [![CTAN: Version](https://img.shields.io/ctan/v/skdoc.svg)](http://www.ctan.org/pkg/skdoc)
 [![CTAN: License](https://img.shields.io/ctan/l/skdoc.svg)](http://www.ctan.org/pkg/skdoc)
 ```
 %% skdoc documentation class
 %%
-%% Copyright (C) 2012-2015 by Simon Sigurdhsson <sigurdhsson@gmail.com>
+%% Copyright (C) 2012-2016 by Simon Sigurdhsson <sigurdhsson@gmail.com>
 %%
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3
