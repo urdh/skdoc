@@ -16,6 +16,7 @@ before_install:
 
 install:
   - PATH=$HOME/texlive/bin/x86_64-linux:$PATH
+  - tlmgr update --self
   - tlmgr install paratype
   - tlmgr install opensans
   - tlmgr install sourcecodepro
