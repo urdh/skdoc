@@ -23,6 +23,7 @@ install:
   - tlmgr install sourcecodepro
   - tlmgr install ly1
   - tlmgr install xindy
+  - tlmgr remove --force skdoc || true
 
 script:
   - make dist
