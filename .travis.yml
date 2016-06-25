@@ -8,6 +8,7 @@ env:
     - NAME="Simon Sigurdhsson"
     - EMAIL="Sigurdhsson@gmail.com"
     - DIRECTORY=/macros/latex/contrib/skdoc
+    - SUMMARY="Documentation and extraction for packages and document classes"
     - LICENSE=free
     - FREEVERSION=lppl
 
