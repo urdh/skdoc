@@ -1224,9 +1224,9 @@
 \DeclareDocumentCommand\DeclareFile{om}{
     \group_begin:
     \keys_define:nn{skdoc@declarefile}{%
-        preamble .value_required:,
+        preamble .value_required:n = true,
         preamble .code:n = \edef\skdoc@preamble{##1},
-        key .value_required:,
+        key .value_required:n = true,
         key .code:n = \def\skdoc@key{##1}
     }%
     \def\skdoc@preamble{}%
@@ -2908,7 +2908,7 @@
 %    \begin{macrocode}
 \DeclareDocumentCommand\package{om}{%
     \keys_define:nn{skdoc@package}{%
-        vcs .value_required:,%
+        vcs .value_required:n = true,%
         vcs .code:n = \repository{##1},%
         ctan .code:n = \ctan{##1},%
         ctan .default:n = #2%
