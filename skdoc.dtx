@@ -1244,7 +1244,7 @@
         \tl_set:Nx\l_tmpa_tl{\skdoc@preamble}
         \edef\skdoc@temp{\tl_head:N\l_tmpa_tl}
         \def\skdoc@preamble@extra{
-            \skdoc@temp\skdoc@temp\space~This~is~file~`#2',~generated~from~`\c_job_name_tl.tex'~(key~`\skdoc@key').
+            \skdoc@temp\skdoc@temp\space~This~is~file~`#2',~generated~from~`\c_sys_jobame_str.tex'~(key~`\skdoc@key').
         }
     }
     \expandafter\xdef\csname skdoc@write@#2\endcsname{%
@@ -1510,7 +1510,7 @@
 % Shorthand to read preamble from current document.
 %    \begin{macrocode}
 \DeclareDocumentCommand\SelfPreambleTo{m}{%
-    \PreambleTo{#1}{\c_job_name_tl}%
+    \PreambleTo{#1}{\c_sys_jobame_str}%
 }
 %    \end{macrocode}
 % \end{macro}
