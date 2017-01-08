@@ -21,7 +21,7 @@
 %% This work consists of the files skdoc.dtx
 %% and the derived filebase skdoc.cls.
 
-This is version 1.4 of the skdoc document class. It is designed to
+This is version 1.4b of the skdoc document class. It is designed to
 generate both documentation and derivative files using only LaTeX,
 i.e. without using docstrip and ins/dtx files.
 
