@@ -35,7 +35,7 @@ after_success:
 deploy:
   provider: releases
   api_key:
-    secure: JKcz2j3ff7nVvCO09Y0qvWr9twR43endSgGrK5iLRU/mTNt9SHOPhbGp/q/B/eWEwrSssc9By1K9oSCZk0Kd0WyctdIT6k7gRFCdzuEh27AAPkusWo+NE252bd/vu8WDPE2s8kis255qgwHtf8H7v0mDuWNG46BAyaeFrjIcogI=
+    secure: bzK7GbOLB7Cc6OdrN5kddIcwp81J2NVBrLU3mNIw6FBFWSQw+tk9+XssZ3LZXMfPGqfO0g5AaOMo374o3WGL20hOOB4ZexegX+9qm1tnMVmDFzVzjv20pvmVzcSOPG5/eOIzlx06h3AW1OMpBLtASkrZ16U4+uD9UzBUtj7MV4o=
   file: skdoc.tar.gz
   skip_cleanup: true
   on:
