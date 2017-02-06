@@ -4,7 +4,7 @@
 ```
 %% skdoc documentation class
 %%
-%% Copyright (C) 2012-2016 by Simon Sigurdhsson <sigurdhsson@gmail.com>
+%% Copyright (C) 2012-2017 by Simon Sigurdhsson <sigurdhsson@gmail.com>
 %%
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3
@@ -21,7 +21,7 @@
 %% This work consists of the files skdoc.dtx
 %% and the derived filebase skdoc.cls.
 
-This is version 1.4b of the skdoc document class. It is designed to
+This is version 1.4c of the skdoc document class. It is designed to
 generate both documentation and derivative files using only LaTeX,
 i.e. without using docstrip and ins/dtx files.
 
