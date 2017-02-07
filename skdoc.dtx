@@ -739,12 +739,21 @@
 % \section{Known issues}
 % A list of current issues is available in the Github repository of this
 % package\footnote{\url{https://github.com/urdh/skdoc/issues}}, but as
-% of the release of \theversion, there are no known issues.
-% \iffalse
+% of the release of \theversion, there are two known issues.
 % \begin{description}
-%   \item[\#?]  ???
+%   \item[\#30]  The use of \pkg{expl3}-style macros in \cs{cs} may cause
+%     issues when generating a glossary. Since such macros are in general
+%     implementation details, a workaround may be to omit the
+%     implementation from the output by using \cs{OnlyDescription}.
+%   \item[\#34]  When generating examples utilizing the documented package,
+%     if a previous version of this package is installed on the machine
+%     where this generation is done, the installed version will be used
+%     instead of the version being documented. This may cause incorrect
+%     output or compiler errors. A workaround is to temporarily remove
+%     the installed version while generating documentation for the more
+%     recent version.
 % \end{description}
-% \fi
+%
 % If you discover any bugs in this package, please report them to the
 % issue tracker in the \thepackage\ Github repository.
 %
