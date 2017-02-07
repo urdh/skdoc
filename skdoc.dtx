@@ -3034,11 +3034,12 @@
 % \end{macro}
 % \begin{macro}{\Warning}[1]
 %   {Warning text}
+% \changes{1.5}{Fix spacing to consider \cs{fboxsep} and \cs{fboxrule}}
 %    \begin{macrocode}
 \DeclareDocumentCommand\Warning{+m}{
     \vspace{\baselineskip}
     \par\noindent
-    \fbox{\begin{minipage}[c]{\textwidth}
+    \fbox{\begin{minipage}[c]{\textwidth-2\fboxsep-2\fboxrule}
         \centering
         \textbf{Warning:}~#1
     \end{minipage}}
@@ -3049,11 +3050,12 @@
 % \end{macro}
 % \begin{macro}{\LongWarning}[1]
 %   {Warning text}
+% \changes{1.5}{Fix spacing to consider \cs{fboxsep} and \cs{fboxrule}}
 %    \begin{macrocode}
 \DeclareDocumentCommand\LongWarning{+m}{
     \Warning{
         \par\noindent
-        \begin{minipage}{\textwidth}
+        \begin{minipage}{\textwidth-2\fboxsep-2\fboxrule}
             #1
         \end{minipage}
     }
