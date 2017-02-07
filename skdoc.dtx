@@ -143,6 +143,7 @@
 % \changes{1.4}{Added option to control \pkg{babel}. Allow optional default value arguments in \env{macro} and friends. Fix spacing issue in \env{option} and friends}
 % \changes{1.4a}{Fix various compatibility issues with latest \pkg{glossaries}}
 % \changes{1.4b}{Track \pkg{expl3} changes (thanks to Joseph Wright)}
+% \changes{1.5}{Fix incompatibilities with \pkg{minted}}
 % \iffalse
 %%% Don't forget to update the version number and release date of
 %%% the package declaration on line 76!
@@ -1011,6 +1012,15 @@
         \__skdoc_if_shellescape:TF{
             \__skdoc_if_pygmentize:TF{
                 \bool_gset_true:N\g__skdoc_use_minted_bool
+%    \end{macrocode}
+% Since \pkg{minted} (through \pkg{fancyvrb}) loads \pkg{lineno}, and something
+% above already defines \cs{c@linenumber}, we have to resort to a bit of a hack
+% before we actually load \pkg{minted}.
+%    \begin{macrocode}
+                \cs_undefine:N\c@linenumber
+                \cs_undefine:N\cl@linenumber
+                \cs_undefine:N\p@linenumber
+                \cs_undefine:N\thelinenumber
                 \RequirePackage{minted}
 %    \end{macrocode}
 % Now that we have \pkg{minted}, we redefine the style of the line
@@ -1032,7 +1042,6 @@
 % \texttt{pygmentize -S default -f html}), but it's not entirely
 % apparent which macro corresponds to what entity.
 %    \begin{macrocode}
-                \renewcommand\minted@usedefaultstyle{}
                 \def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
                     \let\PY@ul=\relax \let\PY@tc=\relax%
                     \let\PY@bc=\relax \let\PY@ff=\relax}
@@ -1301,12 +1310,11 @@
 % If we're using \pkg{minted}, we set a few options ans open the
 % output file.
 %    \begin{macrocode}
-            \minted@resetoptions%
-            \exp_args:Nnx\setkeys{minted@opt}{
-                \int_compare:nNnF{\clist_count:N\l__skdoc_keys}>\c_one{
-                    \bool_if:NF\g__skdoc_in_example_bool{linenos,}
-                    firstnumber=\int_use:c{skdoc@output@#1@line}
-                }
+            \bool_if:NF\g__skdoc_in_example_bool{
+                \setkeys{minted@opt@g}{linenos}
+            }%
+            \exp_args:Nnx\setkeys{FV}{
+                firstnumber=\int_use:c{skdoc@output@#1@line}
             }%
             \iow_open:Nn\minted@code{\jobname.pyg}%
             \Needspace*{2\baselineskip}%
