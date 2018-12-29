@@ -30,24 +30,14 @@ install: all
 	install -m 0644 README $(TEXMFHOME)/doc/latex/skdoc/README
 	-mktexlsr
 
-skdoc.tds.zip: all
-	mkdir -p skdoc/tex/latex/skdoc
-	cp skdoc.cls skdoc/tex/latex/skdoc/skdoc.cls
-	mkdir -p skdoc/doc/latex/skdoc
-	cp skdoc.pdf skdoc/doc/latex/skdoc/skdoc.pdf
-	mkdir -p skdoc/source/latex/skdoc
-	cp skdoc.dtx skdoc/source/latex/skdoc/skdoc.dtx
-	cp README skdoc/doc/latex/skdoc/README
-	cd skdoc && zip -r ../skdoc.tds.zip *
-	rm -rf skdoc
-
-skdoc.tar.gz: all skdoc.tds.zip
-	mkdir -p skdoc
-	cp skdoc.dtx skdoc/skdoc.dtx
+skdoc.tar.gz: all
+	mkdir -p     skdoc
+	cp README    skdoc/README
+	cp Makefile  skdoc/Makefile
 	cp skdoc.pdf skdoc/skdoc.pdf
-	cp README skdoc/README
-	cp Makefile skdoc/Makefile
-	tar -czf $@ skdoc skdoc.tds.zip
+	cp skdoc.dtx skdoc/skdoc.dtx
+	cp skdoc.cls skdoc/skdoc.cls
+	tar -czf $@ skdoc
 	rm -rf skdoc
 
 dist: skdoc.tar.gz
