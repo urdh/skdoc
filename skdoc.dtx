@@ -145,7 +145,7 @@
 % \changes{1.4b}{Track \pkg{expl3} changes (thanks to Joseph Wright)}
 % \changes{1.5}{Fix incompatibilities with \pkg{minted}}
 % \changes{1.5a}{Track \pkg{expl3} changes (thanks to Felix Faltin)}
-% \changes{1.5b}{Replace \pkg{opensans} option \opt{osfigures} with \opt{oldstyle} (\#40)}
+% \changes{1.5b}{Track \pkg{expl3} changes (thanks to Phelype Oleinik). Replace \pkg{opensans} option \opt{osfigures} with \opt{oldstyle} (\#40)}
 % \iffalse
 %%% Don't forget to update the version number and release date of
 %%% the package declaration on line 76!
@@ -944,7 +944,7 @@
 % if no \cs{write18} access is available, two if we have restricted
 % access and one if access is unrestricted.
 %    \begin{macrocode}
-        \if_int_compare:w\pdf@shellescape=\c_one
+        \if_int_compare:w\pdf@shellescape=\c_one_int
             \prg_return_true:
         \else:
             \prg_return_false:
@@ -1309,7 +1309,7 @@
 % Before doing anything, set create or increment a counter keeping
 % track of the line number of the file we're writing to.
 %    \begin{macrocode}
-        \int_compare:nNnT{\int_use:c{skdoc@output@##1@line}}=\c_zero%
+        \int_compare:nNnT{\int_use:c{skdoc@output@##1@line}}=\c_zero_int%
             {\int_gincr:c{skdoc@output@##1@line}}%
     }
 %    \end{macrocode}
@@ -1382,7 +1382,7 @@
                 \begin{minipage}[c][1ex]{\textwidth}
                     \bool_if:nF{
                         \g__skdoc_in_example_bool &&
-                        !\int_compare_p:nNn{\clist_count:N\l__skdoc_keys}>\c_one
+                        !\int_compare_p:nNn{\clist_count:N\l__skdoc_keys}>\c_one_int
                     }{
                         \makebox[4ex]{%
                             \leavevmode
