@@ -1,3 +1,13 @@
+ZIP_NOATTRS :=
+ifeq ($(shell uname -s),Darwin)
+	ZIP_NOATTRS += -X
+endif
+
+TAR_NOATTRS :=
+ifeq ($(shell uname -s),Darwin)
+	TAR_NOATTRS += --disable-copyfile
+endif
+
 TEXMFHOME ?= $(shell kpsewhich -var-value TEXMFHOME)
 .PHONY: all clean distclean install dist test clean-test
 all: skdoc.dtx skdoc.cls skdoc.pdf README
@@ -38,7 +48,7 @@ skdoc.tds.zip: all
 	mkdir -p skdoc/source/latex/skdoc
 	cp skdoc.dtx skdoc/source/latex/skdoc/skdoc.dtx
 	cp README skdoc/doc/latex/skdoc/README
-	cd skdoc && zip -r ../skdoc.tds.zip *
+	cd skdoc && zip $(ZIP_NOATTRS) -r ../skdoc.tds.zip *
 	rm -rf skdoc
 
 skdoc.tar.gz: all skdoc.tds.zip
@@ -47,7 +57,7 @@ skdoc.tar.gz: all skdoc.tds.zip
 	cp skdoc.pdf skdoc/skdoc.pdf
 	cp README skdoc/README
 	cp Makefile skdoc/Makefile
-	tar -czf $@ skdoc skdoc.tds.zip
+	tar $(TAR_NOATTRS) -czf $@ skdoc skdoc.tds.zip
 	rm -rf skdoc
 
 dist: skdoc.tar.gz
