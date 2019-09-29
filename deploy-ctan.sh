@@ -4,10 +4,11 @@ if [[ "$TRAVIS_TAG" ]]; then
   printf "\033[33;1mCommit is tagged with $TRAVIS_TAG, deploying to CTAN...\033[0m\n"
   # 0. Install perl modules
   curl -L https://cpanmin.us | perl - App::cpanminus
-  ~/perl5/bin/cpanm local::lib        || exit 1;
-  ~/perl5/bin/cpanm WWW::Mechanize    || exit 1;
-  ~/perl5/bin/cpanm HTML::TreeBuilder || exit 1;
-  ~/perl5/bin/cpanm HTML::FormatText  || exit 1;
+  ~/perl5/bin/cpanm local::lib           || exit 1;
+  ~/perl5/bin/cpanm WWW::Mechanize       || exit 1;
+  ~/perl5/bin/cpanm HTML::TreeBuilder    || exit 1;
+  ~/perl5/bin/cpanm HTML::FormatText     || exit 1;
+  ~/perl5/bin/cpanm LWP::Protocol::https || exit 1;
   eval "$(perl -I$HOME/perl5/lib/perl5 -Mlocal::lib)"
   # 1. Install ctanupload
   tlmgr install ctanupload || exit 1;
