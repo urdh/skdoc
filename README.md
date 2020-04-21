@@ -1,6 +1,6 @@
-[![Travis CI](https://img.shields.io/travis/urdh/skdoc/master.svg)](http://travis-ci.org/urdh/skdoc)
-[![CTAN: Version](https://img.shields.io/ctan/v/skdoc.svg)](http://www.ctan.org/pkg/skdoc)
-[![CTAN: License](https://img.shields.io/ctan/l/skdoc.svg)](http://www.ctan.org/pkg/skdoc)
+[![Travis CI](https://img.shields.io/travis/urdh/skdoc/master)](http://travis-ci.org/urdh/skdoc)
+[![CTAN: Version](https://img.shields.io/ctan/v/skdoc)](http://www.ctan.org/pkg/skdoc)
+[![CTAN: License](https://img.shields.io/ctan/l/skdoc)](http://www.ctan.org/pkg/skdoc)
 ```
 %% skdoc documentation class
 %%
