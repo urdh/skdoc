@@ -22,7 +22,7 @@ distclean: clean
 %.cls: %.dtx
 	tex $<
 
-%.pdf: %.dtx
+%.pdf: %.dtx %.cls
 	pdflatex -interaction=nonstopmode -halt-on-error $<
 	makeglossaries $*
 	biber $*
