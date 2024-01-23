@@ -1,4 +1,4 @@
-[![Github CI](https://img.shields.io/github/actions/workflow/status/urdh/skdoc/continuous-integration)](https://github.com/urdh/skdoc/actions/workflows/continuous-integration.yml)
+[![Github CI](https://img.shields.io/github/actions/workflow/status/urdh/skdoc/continuous-integration.yml)](https://github.com/urdh/skdoc/actions/workflows/continuous-integration.yml)
 [![CTAN: Version](https://img.shields.io/ctan/v/skdoc)](http://www.ctan.org/pkg/skdoc)
 [![CTAN: License](https://img.shields.io/ctan/l/skdoc)](http://www.ctan.org/pkg/skdoc)
 ```
