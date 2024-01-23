@@ -1,0 +1,50 @@
+name: Continuous integration
+on:
+  push:
+    branches: [master]
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  continuous-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: teatimeguest/setup-texlive-action@v3
+        with:
+          version: 2020
+          packages: >-
+            scheme-basic
+            collection-latexrecommended
+            biber
+            biblatex
+            csquotes
+            datatool
+            everyhook
+            fontaxes
+            glossaries
+            ly1
+            marginnote
+            mfirstuc
+            minted
+            mweights
+            needspace
+            opensans
+            paratype
+            sourcecodepro
+            svn-prov
+            xfor
+            xindy
+            xstring
+            ydoc
+      - run: sudo apt-get install -y libncurses5
+      - run: make dist
+      - run: make test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manual
+          path: skdoc.pdf
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle
+          path: skdoc.tar.gz

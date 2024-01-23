@@ -1,0 +1,32 @@
+name: Tagged release
+on:
+  push:
+    tags: ['*.*']
+permissions:
+  contents: read
+jobs:
+  build-package:
+    uses: ./.github/workflows/continuous-integration.yml
+  release:
+    needs: build-package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: bundle
+      - uses: paolobrasolin/ctan-submit-action@v1
+        with:
+          action: upload
+          file_path: skdoc.tar.gz
+          fields: |
+            pkg: skdoc
+            version: ${{ github.ref_name }}
+            uploader: Simon Sigurdhsson
+            email: Sigurdhsson@gmail.com
+            update: "true"
+      - uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: skdoc.tar.gz
