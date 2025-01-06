@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: teatimeguest/setup-texlive-action@v3
         with:
-          version: 2020
+          version: 2024
           packages: >-
             scheme-basic
             collection-latexrecommended
