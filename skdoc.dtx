@@ -148,6 +148,7 @@
 % \changes{1.5b}{Track \pkg{expl3} changes (thanks to Phelype Oleinik). Replace \pkg{opensans} option \opt{osfigures} with \opt{oldstyle} (\#40)}
 % \changes{1.5c}{Replace \pkg{scrpage} package with \pkg{scrlayer-scrpage} (thanks to Daniel Wunderlich)}
 % \changes{1.5d}{Use compatibiltiy levels for \pkg{scrartcl} (\#44)}
+% \changes{1.5d-dev}{Fix incompatibilities with \pkg{glossaries} (\#47)}
 % \iffalse
 %%% Don't forget to update the version number and release date of
 %%% the package declaration on line 76!
@@ -2610,7 +2611,7 @@
 % our own \pkg{glossaries} style.
 %    \begin{macrocode}
 \newglossarystyle{docindex}{
-    \glossarystyle{indexgroup}
+    \setglossarystyle{indexgroup}
     \renewcommand*{\glspostdescription}{\unskip\leaders\hbox to 2.9mm{\hss.}\hfill\strut}
     \renewenvironment{theglossary}{
         \bool_gset_true:N\g__skdoc_no_index_bool
@@ -2622,10 +2623,7 @@
         \end{multicols}
         \bool_gset_false:N\g__skdoc_no_index_bool
     }
-    \renewcommand*{\glossaryentryfield}[5]{
-        \item\glsentryitem{##1}\glstarget{##1}{##2}
-            \ifx\relax##4\relax\else\space(##4)\fi
-            ##3\glspostdescription\space ##5}
+    \renewcommand*{\glstreenamefmt}[1]{##1}
     \renewcommand*{\glsgroupheading}[1]{
         \IfStrEq{##1}{default}{
             \item{\descfont\glssymbolsgroupname}
@@ -2753,6 +2751,8 @@
 % \changes{1.4a}{Unconditionally add version \enquote{parent} to
 %   circumvent strange behaviour by \pkg{glossaries}. Also, gobble
 %   page numbers for similar reasons}
+% \changes{1.5d-dev}{Added an extra intermediate layer of macros
+%   (\cs{@changes}) to force expansion of \cs{skdoc@macroname@stylized}}
 %    \begin{macrocode}
 \DeclareDocumentCommand\changes{mm}{%
     \@bsphack
@@ -2763,25 +2763,30 @@
         nonumberlist=true
     }
     \ifx\skdoc@macroname@key\@empty
-        \newglossaryentry{#1-general}{
-            type=changes,
-            description={\generalname{}:~#2},
-            parent={#1},
-            sort={0},
-            nonumberlist=true
-        }
-        \glsadd[types=changes,format=@gobble]{#1-general}
+        \exp_args:Ne\@changes{\generalname}{!general}{#1}{#2}
     \else
-        \newglossaryentry{#1-\skdoc@macroname@key}{
-            type=changes,
-            description={\skdoc@macroname@stylized{}:~#2},
-            parent={#1},
-            sort={\skdoc@macroname@key},
-            nonumberlist=true
-        }
-        \glsadd[types=changes,format=@gobble]{#1-\skdoc@macroname@key}
+        \exp_args:Nee\@changes{\skdoc@macroname@stylized}{\skdoc@macroname@key}{#1}{#2}
     \fi
     \@esphack
+}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\@changes}[2]
+%   {A prefix prepended to the change log message}
+%   {An internal key used for sorting changes within each version}
+%   {The version in which the changes were made}
+%   {A short description of the changes}
+%    \begin{macrocode}
+\DeclareDocumentCommand\@changes{mmmm}{%
+    \newglossaryentry{#3-#2}{
+        type=changes,
+        name={#1},
+        description={#4},
+        parent={#3},
+        sort={#2},
+        nonumberlist=true
+    }
+    \glsadd[types=changes,format=@gobble]{#3-#2}
 }
 %    \end{macrocode}
 % \end{macro}
@@ -2791,7 +2796,7 @@
 % our own \pkg{glossaries} style.
 %    \begin{macrocode}
 \newglossarystyle{changelog}{
-    \glossarystyle{altlist}
+    \setglossarystyle{altlist}
     \renewenvironment{theglossary}{
         \bool_gset_true:N\g__skdoc_no_index_bool
         \begin{multicols}{2}\begin{description}
@@ -2799,15 +2804,16 @@
         \end{description}\end{multicols}
         \bool_gset_false:N\g__skdoc_no_index_bool
     }
-    \renewcommand*{\glossaryentryfield}[5]{
+    \renewcommand*{\glossentry}[2]{
         \par\vspace{5\p@}\relax
-        \item[\glsentryitem{##1}\glstarget{##1}{##2}]
-                    \mbox{}\par\nobreak\@afterheading
+        \item[\glsentryitem{##1}\glstarget{##1}{\glossentryname{##1}}]
+            \mbox{}\par\nobreak\@afterheading
     }
-    \renewcommand{\glossarysubentryfield}[6]{%
+    \renewcommand*{\subglossentry}[3]{
         \par\hspace*{\itemindent}
-        \glssubentryitem{##2}%
-        \glstarget{##2}{\strut}##4\glspostdescription\space ##6
+        \glssubentryitem{##2}\glstarget{##2}{\strut}%
+        \glossentryname{##2}:~\glossentrydesc{##2}%
+        \glspostdescription\space ##3
     }
 }
 %    \end{macrocode}
