@@ -148,7 +148,7 @@
 % \changes{1.5b}{Track \pkg{expl3} changes (thanks to Phelype Oleinik). Replace \pkg{opensans} option \opt{osfigures} with \opt{oldstyle} (\#40)}
 % \changes{1.5c}{Replace \pkg{scrpage} package with \pkg{scrlayer-scrpage} (thanks to Daniel Wunderlich)}
 % \changes{1.5d}{Use compatibiltiy levels for \pkg{scrartcl} (\#44)}
-% \changes{1.5d-dev}{Fix incompatibilities with \pkg{glossaries} (\#47)}
+% \changes{1.5d-dev}{Fix incompatibilities with \pkg{glossaries} (\#47). Use \pkg{minted2} instead of \pkg{minted}}
 % \iffalse
 %%% Don't forget to update the version number and release date of
 %%% the package declaration on line 76!
@@ -222,8 +222,8 @@
 % \label{ssec:option:highlight}
 % The \opt{highlight} option enables or disabled syntax highlighting
 % of the implementation code. Highlighting is performed using
-% \pkg{minted}, and falls back to no highlighting if there is no
-% \cs{write18} access, if \pkg{minted} is unavailable or if the
+% \pkg{minted2}, and falls back to no highlighting if there is no
+% \cs{write18} access, if \pkg{minted2} is unavailable or if the
 % \texttt{pygmentize} binary can't be found.
 % \Notice{On non-unix platforms, the test for \texttt{pygmentize}
 % will likely fail. Therefore, syntax highlighting is not supported
@@ -472,7 +472,7 @@
 %
 % Since the \env{example} environment is based on the same mechanisms
 % as \env{MacroCode}, (mostly) the same typesetting properties apply.
-% In particular, the code will be highlighted if \pkg{minted} is
+% In particular, the code will be highlighted if \pkg{minted2} is
 % available. \Notice{Since the backend utilizes \cs{verbatim}, the
 % usual caveats apply. In particular, leaving whitespace before
 % \cs{end}\marg{example} will result in an extra newline at the end
@@ -680,7 +680,7 @@
 % sensitivity to whitespace, for instance). As detailed by the
 % description of the \opt{highlight} option (on page
 % \pageref{ssec:option:highlight}), the environment will highlight
-% the code using \pkg{minted} if possible. Multiple \meta{key}s are
+% the code using \pkg{minted2} if possible. Multiple \meta{key}s are
 % allowed, and the code will be written to all corresponding files.
 %
 % \subsubsection{Hiding the implementation}
@@ -828,7 +828,7 @@
 % Set up some booleans used throughout the code.
 % \begin{macro}{\g__skdoc_use_minted_bool}
 % The \texttt{use_minted} boolean keeps track of wether we're using
-% \pkg{minted} or not. The default value is \emph{false}.
+% \pkg{minted2} or not. The default value is \emph{false}.
 %    \begin{macrocode}
 \bool_new:N\g__skdoc_use_minted_bool
 \bool_gset_false:N\g__skdoc_use_minted_bool
@@ -926,10 +926,10 @@
 %    \end{macrocode}
 %
 % \subsection{Special case: syntax highlighting}
-% We support syntax highlighting through \pkg{minted}, but only if
+% We support syntax highlighting through \pkg{minted2}, but only if
 % we're running with unrestricted \cs{write18} access \emph{and}
 % there exists a suitable executable (\texttt{pygmentize}). Since
-% \pkg{minted} bails out without \cs{write18} access, we have to test
+% \pkg{minted2} bails out without \cs{write18} access, we have to test
 % that before even loading it.
 %
 % \subsubsection{A simple \cs{write18} test}
@@ -1018,7 +1018,7 @@
 % \end{macro*}
 %
 % Using the macros defined above, we can test for both \cs{write18}
-% and \texttt{pygmentize}, loading \pkg{minted} and setting a flag
+% and \texttt{pygmentize}, loading \pkg{minted2} and setting a flag
 % if both exist. If the option \opt{highlight} was supplied and set
 % to \texttt{false}, we do nothing.
 %    \begin{macrocode}
@@ -1028,17 +1028,17 @@
             \__skdoc_if_pygmentize:TF{
                 \bool_gset_true:N\g__skdoc_use_minted_bool
 %    \end{macrocode}
-% Since \pkg{minted} (through \pkg{fancyvrb}) loads \pkg{lineno}, and something
+% Since \pkg{minted2} (through \pkg{fancyvrb}) loads \pkg{lineno}, and something
 % above already defines \cs{c@linenumber}, we have to resort to a bit of a hack
-% before we actually load \pkg{minted}.
+% before we actually load \pkg{minted2}.
 %    \begin{macrocode}
                 \cs_undefine:N\c@linenumber
                 \cs_undefine:N\cl@linenumber
                 \cs_undefine:N\p@linenumber
                 \cs_undefine:N\thelinenumber
-                \RequirePackage{minted}
+                \RequirePackage{minted2}
 %    \end{macrocode}
-% Now that we have \pkg{minted}, we redefine the style of the line
+% Now that we have \pkg{minted2}, we redefine the style of the line
 % numbers to match what we have further down for the non-highlighted
 % mode.
 %    \begin{macrocode}
@@ -1217,7 +1217,7 @@
                 \def\PYZlb{[}
                 \def\PYZrb{]}
 %    \end{macrocode}
-% If there's no \texttt{pygmentize}, no \cs{write18} or no \pkg{minted},
+% If there's no \texttt{pygmentize}, no \cs{write18} or no \pkg{minted2},
 % we display a warning message and proceed without highlighting.
 %    \begin{macrocode}
             }{
@@ -1322,7 +1322,7 @@
     \__skdoc_if_print_code:T{
         \bool_if:NTF\g__skdoc_use_minted_bool{
 %    \end{macrocode}
-% If we're using \pkg{minted}, we set a few options ans open the
+% If we're using \pkg{minted2}, we set a few options ans open the
 % output file.
 %    \begin{macrocode}
             \bool_if:NF\g__skdoc_in_example_bool{
@@ -1342,7 +1342,7 @@
         }
         \bool_if:NF\g__skdoc_in_example_bool{
 %    \end{macrocode}
-% In all non-example code, \pkg{minted} or not, we output a small
+% In all non-example code, \pkg{minted2} or not, we output a small
 % marker showing what file we are writing to.
 %    \begin{macrocode}
             \marginnote{
@@ -1373,7 +1373,7 @@
             \bool_if:NTF\g__skdoc_use_minted_bool{
 %    \end{macrocode}
 % ...but if we're using minted, \enquote{a lot more} consists of also
-% writing the line to the file used by \pkg{minted}.
+% writing the line to the file used by \pkg{minted2}.
 %    \begin{macrocode}
                 \iow_now:Nx\minted@code{\the\verbatim@line}%
             }{
@@ -1441,15 +1441,15 @@
     \__skdoc_if_print_code:T{
         \bool_if:NTF\g__skdoc_use_minted_bool{
 %    \end{macrocode}
-% If we're using \pkg{minted}, we still have to actually print the code.
+% If we're using \pkg{minted2}, we still have to actually print the code.
 % We begin with closing the output file.
 %    \begin{macrocode}
             \iow_close:N\minted@code%
 %    \end{macrocode}
-% A few spacing fixes are applied. Since \pkg{minted} uses
+% A few spacing fixes are applied. Since \pkg{minted2} uses
 % \pkg{fancyvrb}, these negative \cs{vspace}s are derived from the
 % \pkg{fancyvrb} documentation \parencite[pp.~46--47]{Rahtz10}. What
-% we want to do is to offset the spacing produced by \pkg{minted}, so
+% we want to do is to offset the spacing produced by \pkg{minted2}, so
 % that we are in control.
 %    \begin{macrocode}
             \bool_if:NF\g__skdoc_in_example_bool{
@@ -1458,7 +1458,7 @@
                 \vspace*{-\parskip}
             }
 %    \end{macrocode}
-% Now, the internal \pkg{minted} macro \cs{minted@pygmentize} is called
+% Now, the internal \pkg{minted2} macro \cs{minted@pygmentize} is called
 % to highlight and typeset the code, and the temporary file is removed.
 %    \begin{macrocode}
             \minted@pygmentize{latex}%
@@ -1470,7 +1470,7 @@
             \vspace*{-\partopsep}
         }{
 %    \end{macrocode}
-% If we aren't using \pkg{minted}, we hack spaces with \cs{@esphack}
+% If we aren't using \pkg{minted2}, we hack spaces with \cs{@esphack}
 % instead.
 %    \begin{macrocode}
             \bool_if:NF\g__skdoc_in_example_bool{\@esphack}%
@@ -1977,7 +1977,7 @@
 %    \end{macrocode}
 % The code coffin is now filled, after clearing it. It'll get filled
 % with the contents of the verbatim environment, typeset like other
-% \env{MacroCode} environments in the document (\emph{i.e.} \pkg{minted}
+% \env{MacroCode} environments in the document (\emph{i.e.} \pkg{minted2}
 % if possible).
 %    \begin{macrocode}
     \coffin_clear:N\l__skdoc_example_code_coffin
