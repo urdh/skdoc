@@ -2945,7 +2945,7 @@
     }%
     \IfNoValueTF{#1}{}{\keys_set:nn{skdoc@package}{#1}}%
     \def\@package{#2}%
-    \title{The~\textbf{\pkg*{\@package}}~package}%
+    \title{The~\textbf{\textsf{\@package}}~package}%
 }
 %    \end{macrocode}
 % \end{macro}
@@ -3005,6 +3005,7 @@
 \DeclareDocumentCommand\thepkg{}{\thepackage}
 %    \end{macrocode}
 % \end{macro}
+% \changes{1.5d-dev}{Always expand \cs{@title} when setting metadata}
 % Additionally we define \cs{skdocpdfsettings}, which is also used
 % by \cs{maketitle}, to include PDF metadata if the documentation
 % is being compiled using \hologo{pdfLaTeX}.
@@ -3013,7 +3014,7 @@
     \def\skdocpdfsettings{%
         \hypersetup{%
             pdfauthor   = {\@author\space<\@plainemail>},
-            pdftitle    = {\@title},
+            pdftitle    = {\text_purify:n{\@title}},
             pdfsubject  = {Documentation~of~LaTeX~package~\@package},
             pdfkeywords = {\@package,~LaTeX,~TeX}
         }%
