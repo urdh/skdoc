@@ -51,13 +51,12 @@ skdoc.tds.zip: all
 	cd skdoc && zip $(ZIP_NOATTRS) -r ../skdoc.tds.zip *
 	rm -rf skdoc
 
-skdoc.tar.gz: all skdoc.tds.zip
+skdoc.tar.gz: all
 	mkdir -p skdoc
 	cp skdoc.dtx skdoc/skdoc.dtx
 	cp skdoc.pdf skdoc/skdoc.pdf
 	cp README skdoc/README
 	cp Makefile skdoc/Makefile
-	tar $(TAR_NOATTRS) -czf $@ skdoc skdoc.tds.zip
 	rm -rf skdoc
 
 dist: skdoc.tar.gz
