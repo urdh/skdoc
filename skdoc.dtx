@@ -1539,6 +1539,59 @@
 }
 %    \end{macrocode}
 % \end{macro}
+% \begin{environment}{skdoc@preamble}
+% This environment saves the preamble from its contents.
+% Do the verbatim thing as above, but return the token list or place
+% it in a variable or something so that it can be used. Possibly allow
+% for adding comment chars at the beginning and saving to several
+% variables.
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{skdoc@preamble}{m}{%
+    \tl_new:N\skdoc@targetlist%
+    \tl_new:N\skdoc@prefixlist%
+    \keys_define:nn{skdoc@preamble}{%
+        unknown .code:n = {%
+            \tl_gput_right:Nn\skdoc@targetlist{\l_keys_key_tl}
+            \IfStrEq{##1}{}{
+                \tl_gput_right:Nx\skdoc@prefixlist{\@percentchar\@percentchar}
+            }{
+                \tl_gput_right:Nx\skdoc@prefixlist{##1}
+            }
+            \tl_new:c{skdoc@preamble@\l_keys_key_tl}
+            \typeout{\expandafter\string\csname skdoc@preamble@\l_keys_key_tl\endcsname}
+        }
+    }%
+    \keys_set:nn{skdoc@preamble}{#1}
+    \def\verbatim@processline{%
+        \tl_set_eq:NN\l_tmpa_tl\skdoc@prefixlist
+        \typeout{test}
+        \tl_map_inline:Nn\skdoc@targetlist{%
+            \tl_set_eq:NN\l_tmpb_tl\l_tmpa_tl
+            \let\thistoken=\tl_head:N\l_tmpa_tl
+            \tl_gput_right:Nx\l_tmpa_tl{\tl_tail:n\l_tmpb_tl}
+            \tl_gput_right:cx{skdoc@preamble@\noexpand#1}{}
+            \tl_gput_right:cx{skdoc@preamble@\noexpand#1}{\the\verbatim@line\iow_newline:}
+        }%
+    }%
+    \let\do\@makeother\dospecials\catcode`\^^M\active%
+    \verbatim@start%
+}{%
+    \tl_map_inline:Nn\skdoc@targetlist{%
+        \xdef##1{\tl_to_str:c{skdoc@preamble@\noexpand##1}}
+    }
+}
+%    \end{macrocode}
+% \end{environment}
+% \begin{environment}{SavePreamble}
+% User interface of \env{skdoc@premable}.
+%    \begin{macrocode}
+\DeclareDocumentEnvironment{SavePreamble}{m}{
+    \skdoc@preamble{#1}
+}{
+    \endskdoc@preamble
+}
+%    \end{macrocode}
+% \end{environment}
 %
 % \subsection{Styling}
 % \subsubsection{Colors}
