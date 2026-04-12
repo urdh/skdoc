@@ -406,7 +406,7 @@
 % \subsection{Documenting the package}\label{sec:doc-macros}
 % The documentation part of any \LaTeX\ manual is arguably the most
 % important one, and to facilitate proper typesetting of the
-% documentation \thepkg\ povides a number of different macros, all
+% documentation \thepkg\ provides a number of different macros, all
 % inspired by or inherited from \pkg{ydoc}. The first of these
 % macros that will be discussed are the macros that typeset differen
 % kinds of arguments in running text.
@@ -424,7 +424,7 @@
 % \DescribeMacro\sarg
 % These macros typeset different kinds of arguments (mandatory,
 % optional, picture-style, beamer-style and star arguments,
-% respetively). These can be used to describe arguments, but
+% respectively). These can be used to describe arguments, but
 % are mostly used internally. See table~\ref{tab:args} for
 % examples of how these macros are typeset.
 %
@@ -827,7 +827,7 @@
 % \subsection{Booleans}
 % Set up some booleans used throughout the code.
 % \begin{macro}{\g__skdoc_use_minted_bool}
-% The \texttt{use_minted} boolean keeps track of wether we're using
+% The \texttt{use_minted} boolean keeps track of whether we're using
 % \pkg{minted2} or not. The default value is \emph{false}.
 %    \begin{macrocode}
 \bool_new:N\g__skdoc_use_minted_bool
@@ -835,7 +835,7 @@
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro}{\g__skdoc_no_index_bool}
-% The \texttt{no_index} boolean keeps track of wether the indexing
+% The \texttt{no_index} boolean keeps track of whether the indexing
 % macros should write things to the index or not. The default value is
 % \emph{false} (don't not write things to the index).
 %    \begin{macrocode}
@@ -844,7 +844,7 @@
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro}{\g__skdoc_in_example_bool}
-% The \texttt{in_example} boolean keeps track of wether we are currently
+% The \texttt{in_example} boolean keeps track of whether we are currently
 % inside an example or not (used mainly by \cs{skdoc@verbatim}). The
 % default value is of course \emph{false}.
 %    \begin{macrocode}
@@ -853,7 +853,7 @@
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro}{\g__skdoc_with_implementation_bool}
-% The \texttt{with_implementation} boolean keeps track of wether we are
+% The \texttt{with_implementation} boolean keeps track of whether we are
 % going to typeset the implementation or not. The default value is
 % \emph{true}, and this is only changed by \cs{OnlyDescription}.
 %    \begin{macrocode}
@@ -862,7 +862,7 @@
 %    \end{macrocode}
 % \end{macro}
 % \begin{macro}{\g__skdoc_in_implementation_bool}
-% The \texttt{in_implementation} boolean keeps track of wether we are
+% The \texttt{in_implementation} boolean keeps track of whether we are
 % in the implementation part of the documentation or not. It defaults
 % to \emph{false}, and is changed by \cs{Implementation} and \cs{Finale}.
 %    \begin{macrocode}
@@ -881,7 +881,7 @@
 % \end{macro}
 %
 % Finally, we define a helpful conditional based on the last two
-% booleans. It decides wether code in \cs{skdoc@verbatim} is typeset
+% booleans. It decides whether code in \cs{skdoc@verbatim} is typeset
 % or just output to a file.
 % \begin{macro*}{\__skdoc_if_print_code_p:}
 % \begin{macro*}{\__skdoc_if_print_code:T}
@@ -968,7 +968,7 @@
 % \end{macro*}
 %
 % \subsubsection{Testing for an application}
-% In order to find out wether \texttt{pygmentize} is installed, we
+% In order to find out whether \texttt{pygmentize} is installed, we
 % have to test for its binary. This is done by shelling out to
 % \texttt{which} and reading a temporary file, which means we need
 % a way to delete that file.
@@ -1322,7 +1322,7 @@
     \__skdoc_if_print_code:T{
         \bool_if:NTF\g__skdoc_use_minted_bool{
 %    \end{macrocode}
-% If we're using \pkg{minted2}, we set a few options ans open the
+% If we're using \pkg{minted2}, we set a few options and open the
 % output file.
 %    \begin{macrocode}
             \bool_if:NF\g__skdoc_in_example_bool{
@@ -2211,7 +2211,7 @@
 % And finally, we redefine some of the underlying \pkg{ydoc} macros
 % to behave the way we want them to.
 % For instance, we redefine the commands that print environment and
-% macro implementation names so that they typeset the name i a
+% macro implementation names so that they typeset the name in a
 % \cs{marginnote} rather than in an \cs{fbox}.
 % \begin{macro}{\PrintEnvImplName}[1]
 %   {The environment name to be printed}
@@ -2376,12 +2376,12 @@
 % process of adding entries to the index is reduced to adding
 % glossary entries. This is done through two wrapper macros around
 % the \cs{newglossaryentry} macro.
-% \begin{macro}{\@index@}[1]
+% \begin{macro}{\@index@}[2]
 %   {The key of the index entry}
 %   {The text of the index entry}
-% What \cs{@index@} does is to decide wether we are hiding the
+% What \cs{@index@} does is to decide whether we are hiding the
 % implementation part of the documentation (discussed later), and
-% wether we are in the actual implementation or not. If we are in
+% whether we are in the actual implementation or not. If we are in
 % the implementation and aren't printing it, we shouldn't add an
 % index entry.
 %    \begin{macrocode}
@@ -2412,9 +2412,9 @@
 % These macros add an index entry with different contents depending
 % on the thing (macro, environment, etc.) that is being indexed. They
 % all have non-starred variants which are used by the referring
-% macros (\cs{cs} \emph{et. al}), and starred variants used by the
+% macros (\cs{cs} \emph{et al.}), and starred variants used by the
 % description macros (the star affects the style of the page number).
-% Each environment first test wether the given entry key exists, and
+% Each environment first test whether the given entry key exists, and
 % defines a new entry if it doesn't. Then, a usage of the entry is
 % recorded.
 % There is also a exclamation variant that is used by the implementation
@@ -2666,7 +2666,7 @@
 % The following redefinition of an internal \pkg{glossaries} macro,
 % provided by \textcite{Talbot13}, makes sure that the underlined
 % and italic page numbers in the index have precedence over the plain
-% nubmer format. In the event that a macro is described and implemented
+% number format. In the event that a macro is described and implemented
 % on the same page, the description format (italic) is used.
 % \begin{macro}{\@gls@addpredefinedattributes}
 % \changes{1.4a}{Add Xdy attribute \texttt{@gobble}}
@@ -2771,7 +2771,7 @@
 }
 %    \end{macrocode}
 % \end{macro}
-% \begin{macro}{\@changes}[2]
+% \begin{macro}{\@changes}[4]
 %   {A prefix prepended to the change log message}
 %   {An internal key used for sorting changes within each version}
 %   {The version in which the changes were made}
@@ -2841,7 +2841,7 @@
 % the \cs{Implementation} and \cs{Finale} macros. What we do is disable
 % and/or reset page and section counters for the duration of the
 % implementation, and set a shipout hook that simply discards the pages
-% while we are in the implementation. A consquence of this is that we
+% while we are in the implementation. A consequence of this is that we
 % must force a page break between what's before the implementation and
 % what's after, which might look horrible.
 %
